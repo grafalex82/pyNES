@@ -41,6 +41,15 @@ The first game-driven loop requires a few prerequisites. Choose those individual
 "bootstrap emulator" change. For example, identifying one ROM's header and mapper could be a first change; it is a
 candidate to discuss, not an approved implementation plan.
 
+## Cartridge inspection
+
+`NESFile` and `misc/nesinfo.py` now support ordinary iNES and NES 2.0 file inspection. See [usage](../README.md) and
+[local ROM notes](../ROMs/README.md) for commands. CPU execution, routing, and mapper emulation remain later steps.
+
+Treat cartridge inputs as structurally valid. Keep corruption checks, header repair, and exception presentation out of
+this loader and utility. Unsupported declared format features remain explicit `NotImplementedError` cases.
+Use synthetic files for routine tests; CLI tests also cover another working directory and paths containing spaces.
+
 ## Documentation roles
 
 | Location | Content |

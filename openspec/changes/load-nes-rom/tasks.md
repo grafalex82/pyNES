@@ -13,8 +13,8 @@
 
 ## 3. Standalone inspection utility
 
-- [ ] 3.1 Add `misc/nesinfo.py` with basic parameter output; verify CLI tests for both formats and paths with spaces.
-- [ ] 3.2 Update usage, current-state notes, and valid-input guidance; verify examples and README naming constraints.
+- [x] 3.1 Add `misc/nesinfo.py` with basic parameter output; verify CLI tests for both formats and paths with spaces.
+- [x] 3.2 Update usage, current-state notes, and valid-input guidance; verify examples and README naming constraints.
 
 ## 4. Integration checks
 

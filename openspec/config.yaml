@@ -16,6 +16,7 @@ context: |
   Single-step execution, bounded execution, and internal callback breakpoints are eventual required capabilities.
   Exact timing, physical video signals, and audio output are out of scope; software-visible behavior remains in scope.
   Document decisions, approximations, and any game patches with their rationale and effects.
+  Cartridge file loading and inspection assume valid input; omit corruption checks, repair, and exception handling.
   Once a game can be attempted, implement only the next observed NotImplementedError, then stop at the next obstacle.
   Check README.md and OpenSpec inventories for the current implementation state before planning the next change.
 

@@ -11,6 +11,7 @@ This is a learning project. Understanding each step matters more than reaching a
 - Let the next observed `NotImplementedError` determine the next behavior once a game can be attempted.
 - Stop after the selected behavior works and report the next obstacle. Do not automatically implement it.
 - Keep unknown instructions, registers, and mapper behavior explicit with `NotImplementedError` and useful context.
+- For cartridge file loading and inspection, assume valid input; omit corruption checks, repair, and exception handling.
 - Deliberate simplifications, including audio responses, need an explanation and focused verification.
 - Use OpenSpec for small changes. Read the relevant installed skill before using its workflow.
 - Keep exploration, proposed behavior, and implemented capabilities distinct. Do not claim unimplemented features.

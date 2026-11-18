@@ -1,4 +1,8 @@
-"""Verify cartridge metadata and exact section contents using synthetic files."""
+"""Verify cartridge parsing and standalone inspection using synthetic files."""
+
+from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -185,3 +189,48 @@ def test_rejects_nes20_miscellaneous_roms(make_nes_file, misc_rom_count):
     # Every nonzero declaration must be explicit rather than silently discarding the extra area.
     with pytest.raises(NotImplementedError, match="NES 2.0 miscellaneous ROM areas"):
         NESFile(filename)
+
+
+@pytest.mark.parametrize(
+    "header_fields, prg_size, chr_size, trainer_size, expected_output",
+    [
+        (
+            [2, 1, 0xB1, 0xA0, 0], 32768, 8192, 0,
+            "Format: iNES\nMapper: 171\nSubmapper: 0\nPRG ROM: 32768 bytes\nCHR ROM: 8192 bytes\n"
+            "Trainer: 0 bytes\nMirroring (header): vertical\nNonvolatile memory (header): no\n",
+        ),
+        (
+            [1, 2, 0x5E, 0x68, 0xBA], 16384, 16384, 512,
+            "Format: NES 2.0\nMapper: 2661\nSubmapper: 11\nPRG ROM: 16384 bytes\nCHR ROM: 16384 bytes\n"
+            "Trainer: 512 bytes\nMirroring (header): four-screen\nNonvolatile memory (header): yes\n",
+        ),
+        (
+            [1, 0, 0, 0x08, 0], 16384, 0, 0,
+            "Format: NES 2.0\nMapper: 0\nSubmapper: 0\nPRG ROM: 16384 bytes\nCHR ROM: 0 bytes\n"
+            "Trainer: 0 bytes\nMirroring (header): horizontal\nNonvolatile memory (header): no\n",
+        ),
+    ],
+    ids=["ines", "nes20-trainer", "nes20-no-chr"],
+)
+def test_inspects_file_from_another_directory(
+    make_nes_file, tmp_path, header_fields, prg_size, chr_size, trainer_size, expected_output
+):
+    # Explicit section patterns expose any changes to the source file during inspection.
+    header = b"NES\x1a" + bytes(header_fields) + bytes(7)
+    filename = make_nes_file(header, b"\x91" * prg_size, b"\x6c" * chr_size, trainer=b"\x35" * trainer_size)
+    filename = filename.rename(tmp_path / "cartridge with spaces.nes")
+    original = filename.read_bytes()
+
+    # Running outside the repository verifies imports independently of pytest's src path.
+    working_directory = tmp_path / "working directory"
+    working_directory.mkdir()
+    script = Path(__file__).resolve().parents[1] / "misc" / "nesinfo.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(filename)],
+        cwd=working_directory, capture_output=True, text=True, check=True,
+    )
+
+    # Inspection prints every selected field, exits normally, and leaves cartridge bytes intact.
+    assert result.stdout == expected_output
+    assert result.stderr == ""
+    assert filename.read_bytes() == original

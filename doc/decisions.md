@@ -108,6 +108,22 @@ Use a local pytest fixture factory to assemble and write synthetic cartridge fil
 Tests supply explicit headers and section bytes, keeping expected values independent of the parser. This removes
 duplicate file creation without introducing a second header encoder or changing the existing parsing scenarios.
 
+## Standalone cartridge inspection and valid inputs (2026-11-18)
+
+Keep file inspection in `misc/nesinfo.py`, using `argparse` for one positional path and `NESFile` getters for values.
+Locate `src/` relative to the script so inspection works from another working directory without installation or a
+configured `PYTHONPATH`. Print complete decimal mapper/submapper values, section lengths in bytes, and header flags.
+This reports cartridge data without constructing devices, selecting a mapper implementation, or starting emulation.
+
+Assume structurally valid input in both the loader and utility. Failures on damaged files are accepted, so signature,
+length, section-completeness, trailing-data, and extension checks, header repair, and exception handling are excluded.
+Filesystem and parsing errors propagate with ordinary Python tracebacks; corrupt-input behavior remains unspecified.
+Explicit unsupported-feature guards describe missing format support rather than validating corruption.
+
+Synthetic CLI cases verify iNES and NES 2.0 output, extended mapper/submapper fields, trainer and empty CHR sections,
+header flags, paths containing spaces, execution from another working directory, and unchanged source bytes.
+No hardware approximation or game patch is introduced.
+
 ## Departures and patches
 
 There are no implemented departures or game patches yet. For each future departure, record the expected hardware

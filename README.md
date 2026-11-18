@@ -77,9 +77,25 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 
 [`NESFile`](src/nesfile.py) reads ordinary iNES and NES 2.0 metadata and extracts trainer, PRG, and CHR bytes.
 Unsupported format markers, NES 2.0 exponent-multiplier sizes, nonstandard console types, and declared miscellaneous
-ROM areas raise `NotImplementedError`. Focused tests use synthetic files. The standalone inspection utility and emulator
-execution are not implemented yet.
+ROM areas raise `NotImplementedError`. [`nesinfo.py`](misc/nesinfo.py) prints the format, mapper/submapper, section byte
+sizes, mirroring, and nonvolatile-memory flag through `NESFile`. These are file metadata; mapper emulation and emulator
+execution are not implemented yet. Focused tests use synthetic files.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
+
+Inspect a valid local cartridge from the repository root (replace the example path with your file):
+
+```text
+python misc/nesinfo.py "ROMs/your game.nes"
+python misc/nesinfo.py --help
+```
+
+Quote paths containing spaces. From another working directory, use the full path to `misc/nesinfo.py`; a relative ROM
+path is resolved from that working directory. The utility uses only the standard library and exits after inspection.
+Mirroring and nonvolatile-memory values describe header flags, not effective mapper behavior.
+
+Cartridge inputs are assumed structurally valid. The loader and utility do not validate signatures, lengths, section
+completeness, trailing bytes, or extensions, and do not repair headers or catch filesystem/parsing exceptions.
+Damaged-input behavior is unspecified; ordinary Python exceptions and tracebacks are acceptable.
 
 Install the test dependency and run pytest from the repository root:
 
