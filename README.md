@@ -12,7 +12,8 @@ implement entire subsystems in advance.
 - Only the cartridge mappers required by the actual target ROMs.
 - Annotated disassembly listings that explain the algorithms in Super Mario Bros. and Battle City (Namco, 1985).
 
-Exact ROM revisions and mapper requirements remain to be established from the user's files.
+Local cartridge metadata and file hashes are recorded in [ROM notes](ROMs/README.md).
+Exact game revisions remain unconfirmed; the inspected headers declare mapper 0.
 
 ## Out of scope
 

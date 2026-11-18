@@ -64,7 +64,7 @@ Use synthetic files for routine tests; CLI tests also cover another working dire
 
 ## Questions to resolve when needed
 
-- Identify the exact Super Mario Bros. and Battle City ROMs, including hashes, header data, and mapper IDs.
+- Confirm exact Super Mario Bros. and Battle City revisions; local hashes and header metadata are in `ROMs/README.md`.
 - Clarify the eventual scope of unofficial 6502 opcodes without reducing the documented instruction-set goal.
 - Define instruction/reset/interrupt behavior for the NES CPU variant as those features are introduced.
 - Choose the simplest approximate PPU progression that satisfies the first observed status loop or interrupt need.

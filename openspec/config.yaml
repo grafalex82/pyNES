@@ -6,7 +6,7 @@ context: |
   Use Python, pygame for rendering, and pytest. Do not introduce pyenv or wheel-based build tooling.
   Write code, comments, documentation, and all OpenSpec artifacts in English.
   Target Super Mario Bros. and Battle City (Namco, 1985), with annotated listings under doc/disassembly/.
-  Exact ROM revisions and mapper requirements are not identified yet; inspect actual files before choosing mappers.
+  Local ROM headers declare mapper 0; hashes and metadata are in ROMs/README.md. Exact revisions remain unconfirmed.
   The long-term goal is full instruction-level NES CPU emulation, implemented incrementally.
   Machine routes every CPU memory and memory-mapped I/O request to separate devices.
   Keep one Python module per component; use compact code and avoid speculative abstractions or redundant checks.

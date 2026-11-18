@@ -42,8 +42,8 @@ individually. Their APIs are not fixed by this initial setup.
 
 ## Target game identity
 
-The target games are Super Mario Bros. and Battle City (Namco, 1985). No ROM images have been inspected. Determine
-mapper requirements from the actual cartridge files and document their identities first;
+The target games are Super Mario Bros. and Battle City (Namco, 1985). At setup, no ROM images had been inspected.
+Determine mapper requirements from the actual cartridge files and document their identities first;
 [the iNES format](https://www.nesdev.org/wiki/INES) describes mapper metadata in the file header.
 
 ## OpenSpec and repository setup
@@ -123,6 +123,16 @@ Explicit unsupported-feature guards describe missing format support rather than 
 Synthetic CLI cases verify iNES and NES 2.0 output, extended mapper/submapper fields, trainer and empty CHR sections,
 header flags, paths containing spaces, execution from another working directory, and unchanged source bytes.
 No hardware approximation or game patch is introduced.
+
+## Cartridge inspection integration (2026-11-18)
+
+Record local headers and full-file SHA-256 values in [ROM notes](../ROMs/README.md) to identify actual inputs before
+selecting mapper behavior. BattleCity matches the design's NES 2.0 mapper/submapper 0, 16384-byte PRG, 8192-byte CHR,
+and absent trainer. Also inspect the available Space Invaders and Super Mario Bros. files. All three CLI results match
+their headers, and all three hashes are unchanged after inspection. Filenames alone do not confirm game revisions.
+
+The full pytest suite passes 49 cases using synthetic temporary files. Local cartridge checks remain separate from
+routine tests. CPU execution and mapper emulation remain later changes; no game execution is claimed.
 
 ## Departures and patches
 

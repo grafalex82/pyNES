@@ -18,6 +18,6 @@
 
 ## 4. Integration checks
 
-- [ ] 4.1 Run the pytest suite; verify all tests pass without depending on local game ROMs.
-- [ ] 4.2 Inspect the local ROM; verify expected metadata and unchanged SHA-256.
-- [ ] 4.3 Validate OpenSpec and edited text formatting; verify strict validation and the 120-character limit.
+- [x] 4.1 Run the pytest suite; verify all tests pass without depending on local game ROMs.
+- [x] 4.2 Inspect the local ROM; verify expected metadata and unchanged SHA-256.
+- [x] 4.3 Validate OpenSpec and edited text formatting; verify strict validation and the 120-character limit.
