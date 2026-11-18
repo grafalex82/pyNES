@@ -15,9 +15,11 @@ The current component only stores state and converts status bytes; startup/reset
 | `pc` | `_pc` | 16 bits | `$0000..$FFFF` |
 | `p` | Computed from booleans | 8 bits | `$00..$FF` input; bit 5 always reads as 1 |
 
-All properties support reading and assignment. Callers supply valid register values and boolean flag values.
-The ordinary register setters assign directly, without validation or truncation. Assigning `a`, `x`, `y`, `sp`,
-or `pc` changes only that stored value; it does not execute an instruction or update status flags.
+All properties support reading and assignment. Register setters use ordinary `assert` statements to check the ranges
+in the table before changing state. An out-of-range value raises `AssertionError`, leaving the previous state intact.
+These assertions are omitted when Python runs with `-O`. Callers supply integer register values and boolean flags.
+Assigning `a`, `x`, `y`, `sp`, or `pc` changes only that stored value, without truncation, instruction execution,
+or status-flag updates.
 
 Construction currently sets A/X/Y/SP/PC to zero and all seven status booleans to `False`, so reading `p` gives `$20`.
 These are storage defaults, not an emulated NES power-up/reset result. Functional startup and repeated reset belong
@@ -82,8 +84,9 @@ Future stack instructions and interrupts will define their hardware behavior sep
 
 ## Verification
 
-The two parameterized tests in [`test/test_cpu.py`](../test/test_cpu.py) check packing and unpacking with individual
+Two parameterized tests in [`test/test_cpu.py`](../test/test_cpu.py) check packing and unpacking with individual
 flag bits, all-set/clear bytes, B, and ignored input bit 5. Unpacking starts from all fields set, so zero bits must
-clear previous values. These state-only checks use `CPU(None)` without cartridge files or memory access.
+clear previous values. One shared parameterized test checks accepted endpoints and rejected out-of-range values
+for each register. These state-only checks use `CPU(None)` without cartridge files or memory access.
 
 Run them from the repository root with `python -m pytest test/test_cpu.py`.

@@ -4,6 +4,7 @@
 
 - [x] 1.1 Add private CPU registers and seven boolean flag properties including `break_flag` in `src/cpu.py`; keep
   no packed P state and extend the two packing/unpacking tests for B=$10, bit 5 normalization, and all-set P=$FF.
+  Assert 8-bit/16-bit ranges in register setters and verify endpoints and unchanged state after rejected values.
 - [x] 1.2 Explain register widths, the seven boolean variables, and NV1BDIZC packing/unpacking in `doc/cpu.md`;
   distinguish software B from the six hardware flags and verify that bit 5 has no stored variable.
 

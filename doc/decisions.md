@@ -206,6 +206,15 @@ At the user's request, tests focus on flag packing/unpacking with individual bit
 These state-only tests construct CPU(None) without cartridge files or memory fixtures.
 Startup/reset remains future work.
 
+## CPU register range assertions (2026-11-18)
+
+At the user's request, register setters now assert unsigned value ranges before changing state: 0..255 for
+A/X/Y/SP/P and 0..65535 for PC. Use ordinary Python `assert` statements to catch invalid caller values during
+development, without truncation or a shared validation framework. The P assertion precedes all flag assignments,
+so a rejected value leaves every status field intact. Integer register inputs and boolean flag inputs are assumed.
+Assertions are omitted with Python's `-O` option. One parameterized test checks both accepted endpoints and values
+just outside each register's range, including preservation of the previous value after rejection.
+
 ## Departures and patches
 
 ### Stored B for status inspection (2026-11-18)

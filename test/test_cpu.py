@@ -46,3 +46,21 @@ def test_p_unpacks_flags(value, expected):
     cpu.p = value
     flags = (cpu.negative, cpu.overflow, cpu.break_flag, cpu.decimal, cpu.interrupt_disable, cpu.zero, cpu.carry)
     assert flags == expected
+
+
+@pytest.mark.parametrize(
+    "register, maximum", [("a", 0xFF), ("x", 0xFF), ("y", 0xFF), ("sp", 0xFF), ("p", 0xFF), ("pc", 0xFFFF)]
+)
+def test_register_setters_assert_value_ranges(register, maximum):
+    # Both endpoints are valid; reading P always includes its constant bit 5.
+    cpu = CPU(None)
+    for value in (0, maximum):
+        setattr(cpu, register, value)
+        assert getattr(cpu, register) == (value | 0x20 if register == "p" else value)
+
+    # Rejected values on either side must preserve the previous register or status fields.
+    previous = getattr(cpu, register)
+    for value in (-1, maximum + 1):
+        with pytest.raises(AssertionError):
+            setattr(cpu, register, value)
+        assert getattr(cpu, register) == previous

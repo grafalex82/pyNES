@@ -4,7 +4,7 @@
 class CPU:
     """CPU state with byte registers A/X/Y/SP and a 16-bit program counter.
 
-    Callers supply valid register and flag values through properties. Construction
+    Register setters assert their value ranges; callers supply boolean flag values. Construction
     currently initializes storage only; functional startup and reset are separate tasks.
     B is software inspection state rather than a physical processor latch.
     """
@@ -35,6 +35,7 @@ class CPU:
 
     @a.setter
     def a(self, value):
+        assert 0 <= value <= 0xFF
         self._a = value
 
 
@@ -45,6 +46,7 @@ class CPU:
 
     @x.setter
     def x(self, value):
+        assert 0 <= value <= 0xFF
         self._x = value
 
 
@@ -55,6 +57,7 @@ class CPU:
 
     @y.setter
     def y(self, value):
+        assert 0 <= value <= 0xFF
         self._y = value
 
 
@@ -65,6 +68,7 @@ class CPU:
 
     @sp.setter
     def sp(self, value):
+        assert 0 <= value <= 0xFF
         self._sp = value
 
 
@@ -75,6 +79,7 @@ class CPU:
 
     @pc.setter
     def pc(self, value):
+        assert 0 <= value <= 0xFFFF
         self._pc = value
 
 
@@ -165,6 +170,9 @@ class CPU:
 
     @p.setter
     def p(self, value):
+        # Check the complete byte before replacing any individual status field.
+        assert 0 <= value <= 0xFF
+
         # Replace all seven status fields; input bit 5 has no stored counterpart.
         self._carry = bool(value & 0x01)
         self._zero = bool(value & 0x02)

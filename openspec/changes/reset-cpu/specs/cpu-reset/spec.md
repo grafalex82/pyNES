@@ -3,7 +3,8 @@
 ## Purpose
 
 Establish observable CPU register state and perform functional startup and repeated reset through connected memory,
-without fetching instructions or modeling physical reset timing. Caller-supplied register values are assumed valid.
+without fetching instructions or modeling physical reset timing. Register inputs are assumed to be integers;
+boolean flag inputs are assumed valid.
 
 ## ADDED Requirements
 
@@ -18,6 +19,24 @@ Register state SHALL be independent between CPUs.
 - **WHEN** a caller assigns valid nonzero register values to one initialized CPU
 - **THEN** the corresponding values can be inspected without accessing private fields
 - **AND** another CPU's state remains unchanged
+
+### Requirement: Assert register value ranges
+
+The A/X/Y/SP/P setters SHALL use ordinary Python assertions for 0..255 and PC for 0..65535 before changing state.
+With assertions enabled, out-of-range assignments SHALL raise AssertionError and leave state unchanged.
+Values SHALL NOT be truncated. These checks SHALL follow standard Python assertion behavior, including omission
+under optimized execution.
+
+#### Scenario: Accept range endpoints
+
+- **WHEN** a caller assigns zero or the maximum value to a register
+- **THEN** the assignment succeeds
+- **AND** reading the register returns that value, with P's normal bit 5 normalization
+
+#### Scenario: Reject values outside the range
+
+- **WHEN** assertions are enabled and a caller assigns -1 or one above a register's maximum
+- **THEN** AssertionError is raised before any register or status field changes
 
 ### Requirement: Store flags separately and convert the status byte
 

@@ -8,6 +8,7 @@ This change introduces functional CPU startup and repeated reset so the next cha
 ## What Changes
 
 - Add CPU register state and seven separate boolean status fields, exposed as properties over private fields.
+- Check the 8-bit or 16-bit register ranges with ordinary Python assertions before changing state.
 - Include B as `break_flag`, a software convenience for status inspection rather than a physical CPU latch.
 - Initialize a newly constructed CPU with the selected deterministic NES power-up register profile.
 - Read the reset vector through the connected Machine and load PC without fetching or executing an opcode.

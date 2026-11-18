@@ -37,9 +37,11 @@ PRG mapping, so CPU needs no cartridge-size or mapper knowledge. This keeps both
 Use private `_a`, `_x`, `_y`, `_sp`, and `_pc` state with read/write properties `a`, `x`, `y`, `sp`, and `pc`.
 Keep status in seven private booleans, exposed through matching flag properties. The computed `p` property provides
 byte conversion as described below. Property assignment permits controlled pre-reset state and later debugger use
-without tests reaching into private fields. Assume valid register widths and boolean flag values; do not add
-range/type checks or silent masking of ordinary A/X/Y/SP/PC inputs. Status conversion decodes and encodes documented
-flag positions rather than maintaining another register value.
+without tests reaching into private fields. Register inputs are integers and flag inputs are booleans.
+At the user's request, use ordinary `assert 0 <= value <= 0xFF` in A/X/Y/SP/P setters and `$FFFF` as the PC limit.
+Check P before changing any flags. This leaves prior state intact on AssertionError and omits the checks under `-O`.
+Use no shared validator, type checks, or silent masking. Status conversion decodes and encodes documented flag
+positions rather than maintaining another register value.
 
 A separate register container or reusable processor base class would add another abstraction without a current need.
 At the user's request, properties allow direct register and flag access in tests without a separate method API.
@@ -121,6 +123,8 @@ Assign properties to establish nonzero registers and varied flags before repeate
 For the state interface, keep two focused tests: packing flags into P and unpacking P into flags.
 Extend these same two tests to cover B=$10, P=$30 with only B set, and all-set P=$FF; repeated P assignment clears B
 alongside the six hardware flags. Verify that bit 5 remains the only ignored input bit.
+One additional parameterized test covers accepted endpoints and rejected values immediately outside every register
+range, checking that rejection preserves the previous value.
 A narrow read spy can return a new vector on a later reset to prove the address is reread; never patch ROM at runtime.
 
 Verify ordered vector reads and no writes/opcode fetch through the Machine interface. A target such as $2002 must be
