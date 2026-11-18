@@ -33,8 +33,18 @@ RAM initialized before CPU construction, including the stack page, remains uncha
 
 This functional model omits dummy bus reads and timing. The deterministic initial profile and these omissions are
 recorded in [the decision record](decisions.md#functional-cpu-startup-2026-11-18).
-Repeated-reset verification and reset debug logging remain pending in the
+Reset debug logging remains pending in the
 [reset-cpu change](../openspec/changes/reset-cpu/tasks.md).
+
+## Repeated CPU reset
+
+Calling `cpu.reset()` again subtracts 3 from the current SP modulo 256, sets I, and reloads PC from `$FFFC/$FFFD`.
+It preserves A/X/Y and N/V/B/D/Z/C. In particular, D and the software B field retain their current values.
+For example, SP=`$01` becomes `$FE`, then `$FB` on the next reset; it is not restored to the initial `$FD`.
+No stack bytes are pushed, and RAM remains unchanged. Reset reloads the address without fetching an opcode there,
+including when the vector points to an unimplemented device such as PPU status at `$2002`.
+
+This resets CPU state only. It does not reconstruct Machine, reset peripherals, or execute an instruction.
 
 ## Seven booleans and the status byte
 
@@ -106,5 +116,9 @@ The `cpu` fixture takes `prg_size` and `start_address`; tests override them with
 
 Two startup cases cover 16 KiB and 32 KiB PRG layouts. They check only initial registers and flags, including the
 little-endian PC from the reset vector. Reads and writes are not mocked. Instruction execution remains unimplemented.
+
+Repeated-reset cases check every register and flag separately after two successive resets, with preserved flags
+both clear and set, several initial stack pointers, and RAM or unimplemented-PPU vector targets.
+A separate test fills RAM through Machine and checks that both resets preserve every byte, including the stack page.
 
 Run them from the repository root with `python -m pytest test/test_cpu.py`.

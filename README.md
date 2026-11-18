@@ -93,7 +93,8 @@ Reading `p` assembles NV1BDIZC; assigning it replaces all seven fields and ignor
 See [the CPU register guide](doc/cpu.md) for property widths, status conversion, and an example.
 Construction clears register storage once, then calls `reset()` to establish A=X=Y=$00, SP=$FD, and P=$24.
 PC comes from the little-endian vector at $FFFC/$FFFD through Machine. Startup preserves RAM and fetches no opcode.
-Repeated-reset verification and reset logging remain pending, as do instruction execution and peripheral behavior.
+Repeated reset preserves A/X/Y and N/V/B/D/Z/C, decrements SP by 3 modulo 256, sets I, and reloads the vector.
+Reset logging, instruction execution, and peripheral behavior remain pending.
 Focused tests use synthetic files; no game execution is claimed.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 

@@ -244,6 +244,18 @@ The `cpu` fixture accepts `prg_size` and `start_address` through pytest parametr
 only CPU registers and flags. The ordered vector reads remain explicit in `CPU.reset`.
 CPU behavior and instruction support are unchanged.
 
+## Repeated CPU reset verification (2026-11-18)
+
+Task 2.2 of `reset-cpu` verifies the existing reset operation without adding another reset path. Constructor-only
+clearing remains separate: repeated calls preserve A/X/Y and N/V/B/D/Z/C, wrap SP after subtracting 3, set I, and
+reload PC. B preservation is the existing software inspection convention; no new hardware departure is introduced.
+
+Synthetic cases exercise two successive resets, clear/set preserved flags, SP around zero and at $FD, and both PRG
+layouts. Moving PC away from the vector before each call checks restoration, including a $2002 target that would
+raise NotImplementedError if fetched. Source review confirms fresh ordered Machine reads at $FFFC/$FFFD on every call.
+Separate cases fill real RAM after construction and verify unchanged bytes, including the stack page, after both resets.
+No read/write mocks, ROM changes, instruction execution, or local game files are used. Reset logging remains task 2.3.
+
 ## Departures and patches
 
 ### Stored B for status inspection (2026-11-18)

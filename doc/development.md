@@ -59,8 +59,8 @@ a runnable synthetic example. The example needs no local game images and does no
 
 CPU register storage, status-byte conversion, and functional startup exist separately in `src/cpu.py`, using
 `CPU(machine)`. Construction reads the reset vector through Machine without executing an instruction or clearing RAM.
-Repeated-reset verification, reset logging, instruction execution, peripherals, bounded execution, and breakpoints
-remain future work.
+Repeated-reset tests cover preserved registers/flags, stack-pointer wrapping, vector loading, and unchanged RAM.
+Reset logging, instruction execution, peripherals, bounded execution, and breakpoints remain future work.
 The memory interface lets tests and exploration scripts access bytes before those execution capabilities are added.
 
 ## Documentation roles

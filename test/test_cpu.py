@@ -1,4 +1,4 @@
-"""Verify CPU startup, register ranges, and conversion between status and seven boolean fields."""
+"""Verify CPU startup, repeated reset, register ranges, and status conversion."""
 
 import pytest
 
@@ -71,6 +71,60 @@ def test_initializes_cpu_through_machine_reset_vector(cpu, start_address):
     assert cpu.interrupt_disable is True
     assert cpu.zero is False
     assert cpu.carry is False
+
+
+@pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0x2002)])
+@pytest.mark.parametrize("flag_value", [False, True])
+@pytest.mark.parametrize(
+    "initial_sp, expected_sp_values",
+    [(0x00, (0xFD, 0xFA)), (0x01, (0xFE, 0xFB)), (0x03, (0x00, 0xFD)), (0xFD, (0xFA, 0xF7))],
+)
+def test_repeated_reset_preserves_registers_and_flags(cpu, start_address, flag_value, initial_sp, expected_sp_values):
+    # Nonzero registers and both flag values distinguish reset from constructor-only initialization.
+    cpu.a = 0x12
+    cpu.x = 0x34
+    cpu.y = 0x56
+    cpu.sp = initial_sp
+    cpu.negative = flag_value
+    cpu.overflow = flag_value
+    cpu.break_flag = flag_value
+    cpu.decimal = flag_value
+    cpu.zero = flag_value
+    cpu.carry = flag_value
+
+    # Each reset must restore PC and I; fetching $2002 would raise the unimplemented PPU error.
+    for expected_sp in expected_sp_values:
+        cpu.pc = 0xABCD
+        cpu.interrupt_disable = False
+        cpu.reset()
+        assert cpu.a == 0x12
+        assert cpu.x == 0x34
+        assert cpu.y == 0x56
+        assert cpu.sp == expected_sp
+        assert cpu.pc == start_address
+        assert cpu.p == (0xFF if flag_value else 0x24)
+        assert cpu.negative is flag_value
+        assert cpu.overflow is flag_value
+        assert cpu.break_flag is flag_value
+        assert cpu.decimal is flag_value
+        assert cpu.interrupt_disable is True
+        assert cpu.zero is flag_value
+        assert cpu.carry is flag_value
+
+
+@pytest.mark.parametrize("prg_size", [16384, 32768])
+def test_repeated_reset_preserves_ram(make_cpu, prg_size):
+    # The generic factory leaves RAM empty so this test supplies its own contents.
+    cpu, machine = make_cpu(prg_size=prg_size)
+    ram = bytes(range(256)) * 8
+    for address, value in enumerate(ram):
+        machine.write_byte(address, value)
+
+    # Wrapping SP across zero must not push data onto the stack or clear RAM.
+    cpu.sp = 0x01
+    cpu.reset()
+    cpu.reset()
+    assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
 @pytest.mark.parametrize(
