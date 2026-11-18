@@ -139,8 +139,9 @@ routine tests. CPU execution and mapper emulation remain later changes; no game 
 ### Zero-filled standalone RAM (2026-11-18)
 
 Task 1.1 of `connect-memory` adds a RAM component with a private bytearray and device-relative byte reads and writes.
-The selected API takes a byte count and exposes only `read_byte` and `write_byte`. CPU address routing and mirroring
-belong to future Machine.
+The selected API takes a byte count and exposes only `read_byte` and `write_byte`. Both RAM and ROM take offsets
+counted in bytes from the start of their own buffers: offset 0 is the first byte. CPU address translation and mirroring
+belong to future Machine; the devices do not translate or mirror offsets themselves.
 Valid offsets are assumed. At the user's request, `write_byte` explicitly raises ValueError for integer values outside
 `0..255` before changing memory, providing a diagnostic rather than truncating the value.
 
@@ -149,6 +150,20 @@ at power-up, as described by [NESdev's CPU power-up reference](https://www.nesde
 This is a deliberate initialization convenience for future games using this component; no game has been run with it.
 Focused synthetic tests verify zero initialization, all byte values and overwrites, boundary isolation, and independent
 instances. CPU reset behavior remains undefined, and no game bytes are patched.
+
+### Standalone ROM and diagnostic write errors (2026-11-18)
+
+Task 1.2 of `connect-memory` adds ROM with private immutable bytes and the same device-relative byte methods as RAM.
+The constructor receives already loaded data; file parsing and CPU address routing remain separate responsibilities.
+Every `write_byte` call raises PermissionError with the device offset before changing any data, including writes of
+the existing value. Synthetic tests verify source-byte reads and unchanged contents after writes at both ends and
+the middle of the image. PermissionError denotes a forbidden write to this implemented device; NotImplementedError
+remains reserved for unimplemented behavior.
+
+This exception is a deliberate diagnostic departure: [NROM](https://www.nesdev.org/wiki/NROM) has fixed banks and no
+mapper registers, so writes do not change its ROM or select banks. Stopping on a write makes unexpected program
+behavior visible during learning. The policy will apply to games using this component; no game has been run with it,
+and no ROM has been patched. Bus conflicts are not modeled. Machine routing remains future work.
 
 For each future departure, record the expected hardware behavior, chosen behavior, reason, affected games, and
 verification. For a ROM patch also record the exact ROM hash, file offset or bank/address, original bytes, replacement
