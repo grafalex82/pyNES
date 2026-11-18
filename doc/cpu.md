@@ -1,8 +1,8 @@
 # CPU register state
 
 [`CPU`](../src/cpu.py) provides register and status properties. Construct it as `CPU(machine)` after connecting
-memory with [`Machine`](memory.md). CPU retains that Machine reference for future memory requests.
-The current component only stores state and converts status bytes; startup/reset and instruction execution are pending.
+memory with [`Machine`](memory.md). CPU uses that Machine reference to read its initial reset vector.
+The component stores state, converts status bytes, and performs functional startup without instruction execution.
 
 ## Register properties
 
@@ -21,9 +21,20 @@ These assertions are omitted when Python runs with `-O`. Callers supply integer 
 Assigning `a`, `x`, `y`, `sp`, or `pc` changes only that stored value, without truncation, instruction execution,
 or status-flag updates.
 
-Construction currently sets A/X/Y/SP/PC to zero and all seven status booleans to `False`, so reading `p` gives `$20`.
-These are storage defaults, not an emulated NES power-up/reset result. Functional startup and repeated reset belong
-to later tasks in the [reset-cpu change](../openspec/changes/reset-cpu/tasks.md).
+## Initial CPU state
+
+Construction sets A/X/Y/SP/PC to zero and all seven status booleans to `False`, then calls `reset()` once.
+Reset subtracts 3 from SP modulo 256, making the initial SP `$FD`, and sets I. The resulting initial state is
+A=X=Y=`$00`, SP=`$FD`, N=V=B=D=Z=C=0, I=1, and displayed P=`$24`.
+
+Reset reads `$FFFC` followed by `$FFFD` through Machine and combines `low | (high << 8)` into PC.
+For example, bytes `$34 $12` produce PC=`$1234`. It performs no opcode fetch, target validation, or memory writes.
+RAM initialized before CPU construction, including the stack page, remains unchanged.
+
+This functional model omits dummy bus reads and timing. The deterministic initial profile and these omissions are
+recorded in [the decision record](decisions.md#functional-cpu-startup-2026-11-18).
+Repeated-reset verification and reset debug logging remain pending in the
+[reset-cpu change](../openspec/changes/reset-cpu/tasks.md).
 
 ## Seven booleans and the status byte
 
@@ -87,6 +98,13 @@ Future stack instructions and interrupts will define their hardware behavior sep
 Two parameterized tests in [`test/test_cpu.py`](../test/test_cpu.py) check packing and unpacking with individual
 flag bits, all-set/clear bytes, B, and ignored input bit 5. Unpacking starts from all fields set, so zero bits must
 clear previous values. One shared parameterized test checks accepted endpoints and rejected out-of-range values
-for each register. These state-only checks use `CPU(None)` without cartridge files or memory access.
+for each register. All CPU tests use real NESFile, Machine, and CPU instances through the `make_cpu` factory fixture.
+Its iNES header helper names PRG/CHR bank counts and mapper explicitly. By default the reset vector points to `$0000`
+in RAM. The factory returns `(cpu, machine)`, so tests can set registers and write their own data or future instruction
+bytes through `machine.write_byte`. RAM starts filled with zeros; the factory does not preload test data.
+The `cpu` fixture takes `prg_size` and `start_address`; tests override them with `pytest.mark.parametrize`.
+
+Two startup cases cover 16 KiB and 32 KiB PRG layouts. They check only initial registers and flags, including the
+little-endian PC from the reset vector. Reads and writes are not mocked. Instruction execution remains unimplemented.
 
 Run them from the repository root with `python -m pytest test/test_cpu.py`.

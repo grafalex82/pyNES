@@ -1,8 +1,8 @@
 # CPU-visible memory
 
 [`Machine`](../src/machine.py) connects the implemented memory devices and provides byte access at NES CPU addresses.
-The current implementation covers internal RAM and fixed mapper-0 PRG ROM. CPU startup/reset and instruction
-execution remain future work.
+The current implementation covers internal RAM and fixed mapper-0 PRG ROM. A separately constructed
+[`CPU`](cpu.md) uses Machine to read its startup vector; instruction execution remains future work.
 
 ## Components and address translation
 
@@ -10,8 +10,8 @@ execution remain future work.
 `Machine(cartridge)` takes that already parsed object, creates its own [`RAM`](../src/ram.py) and
 [`ROM`](../src/rom.py), and uses their byte methods. It does not reopen the cartridge file.
 
-Machine exposes `read_byte(address)` and `write_byte(address, value)`. The future CPU will use this interface for both
-memory and memory-mapped I/O. Machine selects the destination and converts the CPU address to a device-relative offset.
+Machine exposes `read_byte(address)` and `write_byte(address, value)`. CPU startup already uses this interface;
+future instruction memory and I/O requests will use it too. Machine converts CPU addresses to device-relative offsets.
 RAM and ROM know only their own storage: offset 0 means the first byte, regardless of its CPU address.
 
 ## Current memory map

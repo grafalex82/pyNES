@@ -1,19 +1,19 @@
-"""Expose NES CPU registers and separately stored status flags."""
+"""Expose NES CPU registers, separately stored status flags, and functional startup."""
 
 
 class CPU:
     """CPU state with byte registers A/X/Y/SP and a 16-bit program counter.
 
     Register setters assert their value ranges; callers supply boolean flag values. Construction
-    currently initializes storage only; functional startup and reset are separate tasks.
+    clears register storage once, then resets through the connected Machine without executing an instruction.
     B is software inspection state rather than a physical processor latch.
     """
 
     def __init__(self, machine):
-        # Future CPU memory accesses use Machine's address routing.
+        # CPU memory accesses use Machine's address routing.
         self._machine = machine
 
-        # These storage defaults precede the functional startup/reset implementation.
+        # Clear state only at construction; reset applies its effects to these initial values.
         self._a = 0
         self._x = 0
         self._y = 0
@@ -26,6 +26,20 @@ class CPU:
         self._break_flag = False
         self._overflow = False
         self._negative = False
+
+        # Starting SP at zero makes the first reset's three decrements produce $FD.
+        self.reset()
+
+
+    def reset(self):
+        # Functional reset changes SP and I without the hardware's dummy stack reads.
+        self._sp = (self._sp - 3) & 0xFF
+        self._interrupt_disable = True
+
+        # The reset vector is little-endian; loading PC does not fetch an opcode at its target.
+        low = self._machine.read_byte(0xFFFC)
+        high = self._machine.read_byte(0xFFFD)
+        self._pc = low | (high << 8)
 
 
     @property

@@ -10,7 +10,7 @@
 
 ## 2. Startup and repeated reset
 
-- [ ] 2.1 Initialize CPU through one reset after constructor-only register/flag initialization; verify initial
+- [x] 2.1 Initialize CPU through one reset after constructor-only register/flag initialization; verify initial
   registers and flags, little-endian PC, ordered Machine vector reads, and unchanged RAM for both PRG sizes.
 - [ ] 2.2 Implement repeated reset; verify preserved A/X/Y and C/Z/B/D/V/N, SP wrap and successive decrements, a reread
   vector, unchanged stack/RAM, and no opcode fetch even when the new vector targets an unimplemented device address.

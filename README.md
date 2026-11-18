@@ -91,8 +91,10 @@ deliberate hardware departures, and a synthetic byte-access example.
 Reading `p` assembles NV1BDIZC; assigning it replaces all seven fields and ignores bit 5, which always reads as 1.
 `break_flag` represents B in bit 4 as a software convention for inspection, rather than a physical CPU latch.
 See [the CPU register guide](doc/cpu.md) for property widths, status conversion, and an example.
-Construction currently initializes storage only. CPU startup/reset, instruction execution, and peripheral behavior
-remain future work. Focused tests use synthetic files; no game execution is claimed.
+Construction clears register storage once, then calls `reset()` to establish A=X=Y=$00, SP=$FD, and P=$24.
+PC comes from the little-endian vector at $FFFC/$FFFD through Machine. Startup preserves RAM and fetches no opcode.
+Repeated-reset verification and reset logging remain pending, as do instruction execution and peripheral behavior.
+Focused tests use synthetic files; no game execution is claimed.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 
 Inspect a valid local cartridge from the repository root (replace the example path with your file):

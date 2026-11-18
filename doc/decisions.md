@@ -215,6 +215,35 @@ so a rejected value leaves every status field intact. Integer register inputs an
 Assertions are omitted with Python's `-O` option. One parameterized test checks both accepted endpoints and values
 just outside each register's range, including preservation of the previous value after rejection.
 
+## Functional CPU startup (2026-11-18)
+
+Task 2.1 of `reset-cpu` makes construction clear register storage once and call `reset()`. Starting SP at zero lets
+the reset decrement by 3 modulo 256 produce $FD. Reset sets I and reads $FFFC followed by $FFFD through Machine,
+combining the bytes as low OR (high << 8). Initial A/X/Y are zero, B is false, and displayed P is $24.
+The existing Machine remains memory-only; callers construct CPU after connecting the cartridge.
+
+This selects a deterministic startup profile for educational runs. Hardware startup values should not be treated as
+portable guarantees. The functional operation omits reset's dummy bus reads, including stack-page reads, and timing;
+it performs no memory writes or opcode fetch. This keeps the prerequisite focused on register state and vector loading.
+The simplification applies to future games using this CPU; no game has been run and no ROM has been patched.
+Synthetic 16 KiB and 32 KiB cartridges verify initial registers/flags, vector order and byte order, and unchanged RAM.
+Property tests now use a Machine mock for the constructor's vector reads. Repeated-reset verification and debug
+logging remain later tasks, along with the complete reset documentation review.
+
+[Mesen's reset code](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp) was consulted to compare its
+initial register profile and vector loading. This implementation follows the selected constructor/reset separation
+independently and does not adopt its timing or full-console reset machinery.
+
+## Reusable CPU test setup with real memory (2026-11-18)
+
+At the user's request, CPU tests now use a `make_cpu` factory fixture returning a real CPU and Machine backed by a
+synthetic cartridge. A small iNES header function takes named PRG/CHR bank counts and mapper instead of positional
+header bytes. The default reset vector points to $0000 in writable RAM, leaving test-specific data and future
+instruction bytes to the test. RAM starts filled with zeros, with no test data loaded by the factory.
+The `cpu` fixture accepts `prg_size` and `start_address` through pytest parametrization. The startup test checks
+only CPU registers and flags. The ordered vector reads remain explicit in `CPU.reset`.
+CPU behavior and instruction support are unchanged.
+
 ## Departures and patches
 
 ### Stored B for status inspection (2026-11-18)
