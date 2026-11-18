@@ -33,14 +33,15 @@ Add CPU in `src/cpu.py` with `CPU(machine)`. Store only a reference to the conne
 Do not import or reach into RAM, ROM, NESFile, or Machine's private storage. Machine already has the complete supported
 PRG mapping, so CPU needs no cartridge-size or mapper knowledge. This keeps both existing main specs unchanged.
 
-Use private `_a`, `_x`, `_y`, `_sp`, and `_pc` state with simple `get_<register>()` and `set_<register>(value)` methods.
-Keep status in six private booleans, with get_p()/set_p() providing byte conversion as described below. Setters permit
-controlled pre-reset state and later debugger use without tests reaching into private fields. Assume valid register
-widths; do not add range/type checks or silent masking of ordinary A/X/Y/SP/PC inputs. Status conversion decodes and
-encodes documented flag positions rather than maintaining another register value.
+Use private `_a`, `_x`, `_y`, `_sp`, and `_pc` state with read/write properties `a`, `x`, `y`, `sp`, and `pc`.
+Keep status in six private booleans, exposed through matching flag properties. The computed `p` property provides
+byte conversion as described below. Property assignment permits controlled pre-reset state and later debugger use
+without tests reaching into private fields. Assume valid register widths and boolean flag values; do not add
+range/type checks or silent masking of ordinary A/X/Y/SP/PC inputs. Status conversion decodes and encodes documented
+flag positions rather than maintaining another register value.
 
 A separate register container or reusable processor base class would add another abstraction without a current need.
-The existing getter style makes direct methods sufficient.
+At the user's request, properties allow direct register and flag access in tests without a separate method API.
 
 ### Reuse one functional reset operation after initial clearing
 
@@ -60,20 +61,21 @@ power-on method is unnecessary while construction is the only initial-start path
 
 At the user's request, each real flag is a separate private boolean:
 
-| Flag | Variable | P mask |
-| --- | --- | --- |
-| C | `_carry` | $01 |
-| Z | `_zero` | $02 |
-| I | `_interrupt_disable` | $04 |
-| D | `_decimal` | $08 |
-| V | `_overflow` | $40 |
-| N | `_negative` | $80 |
+| Flag | Variable | Property | P mask |
+| --- | --- | --- | --- |
+| C | `_carry` | `carry` | $01 |
+| Z | `_zero` | `zero` | $02 |
+| I | `_interrupt_disable` | `interrupt_disable` | $04 |
+| D | `_decimal` | `decimal` | $08 |
+| V | `_overflow` | `overflow` | $40 |
+| N | `_negative` | `negative` | $80 |
 
-`get_p()` combines the current boolean values into their documented bit positions and adds $20. Bit 4 remains clear,
-so the displayed layout is NV10DIZC and initial P is $24. `set_p(value)` assigns every flag from its corresponding
+Reading `p` combines the current boolean values into their documented bit positions and adds $20. Bit 4 remains clear,
+so the displayed layout is NV10DIZC and initial P is $24. Assigning `p` sets every flag from its corresponding
 input bit using boolean values, including clearing flags whose bits are 0. It ignores input bits 5 and 4.
 Do not store or cache a packed P byte, and do not add B or unused-flag variables. The six booleans are the sole source
-of flag state; byte conversion belongs only in get_p()/set_p(). This needs no separate flag class or per-flag API yet.
+of flag state; byte conversion belongs only in the `p` property. Each flag property directly reads/writes its boolean.
+No separate flag class is needed.
 
 The [NES status-flag reference](https://www.nesdev.org/wiki/Status_flags) explains that bits 4 and 5 are not stored
 flags and debugger representations vary. Our displayed-bit choice is a convention, not extra hardware state.
@@ -93,15 +95,16 @@ initial profile in `doc/decisions.md`; no APU/PPU reset behavior or game patch i
 ### Log completed reset state with the standard component logger
 
 Use `logging.getLogger("cpu")` in the CPU module. After reset completes, emit one debug event with A/X/Y/SP/PC and
-`get_p()` in hexadecimal. Do not configure logging handlers or introduce a new logging-control API. The constructor's
+`p` in hexadecimal. Do not configure logging handlers or introduce a new logging-control API. The constructor's
 call to reset produces one event rather than a duplicate startup event. Instruction tracing remains a later feature.
 
 ### Test state transitions against synthetic connected memory
 
 Use `test/test_cpu.py` and synthetic NESFile/Machine configurations for both existing PRG sizes. Put asymmetric vector
 bytes at their correct file offsets, seed RAM before CPU construction, and check that startup does not modify it.
-Use setters to establish nonzero registers and varied flags before repeated reset, including SP values around zero.
-Cover single-bit and combined P values, ignored display bits, and successive set_p() calls that clear earlier flags.
+Assign properties to establish nonzero registers and varied flags before repeated reset, including SP around zero.
+For the state interface, keep two focused tests: packing flags into P and unpacking P into flags.
+Cover individual flag bits and all-set/clear bytes; repeated P assignment verifies that earlier flags are cleared.
 A narrow read spy can return a new vector on a later reset to prove the address is reread; never patch ROM at runtime.
 
 Verify ordered vector reads and no writes/opcode fetch through the Machine interface. A target such as $2002 must be
@@ -113,7 +116,7 @@ requiring a particular string layout. Existing memory/loader tests remain regres
 - Initial startup and repeated reset may get conflated -> Reuse reset only after constructor-only clearing.
 - SP may become negative or be reset to a constant -> Verify byte wrapping and successive decrements.
 - Display bits may be mistaken for stored flags -> Document the $20 convention and keep B outside mutable state.
-- A cached status byte could diverge from the flags -> Store only booleans and assemble get_p() on every call.
+- A cached status byte could diverge from the flags -> Store only booleans and assemble `p` on every read.
 - Reset may fetch an opcode prematurely -> Assert only the two vector reads, including an unmapped-target case.
 - Functional reset omits real bus activity -> Document the omission; exact timing remains outside project scope.
 

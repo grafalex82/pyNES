@@ -87,8 +87,10 @@ mapper/submapper 0 and no trainer. ROM writes raise `PermissionError`; unconnect
 configurations raise `NotImplementedError`. See [the memory guide](doc/memory.md) for the map, supported limits,
 deliberate hardware departures, and a synthetic byte-access example.
 
-CPU construction, reset, instruction execution, and peripheral behavior remain future work. Focused tests use synthetic
-files; no game execution is claimed.
+[`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and six boolean status flags as read/write properties.
+Reading `p` assembles the displayed status byte; assigning `p` replaces the flags. Bits 5 and 4 display as 1 and 0.
+Construction currently initializes storage only. CPU startup/reset, instruction execution, and peripheral behavior
+remain future work. Focused tests use synthetic files; no game execution is claimed.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 
 Inspect a valid local cartridge from the repository root (replace the example path with your file):

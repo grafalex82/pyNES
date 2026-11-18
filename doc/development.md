@@ -57,8 +57,9 @@ uses mapper/submapper 0, no trainer, 2 KiB of mirrored internal RAM, and fixed 1
 The [memory guide](memory.md) explains the address map, error behavior, and deliberate hardware departures, and includes
 a runnable synthetic example. The example needs no local game images and does not execute CPU instructions.
 
-CPU construction, reset, instruction execution, peripherals, bounded execution, and breakpoints remain future work.
-The current interface lets tests and exploration scripts access bytes before those execution capabilities are added.
+CPU register storage and status-byte conversion now exist separately in `src/cpu.py`, using `CPU(machine)`.
+Startup/reset, instruction execution, peripherals, bounded execution, and breakpoints remain future work.
+The memory interface lets tests and exploration scripts access bytes before those execution capabilities are added.
 
 ## Documentation roles
 

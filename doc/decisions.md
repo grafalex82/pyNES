@@ -178,6 +178,34 @@ stay within 120 characters per line and have no trailing whitespace. The impleme
 and byte access only; CPU reset, instruction execution, and peripheral behavior remain future work. No game execution
 or game patch is introduced by this change.
 
+## CPU register state and separate flags (2026-11-18)
+
+Task 1.1 of `reset-cpu` adds CPU(machine) with private A/X/Y/SP/PC fields and public getter/setter methods. Register
+values are assumed valid; byte registers and the 16-bit PC are assigned directly without validation or truncation.
+The CPU retains the Machine reference for later memory requests. This task initializes storage to zero with all six
+flags false; these defaults do not model NES power-up. Functional startup and reset remain tasks 2.1 and 2.2.
+
+Store C/Z/I/D/V/N only as private booleans. get_p() assembles their documented positions on demand with bit 5 set and
+bit 4 clear; set_p() replaces all six booleans and ignores those two display bits. No packed P, B, or unused-flag state
+is retained. The displayed-byte convention keeps inspection deterministic without introducing extra hardware flags.
+Synthetic tests cover register access, independent CPU states, individual and combined flag bits, ignored display
+bits, and successive writes that clear earlier flags. Dedicated CPU documentation remains task 1.2.
+
+[Mesen's status accessors](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.h) were consulted to compare
+the exclusion of bits 4 and 5 from mutable status. Its packed representation is not used here; this separate-boolean
+implementation follows the selected design and was written independently. No reset, execution, or game patch is added.
+
+## CPU register and flag properties (2026-11-18)
+
+At the user's request, replace CPU getter/setter methods with read/write properties `a`, `x`, `y`, `sp`, `pc`, and `p`.
+Expose `carry`, `zero`, `interrupt_disable`, `decimal`, `overflow`, and `negative` as boolean properties over the same
+private fields. This makes test setup and assertions direct, such as `cpu.a = 0x12` and `cpu.carry = True`.
+Caller-supplied register and boolean flag values are assumed valid. Reading `p` still assembles the current flags;
+assigning it replaces all six flags and ignores bits 5 and 4. The earlier method-based CPU interface is superseded.
+At the user's request, tests focus on flag packing/unpacking with individual bits and all-set/clear bytes.
+These state-only tests construct CPU(None) without cartridge files or memory fixtures.
+Startup/reset remains future work.
+
 ## Departures and patches
 
 ### Zero-filled standalone RAM (2026-11-18)

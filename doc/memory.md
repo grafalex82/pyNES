@@ -1,7 +1,7 @@
 # CPU-visible memory
 
 [`Machine`](../src/machine.py) connects the implemented memory devices and provides byte access at NES CPU addresses.
-The current implementation covers internal RAM and fixed mapper-0 PRG ROM. CPU construction, reset, and instruction
+The current implementation covers internal RAM and fixed mapper-0 PRG ROM. CPU startup/reset and instruction
 execution remain future work.
 
 ## Components and address translation

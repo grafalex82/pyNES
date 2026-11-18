@@ -7,11 +7,11 @@ This change introduces functional CPU startup and repeated reset so the next cha
 
 ## What Changes
 
-- Add CPU register state and six separate boolean status flags, following the existing private-field style.
+- Add CPU register state and six separate boolean status flags, exposed as properties over private fields.
 - Initialize a newly constructed CPU with the selected deterministic NES power-up register profile.
 - Read the reset vector through the connected Machine and load PC without fetching or executing an opcode.
 - Implement repeated reset with NES register effects, including stack-pointer wrapping and preservation of RAM.
-- Assemble P in get_p() and unpack it in set_p(), with no stored packed status byte or mutable B/unused flags.
+- Assemble P when reading `p` and unpack it when assigning `p`, with no packed status state or mutable B/unused flags.
 - Log completed resets with the resulting register state using the standard CPU logger.
 - Test startup and repeated reset against synthetic memory and document functional simplifications.
 

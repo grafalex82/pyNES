@@ -2,8 +2,8 @@
 
 ## 1. CPU state interface
 
-- [ ] 1.1 Add private CPU registers and six separate boolean flags in `src/cpu.py`; keep no packed P state and verify
-  register access plus get_p()/set_p() conversion with single-bit, combined, and successive-clearing test cases.
+- [x] 1.1 Add private CPU registers and six separate boolean flags as properties in `src/cpu.py`; keep no packed P
+  state and verify flag packing/unpacking through `p` with individual bits and all-set/clear bytes.
 - [ ] 1.2 Explain register widths, the six boolean variables, and P packing/unpacking in `doc/cpu.md`; verify the
   documented bit layout matches the tests and stores neither a packed byte nor B/unused-flag variables.
 

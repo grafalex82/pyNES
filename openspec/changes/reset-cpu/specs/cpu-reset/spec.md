@@ -9,8 +9,9 @@ without fetching instructions or modeling physical reset timing. Caller-supplied
 
 ### Requirement: Expose CPU register state
 
-The CPU state interface SHALL allow reading and setting A, X, Y, SP, PC, and processor status P. A, X, Y, and SP SHALL
-represent byte registers and PC SHALL represent a 16-bit address. Register state SHALL be independent between CPUs.
+The CPU state interface SHALL expose read/write properties `a`, `x`, `y`, `sp`, `pc`, and processor status `p`.
+A, X, Y, and SP SHALL represent byte registers and PC SHALL represent a 16-bit address.
+Register state SHALL be independent between CPUs.
 
 #### Scenario: Set a known pre-reset state
 
@@ -20,10 +21,16 @@ represent byte registers and PC SHALL represent a 16-bit address. Register state
 
 ### Requirement: Store flags separately and convert the status byte
 
-N, V, D, I, Z, and C SHALL each be stored as a separate boolean variable. get_p() SHALL assemble a byte from their
-current values; set_p() SHALL decode a byte into all six variables. No packed P byte SHALL be retained as state.
-Flag positions SHALL follow the processor documentation. get_p() SHALL report bit 5 as 1 and bit 4 as 0; set_p()
-SHALL ignore those two bits, which SHALL NOT have stored variables.
+Flags SHALL be separate boolean variables exposed as read/write properties `negative` (N), `overflow` (V),
+`decimal` (D), `interrupt_disable` (I), `zero` (Z), and `carry` (C). Reading `p` SHALL assemble their documented bits;
+assigning `p` SHALL replace all six flags. No packed P SHALL be stored. Bit 5 SHALL read as 1 and bit 4 as 0;
+assignments SHALL ignore both, with no variables for them.
+
+#### Scenario: Edit an individual flag through its property
+
+- **WHEN** a caller assigns a boolean to one flag property
+- **THEN** reading `p` immediately reflects the new value in that flag's bit
+- **AND** the other flag properties remain unchanged
 
 #### Scenario: Normalize a displayed status value
 
@@ -32,9 +39,9 @@ SHALL ignore those two bits, which SHALL NOT have stored variables.
 
 #### Scenario: Replace previously set flag values
 
-- **WHEN** set_p() receives a byte with all six real flags set and then a byte with all six flags clear
-- **THEN** each flag variable becomes false and get_p() returns $20 rather than retaining earlier flag values
-- **AND** a subsequent reset sets only I among those flags, so get_p() returns $24
+- **WHEN** `p` is assigned a byte with all six real flags set and then a byte with all six flags clear
+- **THEN** each flag property becomes false and reading `p` returns $20 rather than retaining earlier flag values
+- **AND** a subsequent reset sets only I among those flags, so reading `p` returns $24
 
 ### Requirement: Establish initial CPU state
 
