@@ -20,7 +20,7 @@
 
 ## 3. Integration checks
 
-- [ ] 3.1 Run `python -m pytest`; verify all new memory tests and existing loader/inspection tests pass using synthetic
+- [x] 3.1 Run `python -m pytest`; verify all new memory tests and existing loader/inspection tests pass using synthetic
   files, with no dependency on local game ROMs and no change to NESFile getters or CLI output.
-- [ ] 3.2 Run `openspec validate connect-memory --strict --no-interactive` and check edited text formatting; verify
+- [x] 3.2 Run `openspec validate connect-memory --strict --no-interactive` and check edited text formatting; verify
   validation passes, lines stay within 120 characters, and no CPU/reset/instruction behavior has entered this change.

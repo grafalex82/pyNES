@@ -167,6 +167,17 @@ Separate construction cases use complete synthetic files parsed by NESFile to ch
 submappers, PRG sizes, and trainers. Errors identify the missing configuration; successful file parsing does not imply
 that Machine can emulate its cartridge hardware. No malformed files, hardware approximations, or game patches are added.
 
+## Connected memory integration (2026-11-18)
+
+The complete pytest suite passes 133 cases: 84 memory-device and routing cases plus 49 existing loader and inspection
+cases. All use synthetic data, with no dependency on local game ROMs. NESFile getters and CLI output retain their
+existing contracts. The earlier synthetic documentation example also verifies both PRG layouts.
+
+Strict OpenSpec validation for `connect-memory` passes. The change's code, tests, documentation, and planning text
+stay within 120 characters per line and have no trailing whitespace. The implemented components expose construction
+and byte access only; CPU reset, instruction execution, and peripheral behavior remain future work. No game execution
+or game patch is introduced by this change.
+
 ## Departures and patches
 
 ### Zero-filled standalone RAM (2026-11-18)

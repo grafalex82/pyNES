@@ -120,6 +120,9 @@ development guide records the installed workflow names and their purpose. The im
 is documented in [the main specification](openspec/specs/nes-rom-loading/spec.md). The completed `load-nes-rom` change
 is [archived](openspec/changes/archive/2026-11-18-load-nes-rom/).
 
+The memory capability is documented in [its main specification](openspec/specs/cpu-memory/spec.md).
+The completed `connect-memory` change is [archived](openspec/changes/archive/2026-11-18-connect-memory/).
+
 ## License
 
 The emulator's original code and documentation are licensed under the [MIT License](LICENSE). Third-party materials
