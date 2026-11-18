@@ -134,6 +134,38 @@ their headers, and all three hashes are unchanged after inspection. Filenames al
 The full pytest suite passes 49 cases using synthetic temporary files. Local cartridge checks remain separate from
 routine tests. CPU execution and mapper emulation remain later changes; no game execution is claimed.
 
+## Initial Machine routing (2026-11-18)
+
+Task 2.1 of `connect-memory` adds Machine, constructed from an already parsed NESFile through its getters. It owns
+separate RAM and ROM devices and translates CPU addresses to device-relative byte offsets. The RAM mask `$07FF`
+connects four CPU windows to one 2048-byte buffer; the PRG mask repeats a 16 KiB image or exposes all of a 32 KiB image.
+Direct routing is sufficient for this fixed wiring, so no device registry or mapper framework is introduced.
+
+The existing zero-filled RAM and diagnostic ROM-write policies also apply through Machine. ROM's PermissionError
+propagates unchanged. Basic NotImplementedError paths keep unconnected addresses and unsupported configurations
+explicit; focused diagnostic coverage belongs to task 2.2. Synthetic tests cover RAM aliases,
+independent configurations, both PRG layouts in iNES and NES 2.0, and unchanged memory after rejected ROM writes.
+The tests remove each temporary cartridge file after parsing to verify that Machine uses loaded data without rereading.
+No CPU, reset, execution, hardware approximation, or game patch is added by this task.
+
+The address wiring follows the [CPU memory map][cpu-map] and [NROM reference][nrom-map]. Mesen's
+[RAM routing][mesen-ram] and [NROM bank setup][mesen-nrom] were consulted for understanding; this direct implementation
+was written independently without its handler or mapper abstractions.
+
+[cpu-map]: https://www.nesdev.org/wiki/CPU_memory_map
+[nrom-map]: https://www.nesdev.org/wiki/NROM
+[mesen-ram]: https://github.com/SourMesen/Mesen2/blob/master/Core/NES/InternalRamHandler.h
+[mesen-nrom]: https://github.com/SourMesen/Mesen2/blob/master/Core/NES/Mappers/Nintendo/NROM.h
+
+## Explicit Machine limits (2026-11-18)
+
+Task 2.2 verifies the existing NotImplementedError paths without adding device behavior or input validation.
+Parameterized reads and writes cover the boundaries and representative registers in the unconnected $2000-$7FFF
+range, require the operation and CPU address in each diagnostic, and verify that mapped RAM and ROM remain unchanged.
+Separate construction cases use complete synthetic files parsed by NESFile to check unsupported mapper bits,
+submappers, PRG sizes, and trainers. Errors identify the missing configuration; successful file parsing does not imply
+that Machine can emulate its cartridge hardware. No malformed files, hardware approximations, or game patches are added.
+
 ## Departures and patches
 
 ### Zero-filled standalone RAM (2026-11-18)

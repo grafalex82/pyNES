@@ -11,9 +11,9 @@
 
 ## 2. Machine routing
 
-- [ ] 2.1 Add Machine using existing NESFile getters; verify `test/test_machine.py` covers RAM aliases, independent
+- [x] 2.1 Add Machine using existing NESFile getters; verify `test/test_machine.py` covers RAM aliases, independent
   configurations, both PRG layouts, and propagation of ROM write PermissionError without constructing a CPU.
-- [ ] 2.2 Keep unconnected addresses and unsupported cartridge configurations explicit; verify parameterized read/write
+- [x] 2.2 Keep unconnected addresses and unsupported cartridge configurations explicit; verify parameterized read/write
   and construction tests check NotImplementedError diagnostics without adding malformed-input validation.
 - [ ] 2.3 Explain the CPU memory map and supported limits in `doc/memory.md` and update relevant current-state notes;
   verify a synthetic byte-access example and keep CPU reset/execution described as future work.
