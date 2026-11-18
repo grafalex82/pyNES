@@ -6,6 +6,7 @@ class CPU:
 
     Callers supply valid register and flag values through properties. Construction
     currently initializes storage only; functional startup and reset are separate tasks.
+    B is software inspection state rather than a physical processor latch.
     """
 
     def __init__(self, machine):
@@ -22,6 +23,7 @@ class CPU:
         self._zero = False
         self._interrupt_disable = False
         self._decimal = False
+        self._break_flag = False
         self._overflow = False
         self._negative = False
 
@@ -117,6 +119,16 @@ class CPU:
 
 
     @property
+    def break_flag(self):
+        return self._break_flag
+
+
+    @break_flag.setter
+    def break_flag(self, value):
+        self._break_flag = value
+
+
+    @property
     def overflow(self):
         return self._overflow
 
@@ -138,11 +150,12 @@ class CPU:
 
     @property
     def p(self):
-        # Bits 5 and 4 are display constants, not mutable processor flags.
+        # Bit 5 is constant; bit 4 reflects the software B field.
         return (
             (self._negative << 7)
             | (self._overflow << 6)
             | 0x20
+            | (self._break_flag << 4)
             | (self._decimal << 3)
             | (self._interrupt_disable << 2)
             | (self._zero << 1)
@@ -152,10 +165,11 @@ class CPU:
 
     @p.setter
     def p(self, value):
-        # Replace all six real flags; input bits 5 and 4 have no stored counterparts.
+        # Replace all seven status fields; input bit 5 has no stored counterpart.
         self._carry = bool(value & 0x01)
         self._zero = bool(value & 0x02)
         self._interrupt_disable = bool(value & 0x04)
         self._decimal = bool(value & 0x08)
+        self._break_flag = bool(value & 0x10)
         self._overflow = bool(value & 0x40)
         self._negative = bool(value & 0x80)

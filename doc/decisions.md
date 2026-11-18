@@ -208,6 +208,21 @@ Startup/reset remains future work.
 
 ## Departures and patches
 
+### Stored B for status inspection (2026-11-18)
+
+The revised task 1.1 of `reset-cpu` adds a private `_break_flag` boolean and its read/write `break_flag` property.
+Reading `p` packs B into bit 4; assigning `p` replaces B from that bit along with the six hardware flags.
+Only bit 5 remains a constant with no stored variable. B starts false, and no packed P byte is retained.
+
+The [NESdev status reference](https://www.nesdev.org/wiki/Status_flags#The_B_flag) describes B as a transient signal
+used when saving status, rather than a physical latch. Keeping B as mutable software state is a deliberate departure
+selected for convenient inspection and byte conversion. It has no independent execution or interrupt effect.
+Future stack instructions and interrupts must define their hardware behavior separately from this inspection field.
+The planned repeated-reset behavior preserves B; reset itself is not implemented by this task.
+
+The existing two conversion tests now include B=$10, packed P=$30 for B alone, all-set P=$FF, ignored input bit 5,
+and replacement of previously set flags. No game has been run with this convention, and no ROM bytes are patched.
+
 ### Zero-filled standalone RAM (2026-11-18)
 
 Task 1.1 of `connect-memory` adds a RAM component with a private bytearray and device-relative byte reads and writes.

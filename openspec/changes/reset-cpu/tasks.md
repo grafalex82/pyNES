@@ -2,20 +2,21 @@
 
 ## 1. CPU state interface
 
-- [x] 1.1 Add private CPU registers and six separate boolean flags as properties in `src/cpu.py`; keep no packed P
-  state and verify flag packing/unpacking through `p` with individual bits and all-set/clear bytes.
-- [ ] 1.2 Explain register widths, the six boolean variables, and P packing/unpacking in `doc/cpu.md`; verify the
-  documented bit layout matches the tests and stores neither a packed byte nor B/unused-flag variables.
+- [x] 1.1 Add private CPU registers and seven boolean flag properties including `break_flag` in `src/cpu.py`; keep
+  no packed P state and extend the two packing/unpacking tests for B=$10, bit 5 normalization, and all-set P=$FF.
+- [ ] 1.2 Explain register widths, the seven boolean variables, and NV1BDIZC packing/unpacking in `doc/cpu.md`;
+  distinguish software B from the six hardware flags and verify that bit 5 has no stored variable.
 
 ## 2. Startup and repeated reset
 
 - [ ] 2.1 Initialize CPU through one reset after constructor-only register/flag initialization; verify initial
   registers and flags, little-endian PC, ordered Machine vector reads, and unchanged RAM for both PRG sizes.
-- [ ] 2.2 Implement repeated reset; verify preserved A/X/Y and C/Z/D/V/N, SP wrap and successive decrements, a reread
+- [ ] 2.2 Implement repeated reset; verify preserved A/X/Y and C/Z/B/D/V/N, SP wrap and successive decrements, a reread
   vector, unchanged stack/RAM, and no opcode fetch even when the new vector targets an unimplemented device address.
 - [ ] 2.3 Log one completed reset event with the CPU component logger; verify all resulting register values with
   caplog for startup and repeated reset, without configuring handlers or adding instruction tracing.
-- [ ] 2.4 Record separate flag storage, the initial profile, and omitted dummy reads/timing in `doc/decisions.md`;
+- [ ] 2.4 Record separate flag storage, the software B convention, initial state, and omitted bus reads/timing;
+  explain B initialization/preservation as a hardware departure in `doc/decisions.md` and its effect on displayed P;
   update status notes and CPU documentation, verifying CPU reset remains distinct from full-console reset/execution.
 
 ## 3. Integration checks

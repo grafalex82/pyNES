@@ -87,8 +87,9 @@ mapper/submapper 0 and no trainer. ROM writes raise `PermissionError`; unconnect
 configurations raise `NotImplementedError`. See [the memory guide](doc/memory.md) for the map, supported limits,
 deliberate hardware departures, and a synthetic byte-access example.
 
-[`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and six boolean status flags as read/write properties.
-Reading `p` assembles the displayed status byte; assigning `p` replaces the flags. Bits 5 and 4 display as 1 and 0.
+[`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and seven boolean status fields as read/write properties.
+Reading `p` assembles NV1BDIZC; assigning it replaces all seven fields and ignores bit 5, which always reads as 1.
+`break_flag` represents B in bit 4 as a software convention for inspection, rather than a physical CPU latch.
 Construction currently initializes storage only. CPU startup/reset, instruction execution, and peripheral behavior
 remain future work. Focused tests use synthetic files; no game execution is claimed.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
