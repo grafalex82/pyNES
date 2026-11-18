@@ -75,9 +75,19 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 
 ## Current state
 
-This repository currently contains project context and OpenSpec setup, with no emulator implementation or tests yet.
-There is no emulator run command. Python dependencies will be added when the first implementation step needs them.
-No game ROMs have been added; see [ROM notes](ROMs/README.md).
+This repository contains project context, OpenSpec setup, and pytest configuration, with no emulator implementation or
+test cases yet. There is no emulator run command. Local game files are kept out of version control;
+see [ROM notes](ROMs/README.md).
+
+Install the test dependency and run pytest from the repository root:
+
+```text
+python -m pip install -r requirements.txt
+python -m pytest
+```
+
+Pytest discovers tests in `test/` and adds `src/` to the import path. Until test cases are added, pytest reports
+"no tests ran" and exits with status 5.
 
 OpenSpec 1.15.0 was initialized for Codex using the `core` profile. Begin exploration with `openspec-explore`; the
 development guide records the installed workflow names and their purpose. Main specifications remain empty until

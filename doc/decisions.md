@@ -54,6 +54,12 @@ at setup and evolve them through small completed changes. No emulator behavior i
 
 Use the MIT license for original project work. Keep local ROM images, traces, caches, and environments out of Git.
 
+## Minimal pytest setup (2026-11-18)
+
+Keep pytest in `requirements.txt` and configure test discovery in `test/` with `src/` on the import path through
+`pytest.ini`. This lets tests import component modules directly without adding packaging or build tooling.
+No placeholder tests are added; focused tests will accompany the first implemented behavior.
+
 ## Departures and patches
 
 There are no implemented departures or game patches yet. For each future departure, record the expected hardware

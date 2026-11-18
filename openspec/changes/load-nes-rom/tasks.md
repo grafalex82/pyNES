@@ -2,7 +2,7 @@
 
 ## 1. Minimal test setup
 
-- [ ] 1.1 Add pytest requirements and configuration for `src` imports and `test`; verify pytest and configured paths.
+- [x] 1.1 Add pytest requirements and configuration for `src` imports and `test`; verify pytest and configured paths.
 
 ## 2. Cartridge file loading
 
