@@ -23,9 +23,11 @@ CHR 8192 bytes, and no trainer. The user requested a standalone inspection utili
 
 ### A parsed file object and a separate utility
 
-Use a plain `NESFile` class in `src/nesfile.py`, constructed from a filename. Read once and expose `header`, `format`,
-`mapper`, `submapper`, `trainer`, `prg_rom`, `chr_rom`, `mirroring`, and `battery`. Sections use immutable bytes.
-Derive reported sizes from section lengths. Keeping the header permits later interpretation of optional metadata.
+Use a plain `NESFile` class in `src/nesfile.py`, constructed from a filename. Read once and store `header`, `format`,
+`mapper`, `submapper`, `trainer`, `prg_rom`, `chr_rom`, `mirroring`, and `battery` in attributes prefixed with `_`.
+Expose values through a `get_<field>()` method, such as `get_header()` or `get_prg_rom()`, rather than public fields.
+Sections use immutable bytes. Derive reported sizes from section lengths. Keep the header for later interpretation
+of optional metadata. Use a local boolean `has_trainer` when calculating the trainer and PRG boundary during parsing.
 This class holds cartridge data; later changes can wrap the data in ROM devices without involving this utility.
 A single small class is sufficient; no parser framework, inheritance, or custom exceptions are needed.
 
@@ -59,7 +61,8 @@ This keeps the educational code focused on file structure; damaged-input behavio
 
 ### Test useful file behavior
 
-Use synthetic headers and distinct trainer/PRG/CHR bytes in pytest temporary directories. Verify both formats,
+Use a pytest fixture factory to write explicit synthetic headers and trainer/PRG/CHR bytes to temporary files.
+Keep each test's header and expected section bytes visible in that test. Verify both formats,
 ordinary size extensions, mapper/submapper bits, trainer offsets, empty sections, mirroring, nonvolatile memory,
 and explicit NotImplementedError cases. Do not add a damaged-file test matrix or test argument-parser internals.
 Run CLI subprocess tests from another directory with paths containing spaces. Automated tests do not require games.

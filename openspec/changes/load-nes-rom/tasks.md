@@ -6,8 +6,10 @@
 
 ## 2. Cartridge file loading
 
-- [ ] 2.1 Implement NESFile metadata and section extraction; verify focused tests for valid iNES/NES 2.0 files.
-- [ ] 2.2 Keep unsupported format features explicit; verify NotImplementedError tests and document parser decisions.
+- [x] 2.1 Implement NESFile metadata and section extraction; verify focused tests for valid iNES/NES 2.0 files.
+- [x] 2.2 Keep unsupported format features explicit; verify NotImplementedError tests and document parser decisions.
+- [x] 2.3 Add a local has_trainer flag and NESFile getters; migrate callers and verify existing tests.
+- [x] 2.4 Extract synthetic NES file creation into a pytest fixture; preserve and verify all parsing scenarios.
 
 ## 3. Standalone inspection utility
 

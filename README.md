@@ -75,9 +75,11 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 
 ## Current state
 
-This repository contains project context, OpenSpec setup, and pytest configuration, with no emulator implementation or
-test cases yet. There is no emulator run command. Local game files are kept out of version control;
-see [ROM notes](ROMs/README.md).
+[`NESFile`](src/nesfile.py) reads ordinary iNES and NES 2.0 metadata and extracts trainer, PRG, and CHR bytes.
+Unsupported format markers, NES 2.0 exponent-multiplier sizes, nonstandard console types, and declared miscellaneous
+ROM areas raise `NotImplementedError`. Focused tests use synthetic files. The standalone inspection utility and emulator
+execution are not implemented yet.
+Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 
 Install the test dependency and run pytest from the repository root:
 
@@ -86,8 +88,7 @@ python -m pip install -r requirements.txt
 python -m pytest
 ```
 
-Pytest discovers tests in `test/` and adds `src/` to the import path. Until test cases are added, pytest reports
-"no tests ran" and exits with status 5.
+Pytest discovers tests in `test/` and adds `src/` to the import path. Routine tests do not require local game ROMs.
 
 OpenSpec 1.15.0 was initialized for Codex using the `core` profile. Begin exploration with `openspec-explore`; the
 development guide records the installed workflow names and their purpose. Main specifications remain empty until

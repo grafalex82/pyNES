@@ -60,6 +60,54 @@ Keep pytest in `requirements.txt` and configure test discovery in `test/` with `
 `pytest.ini`. This lets tests import component modules directly without adding packaging or build tooling.
 No placeholder tests are added; focused tests will accompany the first implemented behavior.
 
+## Ordinary cartridge file parsing (2026-11-18)
+
+Implement `NESFile` as a filename-based class holding the original header and separate immutable trainer, PRG, and CHR
+bytes. File data remains separate from future emulated memory devices; a missing CHR section does not allocate RAM.
+Reading the file once and slicing its sections keeps this prerequisite small and makes offsets easy to verify.
+
+Ordinary PRG and CHR counts use 16384-byte and 8192-byte units respectively. NES 2.0 adds the high count bits in byte 9
+and extends mapper/submapper metadata in byte 8. Mirroring and battery values describe header flags only; they do not
+select or implement mapper behavior. Other header fields remain available unchanged for later interpretation.
+
+Inputs are assumed structurally valid. This step adds no signature or length validation, header repair, or game patches.
+Task 2.1 is verified with synthetic files covering metadata, extended counts, optional sections, and basic flags.
+The remaining unsupported-format guards and explicit rejection tests belong to task 2.2.
+
+The field layout follows [iNES](https://www.nesdev.org/wiki/INES) and [NES 2.0](https://www.nesdev.org/wiki/NES_2.0).
+[Mesen's header reader](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesHeader.cpp) was consulted to compare
+field interpretation; this parser was written independently without its compatibility heuristics or emulation features.
+
+## Explicit unsupported cartridge features (2026-11-18)
+
+Raise `NotImplementedError` for unknown format markers, NES 2.0 exponent-multiplier PRG/CHR sizes, nonstandard console
+types, and declared miscellaneous ROM areas. These features need interpretation beyond the selected ordinary cartridge
+format support. Rejecting them keeps missing behavior visible instead of silently misreading counts or dropping data.
+Messages identify the unsupported feature, including the format marker, console code, or affected PRG/CHR section.
+
+The low two bits of byte 7 declare nonstandard consoles in both supported formats. The low two bits of byte 14 declare
+miscellaneous ROMs only in NES 2.0. Byte 15 is separate expansion-device metadata; a nonzero value remains preserved
+in the original header without implying peripheral emulation. See the [NES 2.0 header reference][nes20-header].
+
+These checks concern declared unsupported features. Inputs remain assumed valid, with no signature checks, length
+checks, trailing-data checks, header repair, or exception handling added. Synthetic tests cover each rejection and
+retain ordinary-file coverage, including a nonzero expansion-device field. No game patches or hardware approximations
+are introduced.
+
+[nes20-header]: https://www.nesdev.org/wiki/NES_2.0#Header
+
+## NESFile getter interface (2026-11-18)
+
+At the user's request, keep parsed values in attributes prefixed with `_` and expose them through `get_<field>()`
+methods. Callers and tests use these methods for all nine metadata and section fields. A local boolean `has_trainer`
+names the header flag when calculating section offsets. Parsing results and unsupported-feature errors are unchanged.
+
+## Shared synthetic cartridge fixture (2026-11-18)
+
+Use a local pytest fixture factory to assemble and write synthetic cartridge files in each test's temporary directory.
+Tests supply explicit headers and section bytes, keeping expected values independent of the parser. This removes
+duplicate file creation without introducing a second header encoder or changing the existing parsing scenarios.
+
 ## Departures and patches
 
 There are no implemented departures or game patches yet. For each future departure, record the expected hardware
