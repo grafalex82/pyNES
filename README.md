@@ -108,8 +108,9 @@ python -m pytest
 Pytest discovers tests in `test/` and adds `src/` to the import path. Routine tests do not require local game ROMs.
 
 OpenSpec 1.15.0 was initialized for Codex using the `core` profile. Begin exploration with `openspec-explore`; the
-development guide records the installed workflow names and their purpose. Main specifications remain empty until
-individual capabilities have been implemented and their changes archived.
+development guide records the installed workflow names and their purpose. The implemented cartridge-file capability
+is documented in [the main specification](openspec/specs/nes-rom-loading/spec.md). The completed `load-nes-rom` change
+is [archived](openspec/changes/archive/2026-11-18-load-nes-rom/).
 
 ## License
 
