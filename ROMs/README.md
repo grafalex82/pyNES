@@ -21,8 +21,10 @@ corrupt-input detection and repair are outside scope, and filesystem/parsing exc
 
 ## Inspected local files (2026-11-18)
 
-All three headers declare mapper 0, submapper 0, no trainer, and no nonvolatile memory. These are header declarations;
-mapper emulation remains unimplemented. Filenames are local labels; exact game revisions have not been confirmed.
+All three headers declare mapper 0, submapper 0, no trainer, and no nonvolatile memory. Their mapper/submapper, trainer,
+and PRG-size declarations fall within [Machine's current construction limits](../doc/memory.md#supported-configuration).
+Byte routing is verified with synthetic cartridges. CPU reset and execution remain future work; no local game execution
+is claimed. Filenames are local labels; exact game revisions have not been confirmed.
 Each CLI inspection matched the expected metadata and left the full-file SHA-256 unchanged.
 
 ### BattleCity (Japan).nes

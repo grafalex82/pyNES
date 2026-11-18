@@ -1,7 +1,8 @@
 # Decisions and rationale
 
-This initial record captures the user's project constraints and the setup choices made on 2026-11-18. It does not
-describe implemented emulator behavior. Add a short dated entry when a new decision is made, including the reason,
+This record began with the user's project constraints and setup choices on 2026-11-18; later entries describe selected
+implementation decisions. Each entry reflects the project state when it was made. See [the memory guide](memory.md)
+for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
 ## Learning through one behavior at a time

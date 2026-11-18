@@ -43,12 +43,22 @@ candidate to discuss, not an approved implementation plan.
 
 ## Cartridge inspection
 
-`NESFile` and `misc/nesinfo.py` now support ordinary iNES and NES 2.0 file inspection. See [usage](../README.md) and
-[local ROM notes](../ROMs/README.md) for commands. CPU execution, routing, and mapper emulation remain later steps.
+`NESFile` and `misc/nesinfo.py` support ordinary iNES and NES 2.0 file inspection. See [usage](../README.md) and
+[local ROM notes](../ROMs/README.md) for commands. Loading and inspection remain separate from emulated memory devices.
 
 Treat cartridge inputs as structurally valid. Keep corruption checks, header repair, and exception presentation out of
 this loader and utility. Unsupported declared format features remain explicit `NotImplementedError` cases.
 Use synthetic files for routine tests; CLI tests also cover another working directory and paths containing spaces.
+
+## Connected memory
+
+`Machine` now routes CPU-addressed byte reads and writes to separate RAM and ROM components. The supported configuration
+uses mapper/submapper 0, no trainer, 2 KiB of mirrored internal RAM, and fixed 16 KiB or 32 KiB PRG ROM.
+The [memory guide](memory.md) explains the address map, error behavior, and deliberate hardware departures, and includes
+a runnable synthetic example. The example needs no local game images and does not execute CPU instructions.
+
+CPU construction, reset, instruction execution, peripherals, bounded execution, and breakpoints remain future work.
+The current interface lets tests and exploration scripts access bytes before those execution capabilities are added.
 
 ## Documentation roles
 
@@ -56,6 +66,7 @@ Use synthetic files for routine tests; CLI tests also cover another working dire
 | --- | --- |
 | `README.md` | Project goals, scope, architecture constraints, and current state |
 | `AGENTS.md` | Instructions for contributors and coding assistants |
+| `doc/memory.md` | Implemented memory routing, supported limits, and a synthetic byte-access example |
 | `openspec/config.yaml` | Concise context and rules for OpenSpec artifacts |
 | `openspec/specs/` | Durable capability specifications maintained as changes are completed |
 | `openspec/changes/` | Individually scoped proposals, designs, scenarios, and tasks |

@@ -79,8 +79,16 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 [`NESFile`](src/nesfile.py) reads ordinary iNES and NES 2.0 metadata and extracts trainer, PRG, and CHR bytes.
 Unsupported format markers, NES 2.0 exponent-multiplier sizes, nonstandard console types, and declared miscellaneous
 ROM areas raise `NotImplementedError`. [`nesinfo.py`](misc/nesinfo.py) prints the format, mapper/submapper, section byte
-sizes, mirroring, and nonvolatile-memory flag through `NESFile`. These are file metadata; mapper emulation and emulator
-execution are not implemented yet. Focused tests use synthetic files.
+sizes, mirroring, and nonvolatile-memory flag through `NESFile`. These values describe file metadata.
+
+[`RAM`](src/ram.py) and [`ROM`](src/rom.py) provide device-relative byte access. [`Machine`](src/machine.py) connects
+zero-filled 2 KiB RAM and its CPU-address mirrors to fixed 16 KiB or 32 KiB mapper-0 PRG ROM. Construction requires
+mapper/submapper 0 and no trainer. ROM writes raise `PermissionError`; unconnected addresses and unsupported cartridge
+configurations raise `NotImplementedError`. See [the memory guide](doc/memory.md) for the map, supported limits,
+deliberate hardware departures, and a synthetic byte-access example.
+
+CPU construction, reset, instruction execution, and peripheral behavior remain future work. Focused tests use synthetic
+files; no game execution is claimed.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 
 Inspect a valid local cartridge from the repository root (replace the example path with your file):

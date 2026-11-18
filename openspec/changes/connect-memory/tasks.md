@@ -15,7 +15,7 @@
   configurations, both PRG layouts, and propagation of ROM write PermissionError without constructing a CPU.
 - [x] 2.2 Keep unconnected addresses and unsupported cartridge configurations explicit; verify parameterized read/write
   and construction tests check NotImplementedError diagnostics without adding malformed-input validation.
-- [ ] 2.3 Explain the CPU memory map and supported limits in `doc/memory.md` and update relevant current-state notes;
+- [x] 2.3 Explain the CPU memory map and supported limits in `doc/memory.md` and update relevant current-state notes;
   verify a synthetic byte-access example and keep CPU reset/execution described as future work.
 
 ## 3. Integration checks
