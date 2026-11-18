@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  pyNES is an educational NES emulator; understanding each small step is the primary goal.
+  Read README.md, AGENTS.md, doc/development.md, and doc/decisions.md for project requirements.
+  Use Python, pygame for rendering, and pytest. Do not introduce pyenv or wheel-based build tooling.
+  Write code, comments, documentation, and all OpenSpec artifacts in English.
+  Target Super Mario Bros. and Battle City (Namco, 1985), with annotated listings under doc/disassembly/.
+  Exact ROM revisions and mapper requirements are not identified yet; inspect actual files before choosing mappers.
+  The long-term goal is full instruction-level NES CPU emulation, implemented incrementally.
+  Machine routes every CPU memory and memory-mapped I/O request to separate devices.
+  Keep one Python module per component; use compact code and avoid speculative abstractions or redundant checks.
+  Maximum line length is 120 characters. Do not wrap lines that fit within that limit.
+  Use two blank lines between functions, one between logical blocks, and explain each block in multi-block functions.
+  Use standard logging for instructions, post-instruction CPU registers, and significant device events.
+  Single-step execution, bounded execution, and internal callback breakpoints are eventual required capabilities.
+  Exact timing, physical video signals, and audio output are out of scope; software-visible behavior remains in scope.
+  Document decisions, approximations, and any game patches with their rationale and effects.
+  Once a game can be attempted, implement only the next observed NotImplementedError, then stop at the next obstacle.
+  Check README.md and OpenSpec inventories for the current implementation state before planning the next change.
+
+rules:
+  proposal:
+    - Scope each change to one instruction encoding, one peripheral aspect, or one minimal prerequisite.
+    - Explain the learning goal and explicitly bound what this change will implement.
+  design:
+    - Explain the hardware behavior and the simplest sufficient implementation; avoid speculative frameworks.
+    - Identify any approximation or game modification and its software-visible effects.
+  specs:
+    - Specify only the selected behavior, with scenarios for observable results and relevant edge cases.
+  tasks:
+    - Keep implementation tasks within the single selected behavior; do not include the next observed obstacle.
+    - Include focused pytest verification and the relevant explanatory documentation.
