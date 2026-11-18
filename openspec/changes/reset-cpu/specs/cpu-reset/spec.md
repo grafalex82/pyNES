@@ -126,9 +126,28 @@ B preservation SHALL be a software-model convention rather than a physical reset
 
 When CPU debug logging is enabled, each completed startup/reset SHALL emit a reset event containing the resulting
 A, X, Y, SP, PC, and displayed P. This event SHALL describe completion without claiming an instruction was executed.
+Reset SHALL call `log_state("Reset completed")` to report its resulting state.
 
 #### Scenario: Observe reset completion
 
 - **WHEN** a reset completes with CPU debug logging enabled
 - **THEN** one reset event reports its resulting register values
 - **AND** the event identifies reset completion rather than an executed instruction
+
+### Requirement: Log current CPU state with an event label
+
+`log_state(event)` SHALL emit one DEBUG event through the `cpu` logger containing the supplied event text and current
+A/X/Y/SP/PC in hexadecimal, without modifying CPU state. P SHALL use eight symbols in NV1BDIZC order: `-` for clear
+flags, uppercase flag letters for set flags, and `1` for bit 5.
+
+#### Scenario: Log current state with a caller-supplied event
+
+- **WHEN** a caller assigns P=$05 and calls `log_state("Checkpoint")` with CPU debug logging enabled
+- **THEN** one event includes `Checkpoint`, the current hexadecimal A/X/Y/SP/PC, and P=`--1--I-C`
+- **AND** CPU state remains unchanged
+
+#### Scenario: Display clear and set flags
+
+- **WHEN** `log_state` observes P with all seven mutable flags clear or all set
+- **THEN** its P mask is `--1-----` or `NV1BDIZC`, respectively
+- **AND** bit 5 appears as `1` in both cases

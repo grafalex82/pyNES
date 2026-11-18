@@ -15,7 +15,8 @@ This change introduces functional CPU startup and repeated reset so the next cha
 - Implement repeated reset with NES register effects, including stack-pointer wrapping and preservation of RAM.
 - Assemble P as NV1BDIZC when reading `p` and unpack all seven fields when assigning it; bit 5 has no stored state.
 - Initialize B to false and preserve it across repeated reset as an explicit software-model convention.
-- Log completed resets with the resulting register state using the standard CPU logger.
+- Log completed resets through a reusable `log_state(event)` helper using the standard CPU logger;
+  append hexadecimal A/X/Y/SP/PC and a symbolic NV1BDIZC status mask to the event text.
 - Test startup and repeated reset against synthetic memory and document functional simplifications.
 
 Scope covers CPU register state and reset only. Instruction execution, dispatch tables, execution loops, IRQ/NMI

@@ -111,9 +111,15 @@ initial profile in `doc/decisions.md`; no APU/PPU reset behavior or game patch i
 
 ### Log completed reset state with the standard component logger
 
-Use `logging.getLogger("cpu")` in the CPU module. After reset completes, emit one debug event with A/X/Y/SP/PC and
-`p` in hexadecimal. Do not configure logging handlers or introduce a new logging-control API. The constructor's
-call to reset produces one event rather than a duplicate startup event. Instruction tracing remains a later feature.
+Use `logging.getLogger("cpu")` in the CPU module. A `log_state(event)` method accepts event text and appends current
+A/X/Y/SP/PC in hexadecimal and P as eight symbols in NV1BDIZC order. Each clear flag appears as `-`, each set flag
+uses its uppercase letter, and bit 5 always appears as `1`; P=$05 therefore appears as `--1--I-C`.
+Compute the mask from the current `p` property without retaining another status representation.
+
+After reset completes, call `log_state("Reset completed")` once. The helper only observes current state and can be
+called with another event string without resetting or executing the CPU. Do not configure logging handlers or add
+logging controls. The constructor's reset produces one event rather than a duplicate startup event.
+Instruction tracing remains a later feature.
 
 ### Test state transitions against synthetic connected memory
 
@@ -128,8 +134,9 @@ range, checking that rejection preserves the previous value.
 A narrow read spy can return a new vector on a later reset to prove the address is reread; never patch ROM at runtime.
 
 Verify ordered vector reads and no writes/opcode fetch through the Machine interface. A target such as $2002 must be
-loaded into PC without triggering the currently unimplemented PPU read. Use caplog to inspect reset events without
-requiring a particular string layout. Existing memory/loader tests remain regression coverage; no local ROM is required.
+loaded into PC without triggering the currently unimplemented PPU read. Use caplog to compare complete reset/helper
+messages, including register order, separators, and flag masks. Existing memory/loader tests remain regression coverage;
+no local ROM is required.
 
 ## Risks / Trade-offs
 

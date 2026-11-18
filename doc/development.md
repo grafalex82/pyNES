@@ -60,7 +60,9 @@ a runnable synthetic example. The example needs no local game images and does no
 CPU register storage, status-byte conversion, and functional startup exist separately in `src/cpu.py`, using
 `CPU(machine)`. Construction reads the reset vector through Machine without executing an instruction or clearing RAM.
 Repeated-reset tests cover preserved registers/flags, stack-pointer wrapping, vector loading, and unchanged RAM.
-Reset logging, instruction execution, peripherals, bounded execution, and breakpoints remain future work.
+Completed resets use `log_state(event)` to log hexadecimal A/X/Y/SP/PC and a symbolic NV1BDIZC mask at DEBUG
+through the `cpu` logger. The helper also accepts caller-supplied event text for inspecting the current state.
+Instruction execution, peripherals, bounded execution, and breakpoints remain future work.
 The memory interface lets tests and exploration scripts access bytes before those execution capabilities are added.
 
 ## Documentation roles

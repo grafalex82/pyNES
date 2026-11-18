@@ -256,6 +256,28 @@ raise NotImplementedError if fetched. Source review confirms fresh ordered Machi
 Separate cases fill real RAM after construction and verify unchanged bytes, including the stack page, after both resets.
 No read/write mocks, ROM changes, instruction execution, or local game files are used. Reset logging remains task 2.3.
 
+## Completed CPU reset logging (2026-11-19)
+
+Task 2.3 of `reset-cpu` adds the standard `cpu` component logger and one DEBUG event after the vector has loaded PC.
+The event identifies reset completion and reports A/X/Y/SP/PC/P in hexadecimal, computing P from the current flags.
+Keeping the event inside `reset()` gives construction one event and each later reset one event, with no duplicate
+startup message. CPU configures no handlers or logging levels, leaving output control to the caller.
+
+Six synthetic `caplog` cases cover startup and two successive resets with both PRG sizes, wrapped SP, and preserved
+flags clear or set. All 51 CPU tests pass. Instruction tracing remains future work; no hardware behavior or ROM changes.
+
+## Reusable CPU state logging with symbolic flags (2026-11-19)
+
+At the user's request, extract `CPU.log_state(event)` from reset so another event can report the current CPU state
+through the same `cpu` DEBUG logger. Reset calls it once with `Reset completed` after loading PC.
+The helper appends hexadecimal A/X/Y/SP/PC and replaces numeric P in the log with eight symbols in NV1BDIZC order.
+Set flags use their uppercase letters, clear flags use `-`, and bit 5 always uses `1`; P=$05 gives `--1--I-C`.
+This makes individual flags directly readable while leaving the numeric `p` property and stored booleans unchanged.
+
+Ten direct-helper cases check event text, individual flags, constant bit 5, combined masks, and unchanged CPU state.
+The updated startup/repeated-reset logging cases and all other CPU tests pass: 61 synthetic cases in total.
+At the user's request, logging tests compare complete messages to check register order, separators, and flag formatting.
+
 ## Departures and patches
 
 ### Stored B for status inspection (2026-11-18)

@@ -33,8 +33,14 @@ RAM initialized before CPU construction, including the stack page, remains uncha
 
 This functional model omits dummy bus reads and timing. The deterministic initial profile and these omissions are
 recorded in [the decision record](decisions.md#functional-cpu-startup-2026-11-18).
-Reset debug logging remains pending in the
-[reset-cpu change](../openspec/changes/reset-cpu/tasks.md).
+After PC is loaded, reset calls `log_state("Reset completed")` to emit one DEBUG event through the standard `cpu`
+logger. Construction uses the same reset event, with no separate startup message. CPU does not configure logging
+handlers; the caller controls logging. Instruction tracing remains unimplemented.
+
+The helper `cpu.log_state(event)` accepts event text and appends current hexadecimal A/X/Y/SP/PC and symbolic P.
+P uses eight positions in NV1BDIZC order: `-` for each clear flag, its uppercase letter for each set flag, and `1`
+at bit 5. For example, P=$05 appears as `--1--I-C`; all flags clear gives `--1-----`, and all set gives `NV1BDIZC`.
+Calling `cpu.log_state("Checkpoint")` observes the current state without changing registers or performing a reset.
 
 ## Repeated CPU reset
 
@@ -120,5 +126,10 @@ little-endian PC from the reset vector. Reads and writes are not mocked. Instruc
 Repeated-reset cases check every register and flag separately after two successive resets, with preserved flags
 both clear and set, several initial stack pointers, and RAM or unimplemented-PPU vector targets.
 A separate test fills RAM through Machine and checks that both resets preserve every byte, including the stack page.
+
+Logging tests use `caplog` for startup and two successive resets in both PRG layouts. They verify one DEBUG event per
+reset from the `cpu` logger and all six resulting register values, including wrapped SP and displayed P with I set.
+Direct helper cases check custom event text, each flag position, the constant `1`, the `--1--I-C` example, all-set/clear
+masks, and unchanged CPU state.
 
 Run them from the repository root with `python -m pytest test/test_cpu.py`.

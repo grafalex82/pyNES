@@ -1,5 +1,10 @@
 """Expose NES CPU registers, separately stored status flags, and functional startup."""
 
+import logging
+
+
+logger = logging.getLogger("cpu")
+
 
 class CPU:
     """CPU state with byte registers A/X/Y/SP and a 16-bit program counter.
@@ -40,6 +45,22 @@ class CPU:
         low = self._machine.read_byte(0xFFFC)
         high = self._machine.read_byte(0xFFFD)
         self._pc = low | (high << 8)
+
+        # Report the state only after reset has completed.
+        self.log_state("Reset completed")
+
+
+    def log_state(self, event):
+        """Log an event with the current registers and symbolic status flags at DEBUG level."""
+        # Display status from N to C, with the constant bit 5 shown as 1.
+        p = self.p
+        flags = "".join(name if p & (0x80 >> bit) else "-" for bit, name in enumerate("NV1BDIZC"))
+
+        # Treat the event text as data and append a snapshot of the current registers.
+        logger.debug(
+            "%s: A=%02X X=%02X Y=%02X SP=%02X PC=%04X P=%s",
+            event, self._a, self._x, self._y, self._sp, self._pc, flags,
+        )
 
 
     @property
