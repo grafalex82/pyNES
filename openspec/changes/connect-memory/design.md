@@ -22,7 +22,7 @@ The existing file-inspection contract remains unchanged.
 
 - CPU fields, reset methods, word helpers, instruction dispatch, or an emulator CLI.
 - A generic bus registry, device base class, or mapper framework before another device actually needs one.
-- Validation of malformed files, invalid addresses/values, exception presentation, or header repair.
+- Validation of malformed files or addresses, value type checks, exception presentation, or header repair.
 
 ## Decisions
 
@@ -32,6 +32,10 @@ Add RAM in `src/ram.py` and ROM in `src/rom.py`. RAM takes a byte count and owns
 ROM takes already parsed PRG bytes and keeps immutable private data. Both devices expose `read_byte(offset)`
 and `write_byte(offset, value)`. ROM writes raise PermissionError. Neither device knows CPU ranges, mirroring, files,
 or Machine. Use private fields consistently with NESFile; consume its parsed values only through existing getters.
+
+At the user's request, RAM.write_byte explicitly rejects integer values outside 0..255 with ValueError before storing
+anything. The diagnostic includes the rejected value and accepted range. This check does not truncate values or add
+address or type validation.
 
 A common method shape is sufficient without an abstract interface. A shared writable memory class would blur the ROM
 write policy. Plain byte access also avoids introducing stack, word, or burst APIs before their behavior is needed.
@@ -89,9 +93,9 @@ Zero-filled RAM and the ROM-write trap are deliberate departures in this change;
 
 Unconnected reads and writes raise NotImplementedError containing the operation and CPU address. Do not fake register
 responses, model open-bus values, or treat the rest of the CPU space as RAM. These exceptions mark future work rather
-than claim the real console has no device there. Valid byte values and CPU addresses are assumed; native storage
-failures can propagate. ROM-write PermissionError also propagates unchanged. No redundant range checks, recovery
-paths, or exception wrappers are required.
+than claim the real console has no device there. Valid CPU addresses are assumed; RAM's explicit byte-range check is
+the only added input check. Native storage failures and ROM-write PermissionError propagate unchanged. No recovery
+paths or exception wrappers are required.
 
 ## Risks / Trade-offs
 

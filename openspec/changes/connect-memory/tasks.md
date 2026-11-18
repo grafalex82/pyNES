@@ -2,8 +2,8 @@
 
 ## 1. Memory devices
 
-- [ ] 1.1 Add RAM in `src/ram.py`; verify zero initialization, byte access, boundaries, and instance isolation in
-  `test/test_ram.py` using valid byte values and offsets.
+- [x] 1.1 Add RAM in `src/ram.py`; verify zero initialization, byte access, boundaries, and instance isolation in
+  `test/test_ram.py` using valid offsets; verify out-of-range byte values raise ValueError without changing RAM.
 - [ ] 1.2 Add ROM in `src/rom.py`; verify source-byte reads, write PermissionError, and unchanged data in
   `test/test_rom.py`.
 - [ ] 1.3 Explain device-relative offsets and ROM write errors in comments; record zero-filled RAM and the diagnostic

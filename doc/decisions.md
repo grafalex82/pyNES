@@ -136,6 +136,20 @@ routine tests. CPU execution and mapper emulation remain later changes; no game 
 
 ## Departures and patches
 
-There are no implemented departures or game patches yet. For each future departure, record the expected hardware
-behavior, chosen behavior, reason, affected games, and verification. For a ROM patch also record the exact ROM hash,
-file offset or bank/address, original bytes, replacement bytes, and the effect on later disassembly.
+### Zero-filled standalone RAM (2026-11-18)
+
+Task 1.1 of `connect-memory` adds a RAM component with a private bytearray and device-relative byte reads and writes.
+The selected API takes a byte count and exposes only `read_byte` and `write_byte`. CPU address routing and mirroring
+belong to future Machine.
+Valid offsets are assumed. At the user's request, `write_byte` explicitly raises ValueError for integer values outside
+`0..255` before changing memory, providing a diagnostic rather than truncating the value.
+
+Each RAM instance starts at zero to make educational runs and tests reproducible. Hardware RAM contents are unreliable
+at power-up, as described by [NESdev's CPU power-up reference](https://www.nesdev.org/wiki/CPU_power_up_state).
+This is a deliberate initialization convenience for future games using this component; no game has been run with it.
+Focused synthetic tests verify zero initialization, all byte values and overwrites, boundary isolation, and independent
+instances. CPU reset behavior remains undefined, and no game bytes are patched.
+
+For each future departure, record the expected hardware behavior, chosen behavior, reason, affected games, and
+verification. For a ROM patch also record the exact ROM hash, file offset or bank/address, original bytes, replacement
+bytes, and the effect on later disassembly.

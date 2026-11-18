@@ -3,7 +3,7 @@
 ## Purpose
 
 Provide CPU-visible byte access to internal RAM and fixed mapper-0 cartridge ROM before processor execution is added.
-Addresses and byte values are assumed valid; malformed-input validation and recovery are outside this capability.
+Addresses are assumed valid. RAM byte-range checking is explicit; other input validation and recovery are out of scope.
 
 ## ADDED Requirements
 
@@ -11,11 +11,18 @@ Addresses and byte values are assumed valid; malformed-input validation and reco
 
 The CPU-facing memory interface SHALL provide writable RAM at $0000-$07FF. A byte written to an address SHALL be
 returned by subsequent reads of that address without changing other RAM bytes or cartridge ROM.
+RAM.write_byte SHALL raise ValueError for integer values outside 0..255 without changing RAM contents.
 
 #### Scenario: Access RAM boundaries
 
 - **WHEN** distinct bytes are written to $0000 and $07FF
 - **THEN** reads return the corresponding bytes at both boundaries and neighboring bytes remain unchanged
+
+#### Scenario: Reject a RAM value outside one byte
+
+- **WHEN** RAM.write_byte receives an integer below 0 or above 255 at a valid offset
+- **THEN** ValueError identifies the value and the accepted range
+- **AND** the target byte and all other RAM bytes remain unchanged
 
 ### Requirement: Mirror internal RAM throughout its CPU window
 

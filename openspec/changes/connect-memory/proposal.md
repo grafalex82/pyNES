@@ -17,7 +17,8 @@ prerequisite teaches how physical RAM and PRG ROM appear at CPU addresses before
 
 Scope ends at connected CPU-visible memory. CPU construction, reset, instruction execution, video/audio/controller
 registers, cartridge RAM, trainer placement, and additional mappers remain separate changes. Cartridge inspection and
-the existing loader's behavior are unchanged. Valid input is assumed; no corruption checks or recovery are added.
+the existing loader's behavior are unchanged. Valid input is assumed except for RAM's explicit byte-range check;
+no corruption checks or recovery are added.
 
 ## Capabilities
 
