@@ -68,6 +68,7 @@ The memory interface lets tests and exploration scripts access bytes before thos
 | `README.md` | Project goals, scope, architecture constraints, and current state |
 | `AGENTS.md` | Instructions for contributors and coding assistants |
 | `doc/memory.md` | Implemented memory routing, supported limits, and a synthetic byte-access example |
+| `doc/cpu.md` | Register widths, boolean status fields, P conversion, and the software B convention |
 | `openspec/config.yaml` | Concise context and rules for OpenSpec artifacts |
 | `openspec/specs/` | Durable capability specifications maintained as changes are completed |
 | `openspec/changes/` | Individually scoped proposals, designs, scenarios, and tasks |
