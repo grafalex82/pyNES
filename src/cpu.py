@@ -324,6 +324,34 @@ class CPU:
         self.log_instruction(address, (opcode, pointer & 0xFF, pointer >> 8), "JMP", f"(${pointer:04X})")
 
 
+    def _lda_zero_page(self, address, opcode):
+        destination = self._fetch_byte()
+        self._a = self._machine.read_byte(destination)
+        self._finish_zero_page_load(address, opcode, "LDA", destination, self._a)
+
+
+    def _ldx_zero_page(self, address, opcode):
+        destination = self._fetch_byte()
+        self._x = self._machine.read_byte(destination)
+        self._finish_zero_page_load(address, opcode, "LDX", destination, self._x)
+
+
+    def _ldy_zero_page(self, address, opcode):
+        destination = self._fetch_byte()
+        self._y = self._machine.read_byte(destination)
+        self._finish_zero_page_load(address, opcode, "LDY", destination, self._y)
+
+
+    def _finish_zero_page_load(self, address, opcode, mnemonic, destination, value):
+        # N and Z reflect the byte read from the zero-page address.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # The trace uses the operand already fetched through Machine.
+        self._cycles += 3
+        self.log_instruction(address, (opcode, destination), mnemonic, f"${destination:02X}")
+
+
     def _lda_immediate(self, address, opcode):
         self._a = self._fetch_byte()
         self._finish_immediate_load(address, opcode, "LDA", self._a)
@@ -375,6 +403,28 @@ class CPU:
         # Use the fetched address for the trace without reading the device again.
         self._cycles += 4
         self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), mnemonic, f"${destination:04X}")
+
+
+    def _sta_zero_page(self, address, opcode):
+        self._store_zero_page(address, opcode, self._a, "STA")
+
+
+    def _stx_zero_page(self, address, opcode):
+        self._store_zero_page(address, opcode, self._x, "STX")
+
+
+    def _sty_zero_page(self, address, opcode):
+        self._store_zero_page(address, opcode, self._y, "STY")
+
+
+    def _store_zero_page(self, address, opcode, value, mnemonic):
+        # An eight-bit operand addresses the first 256 bytes of CPU memory.
+        destination = self._fetch_byte()
+        self._machine.write_byte(destination, value)
+
+        # Trace the fetched address without an additional memory read.
+        self._cycles += 3
+        self.log_instruction(address, (opcode, destination), mnemonic, f"${destination:02X}")
 
 
     def _sta_absolute(self, address, opcode):
@@ -722,9 +772,9 @@ class CPU:
         None,  # $81
         None,  # $82
         None,  # $83
-        None,  # $84
-        None,  # $85
-        None,  # $86
+        _sty_zero_page,  # $84
+        _sta_zero_page,  # $85
+        _stx_zero_page,  # $86
         None,  # $87
         _dey,  # $88
         None,  # $89
@@ -758,9 +808,9 @@ class CPU:
         None,  # $A1
         _ldx_immediate,  # $A2
         None,  # $A3
-        None,  # $A4
-        None,  # $A5
-        None,  # $A6
+        _ldy_zero_page,  # $A4
+        _lda_zero_page,  # $A5
+        _ldx_zero_page,  # $A6
         None,  # $A7
         _tay,  # $A8
         _lda_immediate,  # $A9

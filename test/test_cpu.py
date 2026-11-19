@@ -373,6 +373,46 @@ def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, valu
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, register", [(0x85, "a"), (0x86, "x"), (0x84, "y")])
+@pytest.mark.parametrize("destination", [0x00, 0xFF])
+@pytest.mark.parametrize("value", [0x00, 0x55, 0xFF])
+def test_zero_page_stores_write_register(make_cpu, opcode, register, destination, value):
+    # Keep instruction bytes separate from the selected zero-page address.
+    cpu, machine = make_cpu(start_address=0x0567)
+    setattr(cpu, register, value)
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, destination)
+    machine.write_byte(destination, value ^ 0xFF)
+
+    # The selected address receives the register byte.
+    cpu.step()
+    assert machine.read_byte(destination) == value
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 3
+
+
+@pytest.mark.parametrize("opcode, register", [(0xA5, "a"), (0xA6, "x"), (0xA4, "y")])
+@pytest.mark.parametrize("source", [0x00, 0xFF])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_zero_page_loads_update_register_and_nz(make_cpu, opcode, register, source, value):
+    # Start N and Z opposite to their expected values and place data away from the instruction.
+    cpu, machine = make_cpu(start_address=0x0567)
+    setattr(cpu, register, 0x55)
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, source)
+    machine.write_byte(source, value)
+
+    # The selected register and N/Z reflect the addressed byte.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 3
+
+
 @pytest.mark.parametrize("opcode, register", [(0xAD, "a"), (0xAE, "x"), (0xAC, "y")])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_absolute_loads_update_register_and_nz(make_cpu, opcode, register, value):

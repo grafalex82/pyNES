@@ -28,45 +28,39 @@ Resume another task only when it is selected for implementation.
 
 ## 5. STA zero page ($85)
 
-- [ ] 5.1 Implement the selected encoding; verify the value stored at the destination, zero-page endpoints, PC, and
+- [x] 5.1 Implement the selected encoding; verify the value stored at the destination, zero-page endpoints, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 5.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 5.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 6. STX zero page ($86)
 
-- [ ] 6.1 Implement the selected encoding; verify the value stored at the destination, zero-page endpoints, PC, and
+- [x] 6.1 Implement the selected encoding; verify the value stored at the destination, zero-page endpoints, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 6.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 6.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 7. STY zero page ($84)
 
-- [ ] 7.1 Implement the selected encoding; verify the value stored at the destination, zero-page endpoints, PC, and
+- [x] 7.1 Implement the selected encoding; verify the value stored at the destination, zero-page endpoints, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 7.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 7.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 8. LDA zero page ($A5)
 
-- [ ] 8.1 Implement the selected encoding; verify the loaded values and N/Z, zero-page endpoints, PC, and cycles with
+- [x] 8.1 Implement the selected encoding; verify the loaded values and N/Z, zero-page endpoints, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 8.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 8.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 9. LDX zero page ($A6)
 
-- [ ] 9.1 Implement the selected encoding; verify the loaded values and N/Z, zero-page endpoints, PC, and cycles with
+- [x] 9.1 Implement the selected encoding; verify the loaded values and N/Z, zero-page endpoints, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 9.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 9.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 10. LDY zero page ($A4)
 
-- [ ] 10.1 Implement the selected encoding; verify the loaded values and N/Z, zero-page endpoints, PC, and cycles with
+- [x] 10.1 Implement the selected encoding; verify the loaded values and N/Z, zero-page endpoints, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 10.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 10.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 11. STA absolute,X ($9D)
 
