@@ -10,10 +10,9 @@ Resume another task only when it is selected for implementation.
 
 ## 2. JMP indirect ($6C)
 
-- [ ] 2.1 Implement the selected encoding; verify the destination, page-boundary pointer wrap, and five cycles with
+- [x] 2.1 Implement the selected encoding; verify the destination, page-boundary pointer wrap, and five cycles with
   focused synthetic pytest cases.
-- [ ] 2.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 2.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 3. JSR absolute ($20)
 

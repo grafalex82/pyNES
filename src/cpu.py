@@ -283,6 +283,19 @@ class CPU:
         self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), "JMP", f"${destination:04X}")
 
 
+    def _jmp_indirect(self, address, opcode):
+        # The original CPU wraps the pointer's high-byte read within its page.
+        pointer = self._fetch_word()
+        low = self._machine.read_byte(pointer)
+        high_address = (pointer & 0xFF00) | ((pointer + 1) & 0xFF)
+        high = self._machine.read_byte(high_address)
+        self._pc = low | (high << 8)
+
+        # The trace identifies the operand using the bytes already fetched.
+        self._cycles += 5
+        self.log_instruction(address, (opcode, pointer & 0xFF, pointer >> 8), "JMP", f"(${pointer:04X})")
+
+
     def _lda_immediate(self, address, opcode):
         self._a = self._fetch_byte()
         self._finish_immediate_load(address, opcode, "LDA", self._a)
@@ -653,7 +666,7 @@ class CPU:
         None,  # $69
         None,  # $6A
         None,  # $6B
-        None,  # $6C
+        _jmp_indirect,  # $6C
         None,  # $6D
         None,  # $6E
         None,  # $6F

@@ -90,6 +90,52 @@ def test_jmp_absolute_loads_destination(make_cpu):
     assert cpu.cycles == 3
 
 
+def test_jmp_indirect_loads_destination(make_cpu):
+    # Distinct pointer and target bytes expose incorrect address or byte order.
+    cpu, machine = make_cpu(start_address=0x0200)
+    machine.write_byte(0x0200, 0x6C)
+    machine.write_byte(0x0201, 0x34)
+    machine.write_byte(0x0202, 0x12)
+    machine.write_byte(0x1234, 0x78)
+    machine.write_byte(0x1235, 0x56)
+
+    # The target is read from the two consecutive pointer locations.
+    cpu.step()
+    assert cpu.pc == 0x5678
+    assert cpu.cycles == 5
+
+
+def test_jmp_indirect_wraps_pointer_within_page(make_cpu):
+    # A different value on the next page distinguishes the original CPU's behavior.
+    cpu, machine = make_cpu(start_address=0x0400)
+    machine.write_byte(0x0400, 0x6C)
+    machine.write_byte(0x0401, 0xFF)
+    machine.write_byte(0x0402, 0x12)
+    machine.write_byte(0x12FF, 0x78)
+    machine.write_byte(0x1200, 0x56)
+    machine.write_byte(0x1300, 0x9A)
+
+    # The high target byte comes from the start of the same page.
+    cpu.step()
+    assert cpu.pc == 0x5678
+    assert cpu.cycles == 5
+
+
+def test_jmp_indirect_wraps_pointer_at_end_of_address_space(make_cpu):
+    # ROM supplies the low target byte at $FFFF and a zero high byte at $FF00.
+    cpu, machine = make_cpu(start_address=0xFFFF, prg_program=b"\x78")
+    cpu.pc = 0x0200
+    machine.write_byte(0x0200, 0x6C)
+    machine.write_byte(0x0201, 0xFF)
+    machine.write_byte(0x0202, 0xFF)
+    machine.write_byte(0x0000, 0x56)
+
+    # The high byte comes from $FF00, not $0000.
+    cpu.step()
+    assert cpu.pc == 0x0078
+    assert cpu.cycles == 5
+
+
 def test_fetch_byte_and_word_advance_pc(make_cpu):
     # Distinct bytes reveal a reversed word or an off-by-one fetch.
     cpu, machine = make_cpu(start_address=0x0234)
