@@ -7,8 +7,8 @@
 
 ## 2. Absolute stores
 
-- [ ] 2.1 Implement $8D/$8E/$8C; test destination, values, flags, little-endian addressing, PC, and four cycles.
-- [ ] 2.2 Test ROM or unconnected-write errors; document any omitted dummy reads.
+- [x] 2.1 Implement $8D/$8E/$8C; test destination, values, flags, little-endian addressing, PC, and four cycles.
+- [x] 2.2 Test ROM or unconnected-write errors; document any omitted dummy reads.
 
 ## 3. Stack transfer
 

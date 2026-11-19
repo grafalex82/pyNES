@@ -298,6 +298,28 @@ class CPU:
         self.log_instruction(address, (opcode, value), mnemonic, f"#${value:02X}")
 
 
+    def _sta_absolute(self, address, opcode):
+        self._store_absolute(address, opcode, self._a, "STA")
+
+
+    def _stx_absolute(self, address, opcode):
+        self._store_absolute(address, opcode, self._x, "STX")
+
+
+    def _sty_absolute(self, address, opcode):
+        self._store_absolute(address, opcode, self._y, "STY")
+
+
+    def _store_absolute(self, address, opcode, value, mnemonic):
+        # The operand is a little-endian CPU address routed through Machine.
+        destination = self._fetch_word()
+        self._machine.write_byte(destination, value)
+
+        # A rejected write stops execution before the instruction completes.
+        self._cycles += 4
+        self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), mnemonic, f"${destination:04X}")
+
+
     def _clc(self, address, opcode):
         """Clear the carry flag used by arithmetic and rotates."""
         self._carry = False
@@ -512,9 +534,9 @@ class CPU:
         None,  # $89
         None,  # $8A
         None,  # $8B
-        None,  # $8C
-        None,  # $8D
-        None,  # $8E
+        _sty_absolute,  # $8C
+        _sta_absolute,  # $8D
+        _stx_absolute,  # $8E
         None,  # $8F
 
         # $90-$9F

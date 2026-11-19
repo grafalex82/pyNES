@@ -255,6 +255,61 @@ def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, valu
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, register", [(0x8D, "a"), (0x8E, "x"), (0x8C, "y")])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+@pytest.mark.parametrize("flag", [False, True])
+def test_absolute_stores_write_register_without_changing_flags(make_cpu, opcode, register, value, flag):
+    # The distinct operand bytes identify whether the CPU reads the address low byte first.
+    cpu, machine = make_cpu(start_address=0x0200)
+    setattr(cpu, register, value)
+    cpu.negative = flag
+    cpu.overflow = flag
+    cpu.break_flag = flag
+    cpu.decimal = flag
+    cpu.interrupt_disable = flag
+    cpu.zero = flag
+    cpu.carry = flag
+    machine.write_byte(0x0200, opcode)
+    machine.write_byte(0x0201, 0x56)
+    machine.write_byte(0x0202, 0x04)
+
+    # The write reaches the selected address without affecting the status flags.
+    cpu.step()
+    assert machine.read_byte(0x0456) == value
+    assert cpu.negative is flag
+    assert cpu.overflow is flag
+    assert cpu.break_flag is flag
+    assert cpu.decimal is flag
+    assert cpu.interrupt_disable is flag
+    assert cpu.zero is flag
+    assert cpu.carry is flag
+    assert cpu.pc == 0x0203
+    assert cpu.cycles == 4
+
+
+@pytest.mark.parametrize("opcode, register", [(0x8D, "a"), (0x8E, "x"), (0x8C, "y")])
+@pytest.mark.parametrize(
+    "high_byte, error, message",
+    [
+        (0x20, NotImplementedError, "CPU write at address 0x2000"),
+        (0x80, PermissionError, "ROM at offset 0x0000"),
+    ],
+)
+def test_absolute_store_propagates_write_error(make_cpu, opcode, register, high_byte, error, message):
+    # Target either the unconnected PPU area or the beginning of PRG ROM.
+    cpu, machine = make_cpu(start_address=0x0200)
+    setattr(cpu, register, 0xA5)
+    machine.write_byte(0x0200, opcode)
+    machine.write_byte(0x0201, 0x00)
+    machine.write_byte(0x0202, high_byte)
+
+    # The device's diagnostic propagates before completed-instruction cycles accrue.
+    with pytest.raises(error, match=message):
+        cpu.step()
+    assert cpu.pc == 0x0203
+    assert cpu.cycles == 0
+
+
 def test_cycles_accumulate_across_mixed_instructions(make_cpu):
     # Execute each supported encoding once in a synthetic RAM program.
     cpu, machine = make_cpu()

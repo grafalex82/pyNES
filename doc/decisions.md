@@ -376,6 +376,14 @@ stopped on unsupported $A9 at $8002. These are observed entry traces, not eviden
 Each full-file SHA-256 matched [the recorded value](../ROMs/README.md#inspected-local-files-2026-11-18) before and
 after execution. No ROM was patched. The next instruction remains unimplemented.
 
+## Rejected absolute writes (2026-11-19)
+
+An absolute store reads both address bytes before Machine attempts the write. If the device rejects it, the exception
+propagates with PC already past the operand, and no completed-instruction cycles are added. This differs from an
+unsupported opcode, whose PC is restored for inspection. The diagnostic ROM-write trap is documented below.
+Absolute stores perform the opcode and operand reads followed by the write; they require no omitted dummy read.
+See the [6502 bus-cycle reference](https://www.nesdev.org/6502_cpu.txt).
+
 ## Departures and patches
 
 ### Implied flag instructions and official NOP (2026-11-19)
