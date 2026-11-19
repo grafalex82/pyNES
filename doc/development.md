@@ -34,6 +34,10 @@ For an instruction, tests should cover the selected addressing behavior, affecte
 counter as appropriate. Several opcodes that share a mnemonic must not become an excuse to implement a large family
 of instructions at once; choose the next required encoding and state its scope clearly.
 
+CPU instruction tests check only the instruction's direct effects, including the destination, affected flags, program
+counter, and nominal cycles where applicable. They do not test logging or guard against unrelated side effects, such as
+changes to registers not used by the instruction.
+
 When code already implements a behavior but produces the wrong result, fix that behavior rather than adding another
 instruction. A bounded run is useful for detecting a polling loop that no longer makes progress.
 
