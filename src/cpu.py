@@ -298,6 +298,34 @@ class CPU:
         self.log_instruction(address, (opcode, value), mnemonic, f"#${value:02X}")
 
 
+    def _lda_absolute(self, address, opcode):
+        destination = self._fetch_word()
+        self._a = self._machine.read_byte(destination)
+        self._finish_absolute_load(address, opcode, "LDA", destination, self._a)
+
+
+    def _ldx_absolute(self, address, opcode):
+        destination = self._fetch_word()
+        self._x = self._machine.read_byte(destination)
+        self._finish_absolute_load(address, opcode, "LDX", destination, self._x)
+
+
+    def _ldy_absolute(self, address, opcode):
+        destination = self._fetch_word()
+        self._y = self._machine.read_byte(destination)
+        self._finish_absolute_load(address, opcode, "LDY", destination, self._y)
+
+
+    def _finish_absolute_load(self, address, opcode, mnemonic, destination, value):
+        # Loads update N and Z from the value returned by the addressed device.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # Use the fetched address for the trace without reading the device again.
+        self._cycles += 4
+        self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), mnemonic, f"${destination:04X}")
+
+
     def _sta_absolute(self, address, opcode):
         self._store_absolute(address, opcode, self._a, "STA")
 
@@ -617,9 +645,9 @@ class CPU:
         _lda_immediate,  # $A9
         _tax,  # $AA
         None,  # $AB
-        None,  # $AC
-        None,  # $AD
-        None,  # $AE
+        _ldy_absolute,  # $AC
+        _lda_absolute,  # $AD
+        _ldx_absolute,  # $AE
         None,  # $AF
 
         # $B0-$BF

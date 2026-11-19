@@ -255,6 +255,29 @@ def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, valu
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, register", [(0xAD, "a"), (0xAE, "x"), (0xAC, "y")])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_absolute_loads_update_register_and_nz(make_cpu, opcode, register, value):
+    # Use distinct address bytes to test little-endian addressing.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0456, value)
+    cpu.pc = 0x0200
+    setattr(cpu, register, 0x55)
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0200, opcode)
+    machine.write_byte(0x0201, 0x56)
+    machine.write_byte(0x0202, 0x04)
+
+    # The selected register and N/Z reflect the fetched byte.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0203
+    assert cpu.cycles == 4
+
+
 @pytest.mark.parametrize("opcode, register", [(0x8D, "a"), (0x8E, "x"), (0x8C, "y")])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 @pytest.mark.parametrize("flag", [False, True])

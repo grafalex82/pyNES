@@ -17,8 +17,8 @@
 
 ## 4. Absolute loads
 
-- [ ] 4.1 Implement $AD/$AE/$AC; test values, little-endian addresses, N/Z, unrelated state, PC advancement, and cycles.
-- [ ] 4.2 Verify one routed device read.
+- [x] 4.1 Implement $AD/$AE/$AC; test values, little-endian addresses, N/Z, PC advancement, and cycles.
+- [x] 4.2 Verify one routed device read.
 
 ## 5. Relative branch
 
