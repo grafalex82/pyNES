@@ -377,6 +377,47 @@ class CPU:
         self.log_instruction(address, (opcode, value), mnemonic, f"#${value:02X}")
 
 
+    def _lda_absolute_x(self, address, opcode):
+        base, self._a, crossed = self._read_absolute_indexed(self._x)
+        self._finish_indexed_load(address, opcode, "LDA", base, "X", self._a, crossed)
+
+
+    def _lda_absolute_y(self, address, opcode):
+        base, self._a, crossed = self._read_absolute_indexed(self._y)
+        self._finish_indexed_load(address, opcode, "LDA", base, "Y", self._a, crossed)
+
+
+    def _ldx_absolute_y(self, address, opcode):
+        base, self._x, crossed = self._read_absolute_indexed(self._y)
+        self._finish_indexed_load(address, opcode, "LDX", base, "Y", self._x, crossed)
+
+
+    def _ldy_absolute_x(self, address, opcode):
+        base, self._y, crossed = self._read_absolute_indexed(self._x)
+        self._finish_indexed_load(address, opcode, "LDY", base, "X", self._y, crossed)
+
+
+    def _read_absolute_indexed(self, index):
+        # Calculate the effective address and detect a page change, including 16-bit wrap.
+        base = self._fetch_word()
+        destination = (base + index) & 0xFFFF
+        crossed = base >> 8 != destination >> 8
+
+        # The functional model skips the provisional read on a page crossing.
+        value = self._machine.read_byte(destination)
+        return base, value, crossed
+
+
+    def _finish_indexed_load(self, address, opcode, mnemonic, base, index_name, value, crossed):
+        # N and Z reflect the byte loaded from the effective address.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # Preserve the fetched base address for the trace and count page-crossing cost.
+        self._cycles += 4 + crossed
+        self.log_instruction(address, (opcode, base & 0xFF, base >> 8), mnemonic, f"${base:04X},{index_name}")
+
+
     def _lda_absolute(self, address, opcode):
         destination = self._fetch_word()
         self._a = self._machine.read_byte(destination)
@@ -425,6 +466,25 @@ class CPU:
         # Trace the fetched address without an additional memory read.
         self._cycles += 3
         self.log_instruction(address, (opcode, destination), mnemonic, f"${destination:02X}")
+
+
+    def _sta_absolute_x(self, address, opcode):
+        self._store_absolute_indexed(address, opcode, self._x, "X")
+
+
+    def _sta_absolute_y(self, address, opcode):
+        self._store_absolute_indexed(address, opcode, self._y, "Y")
+
+
+    def _store_absolute_indexed(self, address, opcode, index, index_name):
+        # Indexed addresses wrap in the CPU's 16-bit address space.
+        base = self._fetch_word()
+        destination = (base + index) & 0xFFFF
+        self._machine.write_byte(destination, self._a)
+
+        # Stores take five cycles, including the omitted provisional read.
+        self._cycles += 5
+        self.log_instruction(address, (opcode, base & 0xFF, base >> 8), "STA", f"${base:04X},{index_name}")
 
 
     def _sta_absolute(self, address, opcode):
@@ -795,11 +855,11 @@ class CPU:
         None,  # $96
         None,  # $97
         _tya,  # $98
-        None,  # $99
+        _sta_absolute_y,  # $99
         _txs,  # $9A
         None,  # $9B
         None,  # $9C
-        None,  # $9D
+        _sta_absolute_x,  # $9D
         None,  # $9E
         None,  # $9F
 
@@ -831,12 +891,12 @@ class CPU:
         None,  # $B6
         None,  # $B7
         _clv,  # $B8
-        None,  # $B9
+        _lda_absolute_y,  # $B9
         _tsx,  # $BA
         None,  # $BB
-        None,  # $BC
-        None,  # $BD
-        None,  # $BE
+        _ldy_absolute_x,  # $BC
+        _lda_absolute_x,  # $BD
+        _ldx_absolute_y,  # $BE
         None,  # $BF
 
         # $C0-$CF

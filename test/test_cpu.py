@@ -413,6 +413,61 @@ def test_zero_page_loads_update_register_and_nz(make_cpu, opcode, register, sour
     assert cpu.cycles == 3
 
 
+@pytest.mark.parametrize("opcode, index_register", [(0x9D, "x"), (0x99, "y")])
+@pytest.mark.parametrize("base, index, destination", [
+    (0x0120, 0x12, 0x0132),
+    (0x00FF, 0x01, 0x0100),
+    (0xFFFF, 0x01, 0x0000),
+])
+def test_indexed_absolute_stores_write_accumulator(make_cpu, opcode, index_register, base, index, destination):
+    # The program and each indexed destination occupy separate RAM locations.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = 0xA5
+    setattr(cpu, index_register, index)
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, base & 0xFF)
+    machine.write_byte(0x0569, base >> 8)
+    machine.write_byte(destination, 0x5A)
+
+    # The selected address receives A for every page-crossing case.
+    cpu.step()
+    assert machine.read_byte(destination) == 0xA5
+    assert cpu.pc == 0x056A
+    assert cpu.cycles == 5
+
+
+@pytest.mark.parametrize("opcode, register, index_register", [
+    (0xBD, "a", "x"), (0xB9, "a", "y"), (0xBE, "x", "y"), (0xBC, "y", "x"),
+])
+@pytest.mark.parametrize("base, index, source, cycles", [
+    (0x0120, 0x12, 0x0132, 4),
+    (0x00FF, 0x01, 0x0100, 5),
+    (0xFFFF, 0x01, 0x0000, 5),
+])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_indexed_absolute_loads_update_register_and_nz(
+    make_cpu, opcode, register, index_register, base, index, source, cycles, value,
+):
+    # The index and initial flags distinguish the selected address and loaded value.
+    cpu, machine = make_cpu(start_address=0x0567)
+    setattr(cpu, register, 0x55)
+    setattr(cpu, index_register, index)
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, base & 0xFF)
+    machine.write_byte(0x0569, base >> 8)
+    machine.write_byte(source, value)
+
+    # The destination and flags reflect the selected byte and page-crossing cost.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x056A
+    assert cpu.cycles == cycles
+
+
 @pytest.mark.parametrize("opcode, register", [(0xAD, "a"), (0xAE, "x"), (0xAC, "y")])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_absolute_loads_update_register_and_nz(make_cpu, opcode, register, value):

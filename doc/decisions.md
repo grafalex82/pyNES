@@ -5,6 +5,22 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Omitted provisional reads for indexed writes (2026-11-19)
+
+Indexed absolute writes omit the hardware's provisional read before the write, retaining a functional bus model.
+That read occurs even without a page crossing and may trigger device side effects; those effects and bus-cycle timing
+are not modeled. This applies to all ROMs and involves no patch. Synthetic tests cover effective addresses and cycles,
+but do not check the omitted read. See section 6.1 of the
+[MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
+
+### Omitted provisional reads for indexed loads (2026-11-19)
+
+Indexed absolute loads omit the hardware's provisional read when an index crosses a page. This maintains the
+functional bus model but skips device side effects from the provisional address and individual bus-cycle timing.
+The simplification applies to all ROMs and involves no patch. Synthetic tests cover the loaded values and page-crossing
+cycle counts, not the omitted access. See section 6.1 of the
+[MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
+
 ### Omitted reads during subroutine return (2026-11-19)
 
 The functional CPU omits three discarded hardware reads during subroutine return: at the next instruction byte,

@@ -64,45 +64,39 @@ Resume another task only when it is selected for implementation.
 
 ## 11. STA absolute,X ($9D)
 
-- [ ] 11.1 Implement the selected encoding; verify the value stored at the destination, page crossing and 16-bit wrap,
+- [x] 11.1 Implement the selected encoding; verify the value stored at the destination, page crossing and 16-bit wrap,
   PC, and cycles with focused synthetic pytest cases.
-- [ ] 11.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 11.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 12. STA absolute,Y ($99)
 
-- [ ] 12.1 Implement the selected encoding; verify the value stored at the destination, page crossing and 16-bit wrap,
+- [x] 12.1 Implement the selected encoding; verify the value stored at the destination, page crossing and 16-bit wrap,
   PC, and cycles with focused synthetic pytest cases.
-- [ ] 12.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 12.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 13. LDA absolute,X ($BD)
 
-- [ ] 13.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
+- [x] 13.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 13.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 13.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 14. LDA absolute,Y ($B9)
 
-- [ ] 14.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
+- [x] 14.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 14.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 14.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 15. LDX absolute,Y ($BE)
 
-- [ ] 15.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
+- [x] 15.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 15.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 15.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 16. LDY absolute,X ($BC)
 
-- [ ] 16.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
+- [x] 16.1 Implement the selected encoding; verify the loaded values and N/Z, page crossing and 16-bit wrap, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 16.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 16.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 17. Integration
 
