@@ -1,5 +1,116 @@
 ## ADDED Requirements
 
+### Requirement: Execute ADC using zero-page addressing
+
+Opcode $65 SHALL read the zero-extended one-byte address through Machine, add its value and incoming C to A in binary,
+and update A and C/V/N/Z using NES arithmetic rules. It SHALL preserve D without using decimal arithmetic, preserve
+other registers and flags, advance PC by two, and add three nominal cycles.
+
+#### Scenario: Carry out of the byte
+- **WHEN** A=$FF, the addressed byte is $00, and C=1
+- **THEN** A=$00, C=1, V=0, N=0, and Z=1
+
+#### Scenario: Signed overflow and decimal flag
+- **WHEN** A=$7F, the addressed byte is $01, C=0, and D=1
+- **THEN** A=$80, C=0, V=1, N=1, Z=0, and D remains set
+
+### Requirement: Execute SBC using zero-page addressing
+
+Opcode $E5 SHALL read the zero-extended one-byte address through Machine, subtract its value and inverse incoming C from
+A in binary, and update A and C/V/N/Z using NES arithmetic rules. It SHALL preserve D without using decimal arithmetic,
+preserve other registers and flags, advance PC by two, and add three nominal cycles.
+
+#### Scenario: Borrow from the byte
+- **WHEN** A=$00, the addressed byte is $01, and C=1
+- **THEN** A=$FF, C=0, V=0, N=1, and Z=0
+
+#### Scenario: Signed overflow and decimal flag
+- **WHEN** A=$80, the addressed byte is $01, C=1, and D=1
+- **THEN** A=$7F, C=1, V=1, N=0, Z=0, and D remains set
+
+### Requirement: Preserve the zero-page read-modify-write bus sequence
+
+Zero-page ASL, LSR, ROL, and ROR SHALL read the selected byte through Machine, write the original byte to the same
+address, then write the resulting byte to that address. Each SHALL advance PC by two and add five nominal cycles.
+
+#### Scenario: Write original before result
+- **WHEN** one of the selected instructions modifies a zero-page byte
+- **THEN** Machine receives the original-byte write followed by the modified-byte write, even when their values match
+
+### Requirement: Execute ASL using zero-page addressing
+
+Opcode $06 SHALL shift the addressed byte left, move its old bit 7 to C, insert zero into bit 0, and set N/Z from the
+result. It SHALL preserve A and flags other than C/N/Z.
+
+#### Scenario: Shift out the high bit
+- **WHEN** the addressed byte is $80 and ASL executes
+- **THEN** the addressed byte becomes $00, C=1, N=0, and Z=1
+
+### Requirement: Execute LSR using zero-page addressing
+
+Opcode $46 SHALL shift the addressed byte right, move its old bit 0 to C, insert zero into bit 7, and set N/Z from the
+result. It SHALL preserve A and flags other than C/N/Z.
+
+#### Scenario: Shift out the low bit
+- **WHEN** the addressed byte is $01 and LSR executes
+- **THEN** the addressed byte becomes $00, C=1, N=0, and Z=1
+
+### Requirement: Execute ROL using zero-page addressing
+
+Opcode $26 SHALL shift the addressed byte left, move its old bit 7 to C, insert the old C into bit 0, and set N/Z from
+the result. It SHALL preserve A and flags other than C/N/Z.
+
+#### Scenario: Rotate through a set carry
+- **WHEN** the addressed byte is $80, C=1, and ROL executes
+- **THEN** the addressed byte becomes $01, C=1, N=0, and Z=0
+
+#### Scenario: Rotate with a clear carry
+- **WHEN** the addressed byte is $40, C=0, and ROL executes
+- **THEN** the addressed byte becomes $80, C=0, N=1, and Z=0
+
+### Requirement: Execute ROR using zero-page addressing
+
+Opcode $66 SHALL shift the addressed byte right, move its old bit 0 to C, insert the old C into bit 7, and set N/Z from
+the result. It SHALL preserve A and flags other than C/N/Z.
+
+#### Scenario: Rotate through a set carry
+- **WHEN** the addressed byte is $01, C=1, and ROR executes
+- **THEN** the addressed byte becomes $80, C=1, N=1, and Z=0
+
+#### Scenario: Rotate with a clear carry
+- **WHEN** the addressed byte is $02, C=0, and ROR executes
+- **THEN** the addressed byte becomes $01, C=0, N=0, and Z=0
+
+### Requirement: Execute AND using zero-page addressing
+
+Opcode $25 SHALL read the zero-extended one-byte address through Machine, combine its byte with A using bitwise AND,
+store the result in A, and set N/Z from that byte. It SHALL advance PC by two, add three nominal cycles, and preserve
+other registers and flags.
+
+#### Scenario: Produce zero
+- **WHEN** A=$F0 and the addressed byte is $0F
+- **THEN** A=$00, N=0, and Z=1
+
+### Requirement: Execute ORA using zero-page addressing
+
+Opcode $05 SHALL read the zero-extended one-byte address through Machine, combine its byte with A using bitwise OR,
+store the result in A, and set N/Z from that byte. It SHALL advance PC by two, add three nominal cycles, and preserve
+other registers and flags.
+
+#### Scenario: Combine distinct bits
+- **WHEN** A=$10 and the addressed byte is $80
+- **THEN** A=$90, N=1, and Z=0
+
+### Requirement: Execute EOR using zero-page addressing
+
+Opcode $45 SHALL read the zero-extended one-byte address through Machine, combine its byte with A using bitwise
+exclusive OR, store the result in A, and set N/Z from that byte. It SHALL advance PC by two, add three nominal cycles,
+and preserve other registers and flags.
+
+#### Scenario: Toggle matching bits
+- **WHEN** A=$0F and the addressed byte is $8F
+- **THEN** A=$80, N=1, and Z=0
+
 ### Requirement: Execute LDA using indexed-indirect addressing
 
 Opcode $A1 SHALL add X to its one-byte operand modulo 256, read a little-endian pointer from that zero-page address

@@ -3,8 +3,8 @@
 ## Context
 
 CPU.step dispatches opcodes, reads instruction bytes through Machine, accumulates nominal instruction cycles, and
-logs completed instructions using captured bytes. The first 28 encodings in this change have been implemented; the
-indirect indexed loads and immediate arithmetic are planned. Each encoding remains an individual learning step.
+logs completed instructions using captured bytes. The first 32 encodings in this change have been implemented; the
+additional zero-page encodings are planned. Each encoding remains an individual learning step.
 
 ## Goals / Non-Goals
 
@@ -27,6 +27,11 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
 - Immediate ADC adds A, the operand, and C; immediate SBC subtracts the operand and the inverse of C. Set C from
   unsigned carry or no borrow, V from signed overflow, and N/Z from the eight-bit result. The NES stores D but both
   instructions perform binary arithmetic regardless of D, as the NES CPU does not implement decimal arithmetic.
+- Zero-page arithmetic and logical operations read the operand through Machine and apply the same result and flag rules
+  as their immediate forms. The address byte is zero-extended; each operation takes three nominal cycles.
+- Zero-page shifts and rotations read the byte, write the original byte, then write the modified byte through Machine.
+  These five-cycle operations update C/N/Z using the same rules as their accumulator forms. The original-byte write
+  matches the hardware bus sequence; no zero-page read-modify-write access is deliberately omitted.
 - Indexed-indirect loads add X to the zero-page operand modulo 256 and read a wrapping little-endian zero-page pointer.
   Indirect-indexed loads read that pointer first, then add Y modulo 65536; they take one more cycle on page crossing.
   Both read the selected byte through Machine and set N/Z from it.
@@ -50,8 +55,9 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
   each opcode or operand byte on a separate setup line.
 - Follow the existing functional bus model: indexed stores and page-crossing indexed loads omit provisional reads;
   JSR omits its internal dummy read; RTS omits its opcode-adjacent, stack-page, and final return-address dummy reads.
-  Their device-visible read side effects are therefore not modeled. Plain JMP and zero-page encodings need no omitted
-  dummy access in this model. These simplifications apply to every ROM using the affected encodings; no ROM is patched.
+  Their device-visible read side effects are therefore not modeled. Plain JMP and the selected zero-page encodings need
+  no omitted dummy access in this model. These simplifications apply to every ROM using the affected encodings; no ROM
+  is patched.
 - After an individual encoding is selected and verified, report the next observed obstacle and stop. The grouped plan
   does not authorize automatically implementing the next encoding.
 

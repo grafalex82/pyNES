@@ -189,12 +189,66 @@ Resume another task only when it is selected for implementation.
   arithmetic with D clear and set, PC, and cycles with focused synthetic pytest cases.
 - [x] 32.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
-## 33. Integration
+## 33. ADC zero page ($65)
 
-- [ ] 33.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
+- [ ] 33.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, D, zero-page endpoints, PC, and cycles
+  with focused synthetic pytest cases.
+- [ ] 33.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 34. SBC zero page ($E5)
+
+- [ ] 34.1 Implement the selected encoding; verify A, C/V/N/Z, incoming borrow, D, zero-page endpoints, PC, and cycles
+  with focused synthetic pytest cases.
+- [ ] 34.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 35. ASL zero page ($06)
+
+- [ ] 35.1 Implement the selected encoding; verify the memory result, original and final writes, C/N/Z, zero-page
+  endpoints, PC, and cycles with focused synthetic pytest cases.
+- [ ] 35.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 36. LSR zero page ($46)
+
+- [ ] 36.1 Implement the selected encoding; verify the memory result, original and final writes, C/N/Z, zero-page
+  endpoints, PC, and cycles with focused synthetic pytest cases.
+- [ ] 36.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 37. ROL zero page ($26)
+
+- [ ] 37.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  C/N/Z, zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
+- [ ] 37.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 38. ROR zero page ($66)
+
+- [ ] 38.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  C/N/Z, zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
+- [ ] 38.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 39. AND zero page ($25)
+
+- [ ] 39.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
+  pytest cases.
+- [ ] 39.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 40. ORA zero page ($05)
+
+- [ ] 40.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
+  pytest cases.
+- [ ] 40.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 41. EOR zero page ($45)
+
+- [ ] 41.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
+  pytest cases.
+- [ ] 41.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 42. Integration
+
+- [ ] 42.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
   resolve any failures.
-- [ ] 33.2 Review documentation for hardware departures and their rationale without listing instruction support.
-- [ ] 33.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
+- [ ] 42.2 Review documentation for hardware departures and their rationale without listing instruction support.
+- [ ] 42.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
   implementing it; record actual observations only.
 
 ## Workflow follow-up
