@@ -5,6 +5,21 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Omitted indirect indexed provisional read (2026-11-19)
+
+Indirect-indexed writes omit the hardware's provisional indexed read, including when no page is crossed, to keep the
+functional bus model. A provisional read can trigger device side effects; those and individual bus-cycle and DMA
+effects are not modeled. This applies to all ROMs and involves no patch. Synthetic tests verify pointer wrapping,
+indexing, and routed writes, not the omitted read. See section 6.5 of the
+[MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
+
+### Omitted zero-page provisional read (2026-11-19)
+
+Indexed-indirect writes omit the hardware's discarded read at the unindexed zero-page address to retain the functional
+bus model. Zero-page RAM reads have no side effects here, but bus-cycle and DMA effects are not modeled. This applies
+to all ROMs and involves no patch. Synthetic tests verify pointer wrapping and writes, not the omitted read. See
+section 6.4 of the [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
+
 ### Omitted reads for accumulator operations (2026-11-19)
 
 The functional model for accumulator operations omits the hardware's discarded read at the next instruction address.

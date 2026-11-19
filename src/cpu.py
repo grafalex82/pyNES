@@ -489,6 +489,37 @@ class CPU:
         self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), mnemonic, f"${destination:04X}")
 
 
+    def _sta_indexed_indirect(self, address, opcode):
+        # X selects a pointer within zero page, including wrap at $FF.
+        operand = self._fetch_byte()
+        pointer = (operand + self._x) & 0xFF
+        destination = self._read_zero_page_word(pointer)
+        self._machine.write_byte(destination, self._a)
+
+        # The functional model omits the discarded zero-page read.
+        self._cycles += 6
+        self.log_instruction(address, (opcode, operand), "STA", f"(${operand:02X},X)")
+
+
+    def _sta_indirect_indexed(self, address, opcode):
+        # Y indexes the address stored in a wrapping zero-page pointer.
+        operand = self._fetch_byte()
+        base = self._read_zero_page_word(operand)
+        destination = (base + self._y) & 0xFFFF
+        self._machine.write_byte(destination, self._a)
+
+        # The functional model omits the provisional indexed read.
+        self._cycles += 6
+        self.log_instruction(address, (opcode, operand), "STA", f"(${operand:02X}),Y")
+
+
+    def _read_zero_page_word(self, address):
+        # Both pointer bytes are read through Machine within zero page.
+        low = self._machine.read_byte(address)
+        high = self._machine.read_byte((address + 1) & 0xFF)
+        return low | (high << 8)
+
+
     def _sta_zero_page(self, address, opcode):
         self._store_zero_page(address, opcode, self._a, "STA")
 
@@ -904,7 +935,7 @@ class CPU:
 
         # $80-$8F
         None,  # $80
-        None,  # $81
+        _sta_indexed_indirect,  # $81
         None,  # $82
         None,  # $83
         _sty_zero_page,  # $84
@@ -922,7 +953,7 @@ class CPU:
 
         # $90-$9F
         _bcc,  # $90
-        None,  # $91
+        _sta_indirect_indexed,  # $91
         None,  # $92
         None,  # $93
         None,  # $94

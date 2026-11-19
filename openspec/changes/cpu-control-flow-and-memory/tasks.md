@@ -155,15 +155,15 @@ Resume another task only when it is selected for implementation.
 
 ## 27. STA indexed-indirect ($81)
 
-- [ ] 27.1 Implement the selected encoding; verify the written value, indexed zero-page and pointer-byte wrapping, PC,
+- [x] 27.1 Implement the selected encoding; verify the written value, indexed zero-page and pointer-byte wrapping, PC,
   and cycles with focused synthetic pytest cases.
-- [ ] 27.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 27.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 28. STA indirect-indexed ($91)
 
-- [ ] 28.1 Implement the selected encoding; verify the written value, pointer-byte wrapping, page crossing, effective
+- [x] 28.1 Implement the selected encoding; verify the written value, pointer-byte wrapping, page crossing, effective
   address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 28.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 28.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 29. Integration
 

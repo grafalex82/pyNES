@@ -587,6 +587,56 @@ def test_zero_page_loads_update_register_and_nz(make_cpu, opcode, register, sour
     assert cpu.cycles == 3
 
 
+@pytest.mark.parametrize("operand, index, pointer_low, pointer_high", [
+    (0x20, 0x04, 0x24, 0x25),
+    (0xF0, 0x20, 0x10, 0x11),
+    (0xFC, 0x03, 0xFF, 0x00),
+])
+@pytest.mark.parametrize("value", [0x00, 0xA5, 0xFF])
+def test_sta_indexed_indirect_writes_accumulator(make_cpu, operand, index, pointer_low, pointer_high, value):
+    # Place the instruction and the indexed pointer at separate addresses.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value
+    cpu.x = index
+    machine.write_byte(0x0567, 0x81)
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(pointer_low, 0x45)
+    machine.write_byte(pointer_high, 0x03)
+    machine.write_byte(0x0345, value ^ 0xFF)
+
+    # The selected pointer resolves to the destination for each wrap case.
+    cpu.step()
+    assert machine.read_byte(0x0345) == value
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("pointer_low, pointer_high, low, high, index, destination", [
+    (0x20, 0x21, 0x30, 0x12, 0x04, 0x1234),
+    (0xFF, 0x00, 0xFF, 0x12, 0x01, 0x1300),
+    (0x20, 0x21, 0xFF, 0xFF, 0x01, 0x0000),
+])
+@pytest.mark.parametrize("value", [0x00, 0xA5, 0xFF])
+def test_sta_indirect_indexed_writes_accumulator(
+    make_cpu, pointer_low, pointer_high, low, high, index, destination, value,
+):
+    # A zero-page pointer supplies the base address before indexing with Y.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value
+    cpu.y = index
+    machine.write_byte(0x0567, 0x91)
+    machine.write_byte(0x0568, pointer_low)
+    machine.write_byte(pointer_low, low)
+    machine.write_byte(pointer_high, high)
+    machine.write_byte(destination, value ^ 0xFF)
+
+    # The effective address receives the byte, regardless of page crossing.
+    cpu.step()
+    assert machine.read_byte(destination) == value
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
 @pytest.mark.parametrize("opcode, index_register", [(0x9D, "x"), (0x99, "y")])
 @pytest.mark.parametrize("base, index, destination", [
     (0x0120, 0x12, 0x0132),
