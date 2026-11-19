@@ -59,11 +59,32 @@ This resets CPU state only. It does not reconstruct Machine, reset peripherals, 
 
 ## Instruction cycles
 
-`cpu.cycles` is a read-only cumulative integer, initially zero. Each currently supported instruction adds two nominal
-cycles after it completes, including NOP and flag instructions that leave their target flag unchanged. An unsupported
-opcode or a failed opcode read adds nothing. Reset preserves the count and adds no cycles; the counter does not wrap.
+`cpu.cycles` is a read-only cumulative integer, initially zero. Each completed instruction adds its nominal cycle cost,
+even when its effect leaves a register or flag unchanged. A failed fetch or unsupported opcode adds nothing. Reset
+preserves the count and adds no cycles; the counter does not wrap.
 It measures completed instructions only, not hardware reset time, individual bus activity, or peripheral progression.
 See [the decision record](decisions.md#nominal-instruction-cycle-counter-2026-11-19) for the timing simplification.
+
+## Instruction trace
+
+At DEBUG level, each completed instruction logs its original CPU address, fetched bytes, mnemonic, operands, and
+resulting registers, flags, and cycle total. The fields begin at these one-based columns:
+
+| Column | Field |
+| --- | --- |
+| 1 | Four-digit hexadecimal instruction address |
+| 8 | Instruction bytes, up to three pairs separated by spaces |
+| 19 | Mnemonic |
+| 23 | Operands, blank for implied addressing |
+| 44 | Resulting A/X/Y/SP/PC, symbolic P, and decimal `CYC` total |
+
+The trace uses the original address while the register suffix shows the resulting PC. Handlers pass already fetched
+bytes to `log_instruction()`; formatting does not read memory or change CPU state. If DEBUG is disabled, the helper
+returns before formatting. A failed instruction produces no completed trace.
+
+Instruction timing is functional rather than cycle-accurate. Implied instructions omit the hardware's dummy read;
+interrupt polling and delivery are not yet modeled. These omissions and their rationale are in
+[the decision record](decisions.md#functional-sei-single-step-2026-11-19).
 
 ## Seven booleans and the status byte
 

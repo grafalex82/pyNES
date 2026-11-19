@@ -97,11 +97,9 @@ Repeated reset preserves A/X/Y and N/V/B/D/Z/C, decrements SP by 3 modulo 256, s
 Functional reset omits dummy bus reads and timing and preserves the connected Machine and RAM.
 Each completed reset calls `log_state(event)` to emit one DEBUG event through the `cpu` logger with hexadecimal
 A/X/Y/SP/PC, a symbolic NV1BDIZC mask for P, and accumulated instruction cycles.
-`CPU.step()` fetches one opcode through Machine. It supports implied CLC ($18), SEC ($38), CLI ($58), SEI ($78),
-CLV ($B8), CLD ($D8), NOP ($EA), and SED ($F8). Each advances PC by one modulo 65536. Unsupported opcodes raise
-`NotImplementedError` with their byte and address.
-The read-only `CPU.cycles` counts two nominal cycles per completed supported instruction. Startup and reset add no
-cycles; failed fetches and unsupported opcodes leave the total unchanged. It does not advance devices.
+`CPU.step()` fetches and executes one instruction through Machine. Missing behavior raises `NotImplementedError`
+with its byte and address. The read-only `CPU.cycles` accumulates nominal instruction cycles; startup and reset add
+none, and failed fetches and unsupported opcodes leave the total unchanged. It does not advance devices.
 Each completed instruction emits a DEBUG trace with its address, fetched bytes, mnemonic, and resulting CPU state.
 Routine tests use synthetic files.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).

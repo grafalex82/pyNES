@@ -1,7 +1,7 @@
 # Annotated game disassembly
 
-This directory will contain annotated game listings. No game code has been disassembled yet. Identify each source ROM
-before assigning fixed addresses or interpreting routines.
+Game disassembly is deferred at the user's request. When it resumes, identify each source ROM before assigning fixed
+addresses or interpreting routines.
 
 For each listing, record the ROM filename, SHA-256, revision when known, mapper, and relevant bank layout. Distinguish
 CPU addresses from file offsets and bank-relative locations. Include instruction bytes so observations can be checked

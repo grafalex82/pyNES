@@ -21,8 +21,8 @@ trace text, or alignment.
 - [x] 1.11 Add aligned tracing through log_instruction() and log_state(); review post-execution wiring and keep small
   direct-helper cases in test/test_cpu_logging.py for layout, blank operands, state/CYC, and observational behavior.
   Move existing reset/log_state logging-only cases there and update CYC expectations; add no per-instruction log tests.
-- [ ] 1.12 Update doc/cpu.md and doc/decisions.md with the eight encodings, trace layout, cycle/reset rules, and timing
-  omissions; begin SEI/CLD listing rows with ROM identities and CPU/PRG/file offsets verified against source bytes.
+- [x] 1.12 Document trace layout, cycle/reset rules, and timing omissions without an instruction inventory.
+  Game disassembly is deferred at the user's request.
 
 ## 2. Add the shared Emulator control interface
 
