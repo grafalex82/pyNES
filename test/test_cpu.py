@@ -136,6 +136,116 @@ def test_rts_pulls_return_address(make_cpu, initial_sp, final_sp, low_address, h
     assert cpu.cycles == 6
 
 
+@pytest.mark.parametrize("initial, expected, carry", [
+    (0x00, 0x00, False),
+    (0x01, 0x02, False),
+    (0x40, 0x80, False),
+    (0x80, 0x00, True),
+    (0xFF, 0xFE, True),
+])
+@pytest.mark.parametrize("incoming_carry", [False, True])
+def test_asl_accumulator(make_cpu, initial, expected, carry, incoming_carry):
+    # Set the flags opposite to their expected results.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0x0A)
+
+    # Check the shifted value and flags without relying on unrelated state.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 2
+
+
+@pytest.mark.parametrize("initial, expected, carry", [
+    (0x00, 0x00, False),
+    (0x01, 0x00, True),
+    (0x02, 0x01, False),
+    (0x80, 0x40, False),
+    (0xFF, 0x7F, True),
+])
+@pytest.mark.parametrize("incoming_carry", [False, True])
+def test_lsr_accumulator(make_cpu, initial, expected, carry, incoming_carry):
+    # Set the flags opposite to their expected results.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0x4A)
+
+    # Check the shifted value and flags without relying on unrelated state.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 2
+
+
+@pytest.mark.parametrize("initial, incoming_carry, expected, carry", [
+    (0x00, False, 0x00, False),
+    (0x00, True, 0x01, False),
+    (0x80, False, 0x00, True),
+    (0x80, True, 0x01, True),
+    (0x40, False, 0x80, False),
+    (0x40, True, 0x81, False),
+    (0xFF, True, 0xFF, True),
+])
+def test_rol_accumulator(make_cpu, initial, incoming_carry, expected, carry):
+    # Incoming and outgoing carry are varied independently.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0x2A)
+
+    # The rotated byte determines the resulting flags.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 2
+
+
+@pytest.mark.parametrize("initial, incoming_carry, expected, carry", [
+    (0x00, False, 0x00, False),
+    (0x00, True, 0x80, False),
+    (0x01, False, 0x00, True),
+    (0x01, True, 0x80, True),
+    (0x02, False, 0x01, False),
+    (0x02, True, 0x81, False),
+    (0xFF, True, 0xFF, True),
+])
+def test_ror_accumulator(make_cpu, initial, incoming_carry, expected, carry):
+    # Incoming and outgoing carry are varied independently.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0x6A)
+
+    # The rotated byte determines the resulting flags.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 2
+
+
 def test_jmp_absolute_loads_destination(make_cpu):
     # An asymmetric target exposes reversed operand bytes.
     cpu, machine = make_cpu()

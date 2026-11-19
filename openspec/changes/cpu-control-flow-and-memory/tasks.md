@@ -100,25 +100,25 @@ Resume another task only when it is selected for implementation.
 
 ## 17. ASL accumulator ($0A)
 
-- [ ] 17.1 Implement the selected encoding; verify A, C/N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 17.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 17.1 Implement the selected encoding; verify A, C/N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 17.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 18. LSR accumulator ($4A)
 
-- [ ] 18.1 Implement the selected encoding; verify A, C/N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 18.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 18.1 Implement the selected encoding; verify A, C/N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 18.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 19. ROL accumulator ($2A)
 
-- [ ] 19.1 Implement the selected encoding; verify both incoming carry values, A, C/N/Z, PC, and cycles with focused
+- [x] 19.1 Implement the selected encoding; verify both incoming carry values, A, C/N/Z, PC, and cycles with focused
   synthetic pytest cases.
-- [ ] 19.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 19.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 20. ROR accumulator ($6A)
 
-- [ ] 20.1 Implement the selected encoding; verify both incoming carry values, A, C/N/Z, PC, and cycles with focused
+- [x] 20.1 Implement the selected encoding; verify both incoming carry values, A, C/N/Z, PC, and cycles with focused
   synthetic pytest cases.
-- [ ] 20.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 20.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 21. CMP immediate ($C9)
 

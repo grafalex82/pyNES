@@ -526,6 +526,38 @@ class CPU:
         self.log_instruction(address, (opcode,), "TXS")
 
 
+    def _asl_accumulator(self, address, opcode):
+        self._carry = bool(self._a & 0x80)
+        self._a = (self._a << 1) & 0xFF
+        self._finish_register_update(address, opcode, "ASL", self._a)
+
+
+    def _lsr_accumulator(self, address, opcode):
+        self._carry = bool(self._a & 0x01)
+        self._a >>= 1
+        self._finish_register_update(address, opcode, "LSR", self._a)
+
+
+    def _rol_accumulator(self, address, opcode):
+        # Preserve the incoming carry before replacing it with the outgoing bit.
+        incoming_carry = self._carry
+        self._carry = bool(self._a & 0x80)
+        self._a = ((self._a << 1) & 0xFF) | incoming_carry
+
+        # N and Z reflect the rotated byte.
+        self._finish_register_update(address, opcode, "ROL", self._a)
+
+
+    def _ror_accumulator(self, address, opcode):
+        # Preserve the incoming carry before replacing it with the outgoing bit.
+        incoming_carry = self._carry
+        self._carry = bool(self._a & 0x01)
+        self._a = (self._a >> 1) | (incoming_carry << 7)
+
+        # N and Z reflect the rotated byte.
+        self._finish_register_update(address, opcode, "ROR", self._a)
+
+
     def _txa(self, address, opcode):
         self._a = self._x
         self._finish_register_update(address, opcode, "TXA", self._a)
@@ -694,7 +726,7 @@ class CPU:
         None,  # $07
         None,  # $08
         None,  # $09
-        None,  # $0A
+        _asl_accumulator,  # $0A
         None,  # $0B
         None,  # $0C
         None,  # $0D
@@ -730,7 +762,7 @@ class CPU:
         None,  # $27
         None,  # $28
         None,  # $29
-        None,  # $2A
+        _rol_accumulator,  # $2A
         None,  # $2B
         None,  # $2C
         None,  # $2D
@@ -766,7 +798,7 @@ class CPU:
         None,  # $47
         None,  # $48
         None,  # $49
-        None,  # $4A
+        _lsr_accumulator,  # $4A
         None,  # $4B
         _jmp_absolute,  # $4C
         None,  # $4D
@@ -802,7 +834,7 @@ class CPU:
         None,  # $67
         None,  # $68
         None,  # $69
-        None,  # $6A
+        _ror_accumulator,  # $6A
         None,  # $6B
         _jmp_indirect,  # $6C
         None,  # $6D

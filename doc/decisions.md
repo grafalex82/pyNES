@@ -5,6 +5,13 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Omitted reads for accumulator operations (2026-11-19)
+
+The functional model for accumulator operations omits the hardware's discarded read at the next instruction address.
+This keeps bus-cycle timing outside the model, but can suppress device read side effects. The simplification applies to
+all ROMs and involves no patch. Synthetic tests check the resulting register and flags, not the omitted read. See the
+[MCS6500 hardware manual](https://xotmatrix.com/6502/6502-single-cycle-execution.html).
+
 ### Omitted provisional reads for indexed writes (2026-11-19)
 
 Indexed absolute writes omit the hardware's provisional read before the write, retaining a functional bus model.
