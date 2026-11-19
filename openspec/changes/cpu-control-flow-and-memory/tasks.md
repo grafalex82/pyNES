@@ -167,15 +167,15 @@ Resume another task only when it is selected for implementation.
 
 ## 29. LDA indexed-indirect ($A1)
 
-- [ ] 29.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page and pointer-byte wrapping,
+- [x] 29.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page and pointer-byte wrapping,
   PC, and cycles with focused synthetic pytest cases.
-- [ ] 29.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 29.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 30. LDA indirect-indexed ($B1)
 
-- [ ] 30.1 Implement the selected encoding; verify the loaded value, N/Z, pointer-byte wrapping, page crossing,
+- [x] 30.1 Implement the selected encoding; verify the loaded value, N/Z, pointer-byte wrapping, page crossing,
   effective address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 30.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 30.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 31. ADC immediate ($69)
 

@@ -324,6 +324,34 @@ class CPU:
         self.log_instruction(address, (opcode, pointer & 0xFF, pointer >> 8), "JMP", f"(${pointer:04X})")
 
 
+    def _lda_indexed_indirect(self, address, opcode):
+        # X selects a wrapping zero-page pointer to the source byte.
+        operand = self._fetch_byte()
+        pointer = (operand + self._x) & 0xFF
+        source = self._read_zero_page_word(pointer)
+        self._a = self._machine.read_byte(source)
+
+        # Set N/Z and trace the completed instruction without the discarded read.
+        self._negative = bool(self._a & 0x80)
+        self._zero = self._a == 0
+        self._cycles += 6
+        self.log_instruction(address, (opcode, operand), "LDA", f"(${operand:02X},X)")
+
+
+    def _lda_indirect_indexed(self, address, opcode):
+        # Y indexes the address stored in a wrapping zero-page pointer.
+        operand = self._fetch_byte()
+        base = self._read_zero_page_word(operand)
+        source = (base + self._y) & 0xFFFF
+        self._a = self._machine.read_byte(source)
+
+        # Count the page-crossing cost without the provisional hardware read.
+        self._negative = bool(self._a & 0x80)
+        self._zero = self._a == 0
+        self._cycles += 5 + (base >> 8 != source >> 8)
+        self.log_instruction(address, (opcode, operand), "LDA", f"(${operand:02X}),Y")
+
+
     def _lda_zero_page(self, address, opcode):
         destination = self._fetch_byte()
         self._a = self._machine.read_byte(destination)
@@ -971,7 +999,7 @@ class CPU:
 
         # $A0-$AF
         _ldy_immediate,  # $A0
-        None,  # $A1
+        _lda_indexed_indirect,  # $A1
         _ldx_immediate,  # $A2
         None,  # $A3
         _ldy_zero_page,  # $A4
@@ -989,7 +1017,7 @@ class CPU:
 
         # $B0-$BF
         _bcs,  # $B0
-        None,  # $B1
+        _lda_indirect_indexed,  # $B1
         None,  # $B2
         None,  # $B3
         None,  # $B4

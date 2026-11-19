@@ -637,6 +637,64 @@ def test_sta_indirect_indexed_writes_accumulator(
     assert cpu.cycles == 6
 
 
+@pytest.mark.parametrize("operand, index, pointer_low, pointer_high", [
+    (0x20, 0x04, 0x24, 0x25),
+    (0xF0, 0x20, 0x10, 0x11),
+    (0xFC, 0x03, 0xFF, 0x00),
+])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_lda_indexed_indirect_loads_accumulator(make_cpu, operand, index, pointer_low, pointer_high, value):
+    # Place the instruction, indexed pointer, and source byte at separate addresses.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = 0x55
+    cpu.x = index
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0567, 0xA1)
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(pointer_low, 0x45)
+    machine.write_byte(pointer_high, 0x03)
+    machine.write_byte(0x0345, value)
+
+    # The selected byte determines A, N, and Z for each pointer wrap case.
+    cpu.step()
+    assert cpu.a == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("pointer_low, pointer_high, low, high, index, source, cycles", [
+    (0x20, 0x21, 0x30, 0x12, 0x04, 0x1234, 5),
+    (0xFF, 0x00, 0xFF, 0x12, 0x01, 0x1300, 6),
+    (0x20, 0x21, 0xFF, 0xFF, 0x01, 0x0000, 6),
+])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_lda_indirect_indexed_loads_accumulator(
+    make_cpu, pointer_low, pointer_high, low, high, index, source, cycles, value,
+):
+    # A zero-page pointer supplies the base address before indexing with Y.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = 0x55
+    cpu.y = index
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0567, 0xB1)
+    machine.write_byte(0x0568, pointer_low)
+    machine.write_byte(pointer_low, low)
+    machine.write_byte(pointer_high, high)
+    machine.write_byte(source, value)
+
+    # The selected byte determines A and N/Z, with an extra cycle on page crossing.
+    cpu.step()
+    assert cpu.a == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == cycles
+
+
 @pytest.mark.parametrize("opcode, index_register", [(0x9D, "x"), (0x99, "y")])
 @pytest.mark.parametrize("base, index, destination", [
     (0x0120, 0x12, 0x0132),
