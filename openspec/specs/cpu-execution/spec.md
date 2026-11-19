@@ -157,15 +157,15 @@ flag already has the requested value. Unsupported opcodes and failed fetches SHA
 
 ### Requirement: Stop at an unsupported opcode
 
-An opcode outside $18/$38/$58/$78/$D8/$F8/$B8/$EA SHALL raise NotImplementedError with its byte and address.
+An opcode without an implemented handler SHALL raise NotImplementedError with its byte and address.
 The failed instruction SHALL leave PC, other registers, flags, cycles, and memory unchanged.
 It SHALL NOT be treated as an instruction that completed or silently skipped.
 
 #### Scenario: Keep the first unsupported instruction visible
 
-- **WHEN** SEI at $8000 and CLD at $8001 are followed by unsupported $A9 at $8002
+- **WHEN** SEI at $8000 and CLD at $8001 are followed by unsupported $02 at $8002
 - **THEN** two instructions complete, PC remains $8002 on failure, and cycles has increased by four
-- **AND** NotImplementedError identifies $A9 at $8002 without a completed trace for it
+- **AND** NotImplementedError identifies $02 at $8002 without a completed trace for it
 
 #### Scenario: Keep unofficial NOP encodings unsupported
 
@@ -223,3 +223,112 @@ The original instruction address SHALL remain distinct from the resulting PC, in
 
 - **WHEN** supplied two-byte or three-byte instruction metadata is rendered
 - **THEN** formatting performs no instruction fetch or execution and leaves registers, flags, and cycles unchanged
+
+### Requirement: Load immediate into a CPU register
+
+LDA ($A9), LDX ($A2), and LDY ($A0) SHALL load the next byte into A, X, and Y respectively. Each SHALL set N
+from bit 7, set Z exactly when the loaded value is zero, preserve other registers and flags, and add two cycles.
+
+#### Scenario: Load each boundary value
+
+- **WHEN** each opcode loads $00, $7F, $80, or $FF from the next instruction byte
+- **THEN** its destination contains that byte, N and Z reflect the result, PC advances by two modulo 65536,
+  and all unrelated state is unchanged
+
+### Requirement: Store registers using absolute addressing
+
+STA ($8D), STX ($8E), and STY ($8C) SHALL write A, X, and Y respectively to the absolute address encoded low byte first.
+Each SHALL preserve registers and flags other than advancing PC by three modulo 65536 and SHALL add four cycles.
+
+#### Scenario: Store each register through memory routing
+
+- **WHEN** each opcode stores a distinctive register value at a writable RAM address
+- **THEN** the addressed byte becomes that value, unrelated memory and CPU state are preserved, and four cycles accrue
+
+#### Scenario: Propagate a device write error
+
+- **WHEN** a store targets an unconnected address or read-only ROM
+- **THEN** the device error propagates and no completed instruction trace or cycles are added
+
+### Requirement: Transfer between X and the stack pointer
+
+TXS ($9A) SHALL copy X to SP, advance PC by one modulo 65536, and add two cycles. It SHALL preserve X,
+all other registers, every status flag, and memory.
+TSX ($BA) SHALL copy SP to X, set N from bit 7 and Z when the result is zero, advance PC by one modulo 65536,
+and add two cycles. It SHALL preserve SP, all other registers, flags other than N/Z, and memory.
+
+#### Scenario: Transfer boundary values
+
+- **WHEN** TXS executes with X set to $00 or $FF
+- **THEN** SP equals X, flags remain unchanged, and the instruction adds two cycles
+
+#### Scenario: Transfer stack pointer to X
+
+- **WHEN** TSX executes with SP set to $00, $7F, $80, or $FF
+- **THEN** X equals SP, N and Z reflect the result, and the instruction adds two cycles
+
+### Requirement: Transfer between the accumulator and index registers
+
+TXA ($8A), TYA ($98), TAX ($AA), and TAY ($A8) SHALL copy X to A, Y to A, A to X, and A to Y respectively.
+Each SHALL set N from bit 7 and Z when the result is zero, preserve other flags and registers, advance PC by one,
+and add two cycles. Memory SHALL remain unchanged.
+
+#### Scenario: Transfer each boundary value
+
+- **WHEN** each instruction executes with its source set to $00, $7F, $80, or $FF
+- **THEN** its destination equals the source, N and Z reflect the result, and the instruction adds two cycles
+
+### Requirement: Load a register using absolute addressing
+
+LDA ($AD), LDX ($AE), and LDY ($AC) SHALL read the absolute address encoded low byte first into A, X, and Y
+respectively. Each SHALL set N from bit 7, set Z exactly when the value is zero, preserve other state except PC and
+cycles, advance PC by three modulo 65536, and add four cycles.
+
+#### Scenario: Load each value from mapped memory
+
+- **WHEN** each opcode reads $00, $7F, $80, or $FF from mapped RAM or ROM
+- **THEN** its destination, N, Z, PC, and cycles reflect the loaded byte and unrelated state is preserved
+
+#### Scenario: Read a memory-mapped device
+
+- **WHEN** an absolute load addresses a connected PPU register
+- **THEN** it performs one read through Machine and uses that single returned byte for the register and trace
+
+### Requirement: Branch on a status flag
+
+BEQ ($F0)/BNE ($D0) SHALL branch if Z is set/clear; BPL ($10)/BMI ($30) if N is clear/set;
+BCC ($90)/BCS ($B0) if C is clear/set; BVC ($50)/BVS ($70) if V is clear/set.
+Each SHALL apply a signed 8-bit displacement to the post-operand PC when its condition holds, wrapping at 16 bits.
+All flags and registers except PC SHALL be preserved. The cost SHALL be two cycles, plus one if taken and one more
+if a taken branch crosses a page.
+
+#### Scenario: Branch backward when N is clear
+
+- **WHEN** BPL $FB is at $800D with N clear
+- **THEN** PC becomes $800A, all flags remain unchanged, and three cycles accrue
+
+#### Scenario: Check each branch condition
+
+- **WHEN** each branch executes with its tested flag set and clear
+- **THEN** it branches only for its specified condition; otherwise PC advances past the operand and two cycles accrue
+
+#### Scenario: Cross a page
+
+- **WHEN** a taken branch crosses a page boundary
+- **THEN** PC reaches the signed relative target and four cycles accrue
+
+### Requirement: Increment or decrement an index register
+
+INX ($E8) and INY ($C8) SHALL increment X and Y; DEX ($CA) and DEY ($88) SHALL decrement X and Y, modulo 256.
+Each SHALL set N from result bit 7, set Z exactly when the result is zero, preserve other registers and flags,
+advance PC by one, and add two cycles.
+
+#### Scenario: Increment each boundary value
+
+- **WHEN** INX or INY executes with its selected register at $00, $7F, or $FF
+- **THEN** the result is $01, $80, or $00 respectively and N and Z reflect the result
+
+#### Scenario: Decrement each boundary value
+
+- **WHEN** DEX or DEY executes with its selected register at $00, $01, or $80
+- **THEN** the result is $FF, $00, or $7F respectively and N and Z reflect the result
