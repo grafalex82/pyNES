@@ -64,7 +64,7 @@ The initial register profile is deterministic. Software B starts false and survi
 displayed as 1. Reset omits dummy bus reads and timing and leaves Machine, RAM, and peripherals untouched.
 Completed resets use `log_state(event)` to log hexadecimal A/X/Y/SP/PC and a symbolic NV1BDIZC mask at DEBUG
 through the `cpu` logger. The helper also accepts caller-supplied event text for inspecting the current state.
-`CPU.step()` executes implied SEI ($78) and CLI ($58) through the existing memory interface. Unsupported opcodes
+`CPU.step()` executes seven implied flag instructions and official NOP ($EA) through Machine. Unsupported opcodes
 raise `NotImplementedError` at the failing PC. Peripherals, bounded execution, and breakpoints remain future work.
 
 ## Documentation roles

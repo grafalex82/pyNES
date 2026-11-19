@@ -7,13 +7,13 @@ increments for every selected opcode. Instruction tests do not capture logs or a
 trace text, or alignment.
 
 - [x] 1.1 Add CPU.step() for implied SEI ($78). Write $78 to RAM at $0000 and verify I is set from either initial value.
-- [ ] 1.2 Add CLC ($18); verify C becomes false from either initial value while other state is preserved.
-- [ ] 1.3 Add SEC ($38); verify C becomes true from either initial value while other state is preserved.
+- [x] 1.2 Add CLC ($18); verify C becomes false from either initial value while other state is preserved.
+- [x] 1.3 Add SEC ($38); verify C becomes true from either initial value while other state is preserved.
 - [x] 1.4 Add CLI ($58); verify I becomes false from either initial value with other state preserved and no IRQ logic.
-- [ ] 1.5 Add CLD ($D8); verify D becomes false from either initial value while other state is preserved.
-- [ ] 1.6 Add SED ($F8); verify D becomes true from either initial value without adding decimal arithmetic.
-- [ ] 1.7 Add CLV ($B8); verify V becomes false from either initial value while other state is preserved.
-- [ ] 1.8 Add official NOP ($EA); verify PC advances while A/X/Y/SP, every flag, and memory remain unchanged.
+- [x] 1.5 Add CLD ($D8); verify D becomes false from either initial value while other state is preserved.
+- [x] 1.6 Add SED ($F8); verify D becomes true from either initial value without adding decimal arithmetic.
+- [x] 1.7 Add CLV ($B8); verify V becomes false from either initial value while other state is preserved.
+- [x] 1.8 Add official NOP ($EA); verify PC advances while A/X/Y/SP, every flag, and memory remain unchanged.
 - [ ] 1.9 Keep unsupported opcodes and fetch failures explicit; verify $A9 and unofficial NOP $1A diagnostics,
   unchanged failed-step state, and retained partial progress before the next unsupported instruction.
 - [ ] 1.10 Add read-only CPU.cycles initialized to zero; verify each selected encoding adds two, including idempotent

@@ -252,6 +252,16 @@ class CPU:
         self._negative = bool(value & 0x80)
 
 
+    def _clc(self):
+        """Clear the carry flag used by arithmetic and rotates."""
+        self._carry = False
+
+
+    def _sec(self):
+        """Set the carry flag used by arithmetic and rotates."""
+        self._carry = True
+
+
     def _cli(self):
         """Clear the interrupt-disable flag used to mask IRQs."""
         self._interrupt_disable = False
@@ -260,6 +270,26 @@ class CPU:
     def _sei(self):
         """Set the interrupt-disable flag used to mask IRQs."""
         self._interrupt_disable = True
+
+
+    def _clv(self):
+        """Clear the overflow flag used to report signed arithmetic overflow."""
+        self._overflow = False
+
+
+    def _cld(self):
+        """Clear the decimal flag stored in the status register."""
+        self._decimal = False
+
+
+    def _nop(self):
+        """Complete the no-op after the shared fetch advances PC."""
+        pass
+
+
+    def _sed(self):
+        """Set the decimal flag, which the NES CPU stores even with binary arithmetic."""
+        self._decimal = True
 
 
     # The opcode is the tuple index. None marks an unimplemented instruction.
@@ -291,7 +321,7 @@ class CPU:
         None,  # $15
         None,  # $16
         None,  # $17
-        None,  # $18
+        _clc,  # $18
         None,  # $19
         None,  # $1A
         None,  # $1B
@@ -327,7 +357,7 @@ class CPU:
         None,  # $35
         None,  # $36
         None,  # $37
-        None,  # $38
+        _sec,  # $38
         None,  # $39
         None,  # $3A
         None,  # $3B
@@ -471,7 +501,7 @@ class CPU:
         None,  # $B5
         None,  # $B6
         None,  # $B7
-        None,  # $B8
+        _clv,  # $B8
         None,  # $B9
         None,  # $BA
         None,  # $BB
@@ -507,7 +537,7 @@ class CPU:
         None,  # $D5
         None,  # $D6
         None,  # $D7
-        None,  # $D8
+        _cld,  # $D8
         None,  # $D9
         None,  # $DA
         None,  # $DB
@@ -527,7 +557,7 @@ class CPU:
         None,  # $E7
         None,  # $E8
         None,  # $E9
-        None,  # $EA
+        _nop,  # $EA
         None,  # $EB
         None,  # $EC
         None,  # $ED
@@ -543,7 +573,7 @@ class CPU:
         None,  # $F5
         None,  # $F6
         None,  # $F7
-        None,  # $F8
+        _sed,  # $F8
         None,  # $F9
         None,  # $FA
         None,  # $FB

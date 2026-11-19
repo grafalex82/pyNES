@@ -97,8 +97,9 @@ Repeated reset preserves A/X/Y and N/V/B/D/Z/C, decrements SP by 3 modulo 256, s
 Functional reset omits dummy bus reads and timing and preserves the connected Machine and RAM.
 Each completed reset calls `log_state(event)` to emit one DEBUG event through the `cpu` logger with hexadecimal
 A/X/Y/SP/PC and a symbolic NV1BDIZC mask for P, using `-` for clear flags and `1` for bit 5.
-`CPU.step()` fetches one opcode through Machine. Implied SEI ($78) sets the interrupt-disable flag and CLI ($58)
-clears it. Both advance PC by one modulo 65536. Other opcodes raise `NotImplementedError` with their byte and address.
+`CPU.step()` fetches one opcode through Machine. It supports implied CLC ($18), SEC ($38), CLI ($58), SEI ($78),
+CLV ($B8), CLD ($D8), NOP ($EA), and SED ($F8). Each advances PC by one modulo 65536. Unsupported opcodes raise
+`NotImplementedError` with their byte and address.
 Routine tests use synthetic files.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 

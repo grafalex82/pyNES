@@ -201,6 +201,76 @@ def test_step_cli_clears_interrupt_disable(make_cpu, initial_i):
     assert cpu.interrupt_disable is False
 
 
+@pytest.mark.parametrize("initial_c", [False, True])
+def test_step_clc_clears_carry(make_cpu, initial_c):
+    # Place CLC at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0x18)
+    cpu.carry = initial_c
+
+    # CLC clears C from either initial value.
+    cpu.step()
+    assert cpu.carry is False
+
+
+@pytest.mark.parametrize("initial_c", [False, True])
+def test_step_sec_sets_carry(make_cpu, initial_c):
+    # Place SEC at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0x38)
+    cpu.carry = initial_c
+
+    # SEC sets C from either initial value.
+    cpu.step()
+    assert cpu.carry is True
+
+
+@pytest.mark.parametrize("initial_d", [False, True])
+def test_step_cld_clears_decimal_flag(make_cpu, initial_d):
+    # Place CLD at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0xD8)
+    cpu.decimal = initial_d
+
+    # CLD clears D from either initial value.
+    cpu.step()
+    assert cpu.decimal is False
+
+
+@pytest.mark.parametrize("initial_d", [False, True])
+def test_step_sed_sets_decimal_flag(make_cpu, initial_d):
+    # Place SED at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0xF8)
+    cpu.decimal = initial_d
+
+    # SED sets D from either initial value.
+    cpu.step()
+    assert cpu.decimal is True
+
+
+@pytest.mark.parametrize("initial_v", [False, True])
+def test_step_clv_clears_overflow(make_cpu, initial_v):
+    # Place CLV at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0xB8)
+    cpu.overflow = initial_v
+
+    # CLV clears V from either initial value.
+    cpu.step()
+    assert cpu.overflow is False
+
+
+def test_step_nop_advances_pc(make_cpu):
+    # Place the official one-byte NOP at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0xEA)
+
+    # The opcode fetch advances PC by one byte.
+    cpu.step()
+    assert cpu.pc == 0x0001
+
+
 def test_instruction_table_has_one_entry_per_opcode():
     assert len(CPU._instruction_handlers) == 256
 

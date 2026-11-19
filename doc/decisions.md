@@ -310,6 +310,23 @@ instruction remains available for inspection. The word helper is available for i
 
 ## Departures and patches
 
+### Implied flag instructions and official NOP (2026-11-19)
+
+CLC ($18) and SEC ($38) clear and set C. CLD ($D8) and SED ($F8) clear and set the stored D flag. CLV ($B8) clears V.
+Each handler assigns its own flag and the RAM tests cover both initial values.
+[MOS programming manual, chapter 3](https://lbaeza.neocities.org/mcs6500/6500_ch03).
+
+The NES keeps D visible in the status register and uses binary arithmetic.
+[NESdev 2A03 reference](https://www.nesdev.org/wiki/2A03).
+
+The official NOP ($EA) uses an empty handler because the shared opcode fetch advances PC. Its RAM test checks that
+PC moves from $0000 to $0001. These implied instructions follow the functional model that omits the second-cycle
+dummy read. [Mesen's implied addressing and IRQ polling][mesen-implied].
+
+The 32 KiB target image completes SEI and CLD before stopping on $A9 at $8002. The 16 KiB target stops on $A9 at
+$C071 after SEI. Both images matched their recorded SHA-256 hashes before and after the checks.
+[Local ROM notes](../ROMs/README.md).
+
 ### Functional CLI single step (2026-11-19)
 
 Task 1.4 of `execute-sei` registers implied CLI ($58) in the handler table. The handler clears I, and the shared
