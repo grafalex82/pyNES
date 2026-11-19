@@ -73,13 +73,25 @@ PermissionError without changing ROM or RAM. The CPU-facing interface SHALL prop
 
 ### Requirement: Report unimplemented CPU address ranges
 
-Reads and writes at $2000-$7FFF SHALL raise NotImplementedError identifying the operation and address. These ranges
-SHALL NOT silently act as additional RAM, return fabricated device values, or ignore writes in this initial model.
+Reads at $2000-$3FFF except status-register aliases and reads at $4000-$7FFF SHALL raise NotImplementedError.
+Writes at $4000-$7FFF SHALL raise NotImplementedError. PPU-window writes and status reads SHALL route to the PPU.
+PPU read errors SHALL identify the operation and register offset; other errors SHALL identify the operation and CPU
+address. Unimplemented ranges SHALL NOT act as RAM.
 
 #### Scenario: Access an unimplemented address
 
-- **WHEN** a read or write targets a video, audio, controller, expansion, or cartridge-RAM address in $2000-$7FFF
-- **THEN** NotImplementedError identifies the attempted operation and CPU address
+- **WHEN** a read targets a non-status PPU register or $4000-$7FFF, or a write targets $4000-$7FFF
+- **THEN** NotImplementedError identifies the attempted operation and PPU register offset or CPU address, respectively
+
+#### Scenario: Write a PPU register mirror
+
+- **WHEN** a write targets $2000-$3FFF
+- **THEN** the write reaches the PPU register selected by the low three address bits
+
+#### Scenario: Read a PPU status mirror
+
+- **WHEN** a read targets a PPU address whose low three bits are 2
+- **THEN** it returns the next status byte from the connected PPU
 
 ### Requirement: Keep unsupported cartridge configurations explicit
 

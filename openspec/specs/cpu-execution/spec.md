@@ -22,7 +22,7 @@ Memory-access exceptions SHALL propagate without advancing PC, adding cycles, or
 
 #### Scenario: Fetch from an unconnected address
 
-- **WHEN** PC is $2002 and single-instruction execution is requested
+- **WHEN** PC is $4000 and single-instruction execution is requested
 - **THEN** the existing unimplemented-read exception propagates and PC and cycles remain unchanged
 - **AND** no completed-instruction trace is emitted
 
