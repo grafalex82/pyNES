@@ -43,6 +43,17 @@ and add two cycles. It SHALL preserve SP, all other registers, flags other than 
 - **WHEN** TSX executes with SP set to $00, $7F, $80, or $FF
 - **THEN** X equals SP, N and Z reflect the result, and the instruction adds two cycles
 
+### Requirement: Transfer between the accumulator and index registers
+
+TXA ($8A), TYA ($98), TAX ($AA), and TAY ($A8) SHALL copy X to A, Y to A, A to X, and A to Y respectively.
+Each SHALL set N from bit 7 and Z when the result is zero, preserve other flags and registers, advance PC by one,
+and add two cycles. Memory SHALL remain unchanged.
+
+#### Scenario: Transfer each boundary value
+
+- **WHEN** each instruction executes with its source set to $00, $7F, $80, or $FF
+- **THEN** its destination equals the source, N and Z reflect the result, and the instruction adds two cycles
+
 ### Requirement: Load a register using absolute addressing
 
 LDA ($AD), LDX ($AE), and LDY ($AC) SHALL read the absolute address encoded low byte first into A, X, and Y

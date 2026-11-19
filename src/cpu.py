@@ -337,6 +337,36 @@ class CPU:
         self.log_instruction(address, (opcode,), "TXS")
 
 
+    def _txa(self, address, opcode):
+        self._a = self._x
+        self._finish_register_transfer(address, opcode, "TXA", self._a)
+
+
+    def _tya(self, address, opcode):
+        self._a = self._y
+        self._finish_register_transfer(address, opcode, "TYA", self._a)
+
+
+    def _tax(self, address, opcode):
+        self._x = self._a
+        self._finish_register_transfer(address, opcode, "TAX", self._x)
+
+
+    def _tay(self, address, opcode):
+        self._y = self._a
+        self._finish_register_transfer(address, opcode, "TAY", self._y)
+
+
+    def _finish_register_transfer(self, address, opcode, mnemonic, value):
+        # Register transfers set N and Z from the transferred byte.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # The implied instruction takes two nominal cycles.
+        self._cycles += 2
+        self.log_instruction(address, (opcode,), mnemonic)
+
+
     def _clc(self, address, opcode):
         """Clear the carry flag used by arithmetic and rotates."""
         self._carry = False
@@ -549,7 +579,7 @@ class CPU:
         None,  # $87
         None,  # $88
         None,  # $89
-        None,  # $8A
+        _txa,  # $8A
         None,  # $8B
         _sty_absolute,  # $8C
         _sta_absolute,  # $8D
@@ -565,7 +595,7 @@ class CPU:
         None,  # $95
         None,  # $96
         None,  # $97
-        None,  # $98
+        _tya,  # $98
         None,  # $99
         _txs,  # $9A
         None,  # $9B
@@ -583,9 +613,9 @@ class CPU:
         None,  # $A5
         None,  # $A6
         None,  # $A7
-        None,  # $A8
+        _tay,  # $A8
         _lda_immediate,  # $A9
-        None,  # $AA
+        _tax,  # $AA
         None,  # $AB
         None,  # $AC
         None,  # $AD

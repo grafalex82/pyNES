@@ -13,6 +13,7 @@
 ## 3. Stack transfer
 
 - [x] 3.1 Implement $9A/$BA; test transferred values, flags, PC, and cycles.
+- [x] 3.2 Implement TXA/TYA/TAX/TAY; test transferred values, N/Z, PC, and cycles.
 
 ## 4. Absolute loads
 

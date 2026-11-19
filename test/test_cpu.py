@@ -359,6 +359,29 @@ def test_txs_transfers_x_without_changing_flags(make_cpu, value, flag):
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize(
+    "opcode, source, destination",
+    [(0x8A, "x", "a"), (0x98, "y", "a"), (0xAA, "a", "x"), (0xA8, "a", "y")],
+)
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_register_transfer_updates_destination_and_nz(make_cpu, opcode, source, destination, value):
+    # Start with a distinct destination and opposite flags to reveal missed updates.
+    cpu, machine = make_cpu()
+    setattr(cpu, source, value)
+    setattr(cpu, destination, 0x55)
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0000, opcode)
+
+    # The destination and N/Z reflect the transferred byte.
+    cpu.step()
+    assert getattr(cpu, destination) == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0001
+    assert cpu.cycles == 2
+
+
 def test_cycles_accumulate_across_mixed_instructions(make_cpu):
     # Execute each supported encoding once in a synthetic RAM program.
     cpu, machine = make_cpu()
