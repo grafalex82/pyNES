@@ -355,23 +355,23 @@ class CPU:
     def _lda_zero_page(self, address, opcode):
         destination = self._fetch_byte()
         self._a = self._machine.read_byte(destination)
-        self._finish_zero_page_load(address, opcode, "LDA", destination, self._a)
+        self._finish_zero_page_update(address, opcode, "LDA", destination, self._a)
 
 
     def _ldx_zero_page(self, address, opcode):
         destination = self._fetch_byte()
         self._x = self._machine.read_byte(destination)
-        self._finish_zero_page_load(address, opcode, "LDX", destination, self._x)
+        self._finish_zero_page_update(address, opcode, "LDX", destination, self._x)
 
 
     def _ldy_zero_page(self, address, opcode):
         destination = self._fetch_byte()
         self._y = self._machine.read_byte(destination)
-        self._finish_zero_page_load(address, opcode, "LDY", destination, self._y)
+        self._finish_zero_page_update(address, opcode, "LDY", destination, self._y)
 
 
-    def _finish_zero_page_load(self, address, opcode, mnemonic, destination, value):
-        # N and Z reflect the byte read from the zero-page address.
+    def _finish_zero_page_update(self, address, opcode, mnemonic, destination, value):
+        # N and Z reflect the resulting register byte.
         self._negative = bool(value & 0x80)
         self._zero = value == 0
 
@@ -406,27 +406,49 @@ class CPU:
 
 
     def _adc_immediate(self, address, opcode):
-        # The NES adds in binary even when the stored decimal flag is set.
         operand = self._fetch_byte()
+        self._add_with_carry(operand)
+        self._finish_immediate_update(address, opcode, "ADC", operand, self._a)
+
+
+    def _adc_zero_page(self, address, opcode):
+        destination = self._fetch_byte()
+        operand = self._machine.read_byte(destination)
+        self._add_with_carry(operand)
+        self._finish_zero_page_update(address, opcode, "ADC", destination, self._a)
+
+
+    def _add_with_carry(self, operand):
+        # The NES adds in binary even when the stored decimal flag is set.
         total = self._a + operand + self._carry
 
         # Signed overflow occurs when equal-sign inputs produce the opposite sign.
         self._overflow = bool(~(self._a ^ operand) & (self._a ^ total) & 0x80)
         self._carry = total > 0xFF
         self._a = total & 0xFF
-        self._finish_immediate_update(address, opcode, "ADC", operand, self._a)
 
 
     def _sbc_immediate(self, address, opcode):
-        # The NES subtracts in binary; a clear C represents an incoming borrow.
         operand = self._fetch_byte()
+        self._subtract_with_borrow(operand)
+        self._finish_immediate_update(address, opcode, "SBC", operand, self._a)
+
+
+    def _sbc_zero_page(self, address, opcode):
+        destination = self._fetch_byte()
+        operand = self._machine.read_byte(destination)
+        self._subtract_with_borrow(operand)
+        self._finish_zero_page_update(address, opcode, "SBC", destination, self._a)
+
+
+    def _subtract_with_borrow(self, operand):
+        # The NES subtracts in binary; a clear C represents an incoming borrow.
         difference = self._a - operand - (not self._carry)
 
         # C means no unsigned borrow; V detects signed subtraction overflow.
         self._overflow = bool((self._a ^ operand) & (self._a ^ difference) & 0x80)
         self._carry = difference >= 0
         self._a = difference & 0xFF
-        self._finish_immediate_update(address, opcode, "SBC", operand, self._a)
 
 
     def _and_immediate(self, address, opcode):
@@ -955,7 +977,7 @@ class CPU:
         None,  # $62
         None,  # $63
         None,  # $64
-        None,  # $65
+        _adc_zero_page,  # $65
         None,  # $66
         None,  # $67
         None,  # $68
@@ -1099,7 +1121,7 @@ class CPU:
         None,  # $E2
         None,  # $E3
         None,  # $E4
-        None,  # $E5
+        _sbc_zero_page,  # $E5
         None,  # $E6
         None,  # $E7
         _inx,  # $E8

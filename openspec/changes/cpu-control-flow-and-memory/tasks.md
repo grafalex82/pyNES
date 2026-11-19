@@ -191,15 +191,15 @@ Resume another task only when it is selected for implementation.
 
 ## 33. ADC zero page ($65)
 
-- [ ] 33.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, D, zero-page endpoints, PC, and cycles
+- [x] 33.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, D, zero-page endpoints, PC, and cycles
   with focused synthetic pytest cases.
-- [ ] 33.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 33.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 34. SBC zero page ($E5)
 
-- [ ] 34.1 Implement the selected encoding; verify A, C/V/N/Z, incoming borrow, D, zero-page endpoints, PC, and cycles
+- [x] 34.1 Implement the selected encoding; verify A, C/V/N/Z, incoming borrow, D, zero-page endpoints, PC, and cycles
   with focused synthetic pytest cases.
-- [ ] 34.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 34.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 35. ASL zero page ($06)
 
