@@ -17,13 +17,13 @@
 - [x] 2.3 Add `log_state(event)` to log event text, hexadecimal A/X/Y/SP/PC, and a symbolic NV1BDIZC status mask;
   use it for one completed reset event. Verify custom event text, each flag, constant bit 5, and resulting register
   values with caplog for startup and repeated reset, without configuring handlers or adding instruction tracing.
-- [ ] 2.4 Record separate flag storage, the software B convention, initial state, and omitted bus reads/timing;
+- [x] 2.4 Record separate flag storage, the software B convention, initial state, and omitted bus reads/timing;
   explain B initialization/preservation as a hardware departure in `doc/decisions.md` and its effect on displayed P;
   update status notes and CPU documentation, verifying CPU reset remains distinct from full-console reset/execution.
 
 ## 3. Integration checks
 
-- [ ] 3.1 Run `python -m pytest`; verify new CPU tests and existing memory/loader/inspection tests pass with synthetic
+- [x] 3.1 Run `python -m pytest`; verify new CPU tests and existing memory/loader/inspection tests pass with synthetic
   data, unchanged memory and inspection contracts, and no dependency on local game files.
-- [ ] 3.2 Run `openspec validate reset-cpu --strict --no-interactive` and text checks; verify strict validation,
+- [x] 3.2 Run `openspec validate reset-cpu --strict --no-interactive` and text checks; verify strict validation,
   120-character lines, and scope limited to register state/reset with no instruction or execution-loop implementation.

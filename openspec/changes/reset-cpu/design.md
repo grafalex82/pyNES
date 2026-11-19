@@ -4,7 +4,7 @@
 
 See [proposal.md](proposal.md) and [the cpu-reset spec](specs/cpu-reset/spec.md).
 Machine already provides `read_byte(address)` and `write_byte(address, value)` over RAM and mapper-0 PRG ROM.
-Its construction is deliberately memory-only. CPU register storage exists, while functional reset remains absent.
+Its construction is deliberately memory-only. At proposal time CPU register storage existed, while reset was absent.
 The archived memory change and its main specification require construction without a CPU. Preserve that interface
 and attach CPU from the caller.
 
@@ -153,6 +153,4 @@ Add CPU and focused tests, then document its register interface and reset behavi
 record. Update relevant README, development, and memory-guide status notes without changing existing behavior or
 inspection commands. No migration of persisted data, memory clearing, ROM editing, or new dependency is required.
 
-Task 1.1 implements the seven-field state interface, including software B, and its two conversion tests.
-Current-state documentation describes this interface and constructor-only storage initialization.
-Functional startup and repeated reset remain pending tasks.
+Implementation progress is tracked in `tasks.md`. Instruction execution remains outside this change.

@@ -278,7 +278,39 @@ Ten direct-helper cases check event text, individual flags, constant bit 5, comb
 The updated startup/repeated-reset logging cases and all other CPU tests pass: 61 synthetic cases in total.
 At the user's request, logging tests compare complete messages to check register order, separators, and flag formatting.
 
+## CPU reset integration (2026-11-19)
+
+The complete pytest suite passes 194 synthetic cases: 61 CPU cases, 84 memory-device/routing cases, and 49 loader/CLI
+cases. Existing memory and cartridge-inspection contracts remain unchanged, with no dependency on local game ROMs.
+The CPU tests retain real connected memory, separate flag storage, repeated-reset RAM preservation, and complete
+reset/helper log-message comparisons. No game execution is claimed.
+
+Strict OpenSpec validation for `reset-cpu` passes. Code, tests, and related documentation stay within 120 characters
+per line with no trailing whitespace. Source review confirms that CPU only reads the two vector bytes through Machine;
+instruction execution, execution loops, interrupts, peripheral reset, and full-console reset remain unimplemented.
+
 ## Departures and patches
+
+### Functional CPU reset and software B preservation (2026-11-19)
+
+Task 2.4 of `reset-cpu` records the implemented model. Six hardware flags and the additional software B field are
+separate booleans; `p` assembles NV1BDIZC on demand, with no retained packed byte or bit-5 variable. Construction
+clears storage once and calls reset, producing A=X=Y=$00, SP=$FD, I=1, N/V/B/D/Z/C=0, P=$24, and vector-derived PC.
+This deterministic initial profile makes educational runs reproducible rather than promising portable hardware
+startup values; see the [NESdev power-up reference](https://www.nesdev.org/wiki/CPU_power_up_state).
+
+Hardware has no stored B latch; see the [status reference](https://www.nesdev.org/wiki/Status_flags#The_B_flag).
+Initializing B to false and preserving it across repeated reset are deliberate software conventions for inspection.
+For example, assigning P=$10 yields displayed P=$30; reset retains B, sets I, and produces P=$34.
+Future stack instructions and interrupts must form their saved status independently of this inspection field.
+The convention applies to future games using CPU; none has been executed with it, and no ROM patch is involved.
+
+Hardware reset performs stack-page reads in place of pushes. The functional model omits those and other dummy reads
+and reset timing, while retaining SP=(SP-3) AND $FF, I=1, and ordered vector reads through Machine at $FFFC/$FFFD.
+This keeps the prerequisite focused on visible register state. A/X/Y and N/V/B/D/Z/C survive repeated reset, as does
+all RAM; no stack bytes are written and no opcode is fetched. Machine construction remains memory-only, and CPU
+reset neither reconstructs the system nor resets peripherals. Exact bus activity and full-console reset are absent.
+Synthetic startup, repeated-reset, status-conversion, and logging cases verify the implemented effects without games.
 
 ### Stored B for status inspection (2026-11-18)
 

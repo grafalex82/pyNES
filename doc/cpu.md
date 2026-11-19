@@ -1,4 +1,4 @@
-# CPU register state
+# CPU register state and functional reset
 
 [`CPU`](../src/cpu.py) provides register and status properties. Construct it as `CPU(machine)` after connecting
 memory with [`Machine`](memory.md). CPU uses that Machine reference to read its initial reset vector.
@@ -26,13 +26,17 @@ or status-flag updates.
 Construction sets A/X/Y/SP/PC to zero and all seven status booleans to `False`, then calls `reset()` once.
 Reset subtracts 3 from SP modulo 256, making the initial SP `$FD`, and sets I. The resulting initial state is
 A=X=Y=`$00`, SP=`$FD`, N=V=B=D=Z=C=0, I=1, and displayed P=`$24`.
+This deterministic startup profile supports reproducible learning and tests. It does not guarantee those values
+on every physical NES; see the [NESdev power-up/reset reference](https://www.nesdev.org/wiki/CPU_power_up_state).
 
 Reset reads `$FFFC` followed by `$FFFD` through Machine and combines `low | (high << 8)` into PC.
 For example, bytes `$34 $12` produce PC=`$1234`. It performs no opcode fetch, target validation, or memory writes.
 RAM initialized before CPU construction, including the stack page, remains unchanged.
 
-This functional model omits dummy bus reads and timing. The deterministic initial profile and these omissions are
-recorded in [the decision record](decisions.md#functional-cpu-startup-2026-11-18).
+This functional model omits reset's dummy bus reads, including the stack-page reads, and all reset timing.
+It performs only the two vector reads, preserving SP's register effect without simulating the omitted bus activity.
+The initial profile and these omissions are recorded in
+[the decision record](decisions.md#functional-cpu-startup-2026-11-18).
 After PC is loaded, reset calls `log_state("Reset completed")` to emit one DEBUG event through the standard `cpu`
 logger. Construction uses the same reset event, with no separate startup message. CPU does not configure logging
 handlers; the caller controls logging. Instruction tracing remains unimplemented.
@@ -104,8 +108,10 @@ Hardware has six stored status flags. B is a transient signal used when saving s
 while IRQ/NMI save it as 0. PLP/RTI do not restore a physical B latch. See the
 [NESdev status reference](https://www.nesdev.org/wiki/Status_flags#The_B_flag).
 
-pyNES deliberately stores B for convenient inspection and byte conversion through `break_flag`. It starts false
-and has no independent execution or interrupt effect. This convention and its rationale are recorded in
+pyNES deliberately stores B for convenient inspection and byte conversion through `break_flag`. Construction sets
+it false; repeated reset preserves it. These are software conventions for the extra inspection field, not hardware
+reset effects. Initial P is `$24`; assigning P=`$10` reads back as `$30`, then reset sets I and produces `$34` while
+preserving B. The field has no independent execution or interrupt effect. This convention is recorded in
 [the decision record](decisions.md#stored-b-for-status-inspection-2026-11-18).
 Future stack instructions and interrupts will define their hardware behavior separately from this inspection field.
 
@@ -130,6 +136,6 @@ A separate test fills RAM through Machine and checks that both resets preserve e
 Logging tests use `caplog` for startup and two successive resets in both PRG layouts. They verify one DEBUG event per
 reset from the `cpu` logger and all six resulting register values, including wrapped SP and displayed P with I set.
 Direct helper cases check custom event text, each flag position, the constant `1`, the `--1--I-C` example, all-set/clear
-masks, and unchanged CPU state.
+masks, and unchanged CPU state. Every logging case compares the complete message, including separators and field order.
 
 Run them from the repository root with `python -m pytest test/test_cpu.py`.

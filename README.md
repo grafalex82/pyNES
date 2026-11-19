@@ -94,6 +94,8 @@ See [the CPU register guide](doc/cpu.md) for property widths, status conversion,
 Construction clears register storage once, then calls `reset()` to establish A=X=Y=$00, SP=$FD, and P=$24.
 PC comes from the little-endian vector at $FFFC/$FFFD through Machine. Startup preserves RAM and fetches no opcode.
 Repeated reset preserves A/X/Y and N/V/B/D/Z/C, decrements SP by 3 modulo 256, sets I, and reloads the vector.
+Functional reset omits dummy bus reads and timing. It preserves the connected Machine and RAM; full-console reset
+and instruction execution are separate capabilities that remain unimplemented.
 Each completed reset calls `log_state(event)` to emit one DEBUG event through the `cpu` logger with hexadecimal
 A/X/Y/SP/PC and a symbolic NV1BDIZC mask for P, using `-` for clear flags and `1` for bit 5.
 Instruction execution and peripheral behavior remain pending.

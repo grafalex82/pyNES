@@ -2,7 +2,8 @@
 
 [`Machine`](../src/machine.py) connects the implemented memory devices and provides byte access at NES CPU addresses.
 The current implementation covers internal RAM and fixed mapper-0 PRG ROM. A separately constructed
-[`CPU`](cpu.md) uses Machine to read its startup vector; instruction execution remains future work.
+[`CPU`](cpu.md) uses Machine to read the vector at startup and on every repeated reset; instruction execution remains
+future work. Machine construction stays memory-only, and CPU reset does not reset the full console.
 
 ## Components and address translation
 
@@ -10,7 +11,7 @@ The current implementation covers internal RAM and fixed mapper-0 PRG ROM. A sep
 `Machine(cartridge)` takes that already parsed object, creates its own [`RAM`](../src/ram.py) and
 [`ROM`](../src/rom.py), and uses their byte methods. It does not reopen the cartridge file.
 
-Machine exposes `read_byte(address)` and `write_byte(address, value)`. CPU startup already uses this interface;
+Machine exposes `read_byte(address)` and `write_byte(address, value)`. CPU startup and reset use this interface;
 future instruction memory and I/O requests will use it too. Machine converts CPU addresses to device-relative offsets.
 RAM and ROM know only their own storage: offset 0 means the first byte, regardless of its CPU address.
 
@@ -48,9 +49,9 @@ Machine translates a RAM address with `address & 0x07FF`. Only the low eleven ad
 
 A write through any alias is immediately visible through all four. There are no duplicate buffers to synchronize.
 Each Machine owns independent RAM and starts it at zero. Zero filling is an educational convenience for reproducible
-runs; real hardware has unreliable RAM contents at power-up. There is no reset method, so this initialization does
-not define reset behavior. See the [recorded departures](decisions.md#departures-and-patches) and
-[hardware power-up reference][power-up].
+runs; real hardware has unreliable RAM contents at power-up. Machine has no reset method; `CPU.reset()` preserves
+the existing RAM instead of clearing or reconstructing it.
+See the [recorded departures](decisions.md#departures-and-patches) and [hardware power-up reference][power-up].
 
 ## Fixed NROM program mapping
 
