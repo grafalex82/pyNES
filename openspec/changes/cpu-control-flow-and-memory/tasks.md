@@ -122,21 +122,21 @@ Resume another task only when it is selected for implementation.
 
 ## 21. CMP immediate ($C9)
 
-- [ ] 21.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
+- [x] 21.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 21.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 21.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 22. CPX immediate ($E0)
 
-- [ ] 22.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
+- [x] 22.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 22.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 22.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 23. CPY immediate ($C0)
 
-- [ ] 23.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
+- [x] 23.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 23.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 23.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 24. Integration
 

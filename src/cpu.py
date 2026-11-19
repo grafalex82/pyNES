@@ -352,6 +352,31 @@ class CPU:
         self.log_instruction(address, (opcode, destination), mnemonic, f"${destination:02X}")
 
 
+    def _cmp_immediate(self, address, opcode):
+        self._compare_immediate(address, opcode, "CMP", self._a)
+
+
+    def _cpx_immediate(self, address, opcode):
+        self._compare_immediate(address, opcode, "CPX", self._x)
+
+
+    def _cpy_immediate(self, address, opcode):
+        self._compare_immediate(address, opcode, "CPY", self._y)
+
+
+    def _compare_immediate(self, address, opcode, mnemonic, value):
+        # C uses an unsigned comparison; N and Z use the eight-bit difference.
+        operand = self._fetch_byte()
+        difference = (value - operand) & 0xFF
+        self._carry = value >= operand
+        self._zero = difference == 0
+        self._negative = bool(difference & 0x80)
+
+        # The fetched operand is reused for the trace.
+        self._cycles += 2
+        self.log_instruction(address, (opcode, operand), mnemonic, f"#${operand:02X}")
+
+
     def _lda_immediate(self, address, opcode):
         self._a = self._fetch_byte()
         self._finish_immediate_load(address, opcode, "LDA", self._a)
@@ -932,7 +957,7 @@ class CPU:
         None,  # $BF
 
         # $C0-$CF
-        None,  # $C0
+        _cpy_immediate,  # $C0
         None,  # $C1
         None,  # $C2
         None,  # $C3
@@ -941,7 +966,7 @@ class CPU:
         None,  # $C6
         None,  # $C7
         _iny,  # $C8
-        None,  # $C9
+        _cmp_immediate,  # $C9
         _dex,  # $CA
         None,  # $CB
         None,  # $CC
@@ -968,7 +993,7 @@ class CPU:
         None,  # $DF
 
         # $E0-$EF
-        None,  # $E0
+        _cpx_immediate,  # $E0
         None,  # $E1
         None,  # $E2
         None,  # $E3

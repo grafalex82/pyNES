@@ -465,6 +465,35 @@ def test_step_nop_advances_pc(make_cpu):
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, register", [(0xC9, "a"), (0xE0, "x"), (0xC0, "y")])
+@pytest.mark.parametrize("value, operand, carry, zero, negative", [
+    (0x00, 0x00, True, True, False),
+    (0x42, 0x42, True, True, False),
+    (0x00, 0x01, False, False, True),
+    (0x00, 0xFF, False, False, False),
+    (0x80, 0x01, True, False, False),
+    (0xFF, 0x00, True, False, True),
+])
+def test_immediate_compare_updates_cnz(make_cpu, opcode, register, value, operand, carry, zero, negative):
+    # Start the affected flags opposite to the expected comparison result.
+    cpu, machine = make_cpu(start_address=0x0567)
+    setattr(cpu, register, value)
+    cpu.carry = not carry
+    cpu.zero = not zero
+    cpu.negative = not negative
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, operand)
+
+    # Comparison updates flags without storing the difference in the source register.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.carry is carry
+    assert cpu.zero is zero
+    assert cpu.negative is negative
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 2
+
+
 @pytest.mark.parametrize("opcode, register", [(0xA9, "a"), (0xA2, "x"), (0xA0, "y")])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, value):
