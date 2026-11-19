@@ -8,14 +8,14 @@
 
 ## 2. Status reads
 
-- [ ] 2.1 Add $00/$80 status alternation; test first value, repeated reads, mirrors, and independent PPU instances.
-- [ ] 2.2 Verify writes do not advance the sequence, CPU reset preserves PPU state, and other reads fail explicitly.
-- [ ] 2.3 Update affected $2002 failure tests and record the read-driven approximation and affected ROMs.
+- [x] 2.1 Add $00/$80 status alternation; test first value, repeated reads, mirrors, and independent PPU instances.
+- [x] 2.2 Verify writes do not advance the sequence, CPU reset preserves PPU state, and other reads fail explicitly.
+- [x] 2.3 Update affected $2002 failure tests and record the read-driven approximation and affected ROMs.
 
 ## 3. Integration
 
-- [ ] 3.1 Run focused and full pytest suites and validate this change in strict mode.
-- [ ] 3.2 Attempt applicable local ROMs with a bounded cycle budget; report the next obstacle without implementing it.
+- [x] 3.1 Run focused and full pytest suites and validate this change in strict mode.
+- [x] 3.2 Attempt applicable local ROMs with a bounded cycle budget; report the next obstacle without implementing it.
 
 ## Workflow follow-up
 

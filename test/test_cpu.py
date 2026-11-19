@@ -23,7 +23,7 @@ def test_initializes_cpu_through_machine_reset_vector(cpu, start_address):
     assert cpu.carry is False
 
 
-@pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0x2002)])
+@pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0x4000)])
 @pytest.mark.parametrize("flag_value", [False, True])
 @pytest.mark.parametrize(
     "initial_sp, expected_sp_values",
@@ -42,7 +42,7 @@ def test_repeated_reset_preserves_registers_and_flags(cpu, start_address, flag_v
     cpu.zero = flag_value
     cpu.carry = flag_value
 
-    # Each reset must restore PC and I; fetching $2002 would raise the unimplemented PPU error.
+    # Each reset restores PC and I without attempting a fetch from the unconnected $4000 address.
     for expected_sp in expected_sp_values:
         cpu.pc = 0xABCD
         cpu.interrupt_disable = False
@@ -112,26 +112,26 @@ def test_fetch_word_preserves_pc_when_second_read_fails(cpu):
 
 
 def test_step_preserves_state_when_opcode_read_fails(make_cpu):
-    # The unconnected PPU register cannot supply an opcode; retain distinctive CPU and RAM contents.
+    # The unconnected address cannot supply an opcode; retain distinctive CPU and RAM contents.
     cpu, machine = make_cpu()
     cpu.a = 0x12
     cpu.x = 0x34
     cpu.y = 0x56
     cpu.sp = 0x9A
     cpu.p = 0xE1
-    cpu.pc = 0x2002
+    cpu.pc = 0x4000
     machine.write_byte(0x0100, 0xAB)
     ram = bytes(machine.read_byte(address) for address in range(2048))
 
     # The read failure propagates from Machine without changing CPU state or RAM.
-    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x02"):
+    with pytest.raises(NotImplementedError, match="CPU read at address 0x4000"):
         cpu.step()
     assert cpu.a == 0x12
     assert cpu.x == 0x34
     assert cpu.y == 0x56
     assert cpu.sp == 0x9A
     assert cpu.p == 0xE1
-    assert cpu.pc == 0x2002
+    assert cpu.pc == 0x4000
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
@@ -525,7 +525,7 @@ def test_cycles_are_read_only_and_preserved_by_reset(make_cpu):
     assert cpu.cycles == 2
 
 
-@pytest.mark.parametrize("failed_pc", [0x0001, 0x2002])
+@pytest.mark.parametrize("failed_pc", [0x0001, 0x4000])
 def test_failed_step_preserves_accumulated_cycles(make_cpu, failed_pc):
     # A completed NOP precedes either an unsupported opcode or an unconnected read.
     cpu, machine = make_cpu()

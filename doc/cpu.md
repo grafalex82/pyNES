@@ -53,7 +53,7 @@ Calling `cpu.reset()` again subtracts 3 from the current SP modulo 256, sets I, 
 It preserves A/X/Y and N/V/B/D/Z/C. In particular, D and the software B field retain their current values.
 For example, SP=`$01` becomes `$FE`, then `$FB` on the next reset; it is not restored to the initial `$FD`.
 No stack bytes are pushed, and RAM remains unchanged. Reset reloads the address without fetching an opcode there,
-including when the vector points to an unimplemented device such as PPU status at `$2002`.
+including when the vector points to an unconnected address such as `$4000`.
 
 This resets CPU state only. It does not reconstruct Machine, reset peripherals, or execute an instruction.
 

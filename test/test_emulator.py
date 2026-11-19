@@ -95,9 +95,9 @@ def test_run_stops_at_first_complete_instruction_boundary(make_machine, budget, 
 
 
 def test_run_zero_does_not_fetch_from_unconnected_memory(make_machine):
-    emulator = Emulator(make_machine(start_address=0x2002))
+    emulator = Emulator(make_machine(start_address=0x4000))
     assert emulator.run(0) is None
-    assert emulator.cpu.pc == 0x2002
+    assert emulator.cpu.pc == 0x4000
     assert emulator.cpu.sp == 0xFD
     assert emulator.cpu.p == 0x24
     assert emulator.cpu.cycles == 0

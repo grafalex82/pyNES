@@ -19,7 +19,7 @@ def test_logs_completed_startup_reset(make_cpu, caplog, prg_size, start_address)
     assert record.getMessage() == f"Reset completed: A=00 X=00 Y=00 SP=FD PC={start_address:04X} P=--1--I-- CYC=0"
 
 
-@pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0x2002)])
+@pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0x4000)])
 @pytest.mark.parametrize("initial_p, expected_p", [(0x00, "--1--I--"), (0xDB, "NV1BDIZC")])
 def test_logs_completed_repeated_reset(cpu, caplog, start_address, initial_p, expected_p):
     # Nonzero registers, wrapping SP, and clear I distinguish the result from the pre-reset state.

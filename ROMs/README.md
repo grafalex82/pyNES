@@ -27,8 +27,20 @@ Byte routing is verified with synthetic cartridges. These inspection checks did 
 Filenames are local labels; exact game revisions have not been confirmed.
 Each CLI inspection matched the expected metadata and left the full-file SHA-256 unchanged.
 
-Bounded entry checks on 2026-11-19 confirmed the recorded hashes for all three images before and after execution.
-Each stopped at an unconnected PPU register. No image was modified; these checks do not establish game playability.
+Earlier bounded entry checks on 2026-11-19 confirmed the recorded hashes for all three images before and after
+execution. Each stopped at an unconnected PPU register.
+
+After implementing minimal PPU register access, each image was run again with a 10,000-cycle budget. All stopped on
+an unsupported CPU opcode before reaching the budget:
+
+| Local image | Reset PC | Completed cycles | First unimplemented opcode | Address |
+| --- | --- | ---: | --- | --- |
+| BattleCity (Japan).nes | $C070 | 63 | $20 | $C089 |
+| Space Invaders (J) [!].nes | $8000 | 54 | $86 | $801E |
+| Super Mario Bros. (Europe).nes | $8000 | 44 | $BD | $8018 |
+
+All three files matched their recorded SHA-256 hashes before and after these checks. No image was modified, and the
+entry checks do not establish game playability.
 
 ### BattleCity (Japan).nes
 

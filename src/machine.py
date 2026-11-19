@@ -23,7 +23,7 @@ class Machine:
     CPU memory map, with inclusive hexadecimal address ranges:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
         $0800-$1FFF  Three mirrors of the same internal RAM.
-        $2000-$3FFF  PPU registers and mirrors; writes retained for inspection only.
+        $2000-$3FFF  PPU registers and mirrors; minimal status reads and retained writes.
         $4000-$4017  APU (audio) and I/O registers; not connected yet.
         $4018-$401F  Normally disabled APU and I/O functionality; not connected yet.
         $4020-$5FFF  Cartridge expansion area; not connected yet.
@@ -42,10 +42,10 @@ class Machine:
     PermissionError unchanged, preserving both ROM and RAM. This is a diagnostic
     trap: hardware NROM writes do not change ROM or select banks.
 
-    Reads and writes in $2000-$3FFF are routed to PPU register offsets. PPU reads
-    currently raise NotImplementedError identifying the register offset. Both reads
-    and writes in the unconnected $4000-$7FFF range raise NotImplementedError
-    identifying the CPU address.
+    Reads and writes in $2000-$3FFF are routed to PPU register offsets. PPU status
+    reads alternate between $00 and $80; other PPU reads raise NotImplementedError
+    identifying the register offset. Reads and writes in the unconnected $4000-$7FFF
+    range raise NotImplementedError identifying the CPU address.
 
     Addresses are assumed to be valid 16-bit CPU addresses ($0000-$FFFF).
     RAM rejects integer byte values outside 0..255 with ValueError.

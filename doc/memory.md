@@ -1,7 +1,7 @@
 # CPU-visible memory
 
 [`Machine`](../src/machine.py) connects the implemented memory devices and provides byte access at NES CPU addresses.
-The current implementation covers internal RAM, fixed mapper-0 PRG ROM, and inspection of PPU register writes.
+The current implementation covers internal RAM, fixed mapper-0 PRG ROM, and minimal PPU register access.
 A separately constructed [`CPU`](cpu.md) uses Machine for reset and instruction accesses. Machine does not construct
 the CPU, and CPU reset does not reset the full console.
 
@@ -23,7 +23,7 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | --- | --- | --- |
 | $0000-$07FF | Internal RAM | Read/write one 2048-byte buffer. |
 | $0800-$1FFF | Three mirrors of internal RAM | Read/write the same buffer. |
-| $2000-$3FFF | PPU video registers and their mirrors | Retain writes for inspection; reads are unimplemented. |
+| $2000-$3FFF | PPU video registers and their mirrors | Retain writes; status reads alternate $00/$80. |
 | $4000-$4017 | APU audio and I/O registers | Not connected. |
 | $4018-$401F | Normally disabled APU and I/O functionality | Not connected. |
 | $4020-$5FFF | Cartridge expansion area | Not connected. |
@@ -32,10 +32,10 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | $C000-$FFFF | PRG ROM | Read the second 16 KiB, or mirror the first for a 16 KiB image. |
 
 The hardware ranges follow the [NESdev CPU memory map][cpu-map]; the PRG layout follows [NROM][nrom].
-PPU reads raise `NotImplementedError` with the device-relative register offset. For example, reading $2002 reports
-`PPU read at register offset 0x02 is not implemented`. Reads and writes in $4000-$7FFF raise `NotImplementedError`
-with the operation and CPU address. Audio, DMA, controllers, expansion hardware, and cartridge RAM have no behavior
-yet. No open-bus response is modeled.
+PPU reads other than status raise `NotImplementedError` with the device-relative register offset. For example,
+reading $2001 reports `PPU read at register offset 0x01 is not implemented`. Reads and writes in $4000-$7FFF also
+raise `NotImplementedError`, with the operation and CPU address. Audio, DMA, controllers, expansion hardware, and
+cartridge RAM have no behavior yet. No open-bus response is modeled.
 
 ## PPU register writes
 
@@ -47,7 +47,18 @@ These writes only retain bytes: they do not implement rendering, interrupts, vid
 They are accepted even at $2002, although hardware PPUSTATUS is read-only. This model also records writes immediately;
 hardware ignores writes to $2000, $2001, $2005, and $2006 during an initial warmup period. See the
 [decision record](decisions.md#ppu-register-write-retention-2026-11-19) for the rationale and affected ROMs.
-Reads use the same offset routing, but PPU reads remain unimplemented; the PPU's error propagates unchanged.
+Reads use the same offset routing. The PPU's errors for unsupported reads propagate unchanged.
+
+## PPU status reads
+
+Reads of $2002 and its mirrors return $00, then $80, repeatedly. Every alias advances the same per-PPU sequence;
+each new PPU starts at $00. Writes do not advance the sequence, and CPU reset preserves the PPU and its state.
+The retained byte for offset 2 is separate from the returned status and is unchanged by reads.
+
+This read-driven alternation is an approximation intended to let software polling the vblank bit progress.
+Hardware vblank follows video timing, and reading PPUSTATUS clears its vblank flag; this model implements neither
+timing nor the hardware read side effects. Other status bits, open bus, rendering, and interrupts are not modeled.
+See [the decision record](decisions.md#read-driven-ppu-status-2026-11-19) for the reason and affected ROMs.
 
 ## Internal RAM and its mirrors
 

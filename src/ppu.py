@@ -1,4 +1,4 @@
-"""Retain CPU writes to the eight PPU register offsets for inspection."""
+"""Provide minimal CPU-facing PPU register behavior."""
 
 
 class PPU:
@@ -6,6 +6,7 @@ class PPU:
 
     def __init__(self):
         self._last_writes = [None] * 8
+        self._next_status = 0x00
 
 
     @property
@@ -15,6 +16,13 @@ class PPU:
 
 
     def read_byte(self, offset):
+        # Alternate the vblank bit on status reads so polling can progress without video timing.
+        if offset == 2:
+            status = self._next_status
+            self._next_status ^= 0x80
+            return status
+
+        # Other PPU register reads remain explicit missing behavior.
         raise NotImplementedError(f"PPU read at register offset 0x{offset:02X} is not implemented")
 
 

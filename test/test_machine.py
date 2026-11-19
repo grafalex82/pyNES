@@ -165,13 +165,12 @@ def test_status_writes_through_mirrors_only_retain_the_last_byte(make_cartridge)
         assert machine.read_byte(0x123) == 0xA5
         assert machine.read_byte(0x8000) == prg[0]
 
-    # Reading status is still unsupported and must not expose or change the retained byte.
-    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x02"):
-        machine.read_byte(0x2002)
+    # Status reads do not expose or change the retained write.
+    assert machine.read_byte(0x2002) == 0x00
     assert machine.ppu.last_writes[2] == 0xFF
 
 
-@pytest.mark.parametrize("offset", range(8))
+@pytest.mark.parametrize("offset", [0, 1, 3, 4, 5, 6, 7])
 def test_ppu_register_reads_remain_explicitly_unsupported(make_cartridge, offset):
     machine = Machine(make_cartridge(bytes(16384)))
     with pytest.raises(NotImplementedError, match=rf"PPU read at register offset 0x{offset:02X}"):
@@ -189,8 +188,43 @@ def test_ppu_reads_route_all_mirrors_to_register_offsets(make_cartridge, monkeyp
 def test_ppu_read_error_reports_register_offset(make_cartridge):
     # Unsupported mirrored reads propagate the PPU's device-relative diagnostic directly.
     machine = Machine(make_cartridge(bytes(16384)))
-    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x02"):
-        machine.read_byte(0x3FFA)
+    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x01"):
+        machine.read_byte(0x3FF9)
+
+
+def test_ppu_status_alternates_across_register_mirrors(make_cartridge):
+    # All status aliases share one sequence, beginning with a clear vblank bit.
+    machine = Machine(make_cartridge(bytes(16384)))
+    assert [machine.read_byte(address) for address in (0x2002, 0x200A, 0x3FFA, 0x2002, 0x3FFA)] == [
+        0x00, 0x80, 0x00, 0x80, 0x00,
+    ]
+
+
+def test_ppu_status_sequences_are_independent(make_cartridge):
+    # Advancing one PPU cannot change the initial or subsequent values of another.
+    cartridge = make_cartridge(bytes(16384))
+    first = Machine(cartridge)
+    second = Machine(cartridge)
+    assert first.read_byte(0x2002) == 0x00
+    assert first.read_byte(0x2002) == 0x80
+    assert first.read_byte(0x2002) == 0x00
+    assert second.read_byte(0x2002) == 0x00
+    assert first.read_byte(0x2002) == 0x80
+    assert second.read_byte(0x2002) == 0x80
+
+
+def test_ppu_writes_do_not_advance_status_sequence(make_cartridge):
+    # Writes to every register, including PPUSTATUS, leave the first status read unchanged.
+    machine = Machine(make_cartridge(bytes(16384)))
+    for offset in range(8):
+        machine.write_byte(0x2000 + offset, offset + 0x10)
+    assert machine.read_byte(0x2002) == 0x00
+
+    # A second round of writes cannot consume the next status value either.
+    for offset in range(8):
+        machine.write_byte(0x3FF8 + offset, offset + 0x80)
+    assert machine.read_byte(0x200A) == 0x80
+    assert machine.ppu.last_writes == tuple(range(0x80, 0x88))
 
 
 def test_each_machine_owns_independent_ppu(make_cartridge):

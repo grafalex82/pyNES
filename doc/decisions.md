@@ -20,6 +20,20 @@ connected cartridges, including BattleCity (Japan), Space Invaders (J), and Supe
 [ROM notes](../ROMs/README.md). No ROM was patched or run for these tasks. Synthetic tests cover every mirrored address,
 independent Machines, status-register writes, unchanged neighboring bytes, and unsupported reads.
 
+### Read-driven PPU status (2026-11-19)
+
+Tasks 2.1-2.3 of `ppu-register-writes` make reads of PPUSTATUS and its mirrors alternate $00 and $80, starting at
+$00 for each PPU. Reads through any alias share a sequence; writes and CPU reset do not advance or reset it. This
+approximation lets a polling loop observe a clear and then a set vblank bit without implementing video timing.
+
+On hardware, vblank follows video timing and a PPUSTATUS read clears its vblank flag and resets the scroll/address
+write latch; the lower status and open-bus bits have their own meanings. See the
+[NESdev PPU register reference](https://www.nesdev.org/wiki/PPU_registers). The alternating bytes do not model those
+effects, rendering, or NMI and can hide timing-dependent behavior. The approximation applies to connected cartridges,
+including BattleCity (Japan), Space Invaders (J), and Super Mario Bros. (Europe) in [ROM notes](../ROMs/README.md).
+Synthetic tests verify aliases, independent PPUs, writes, and unsupported reads. No ROM was patched or run
+for these tasks; integration checks and the next observed obstacle remain separate work.
+
 ## Learning through one behavior at a time
 
 Implement one instruction or one peripheral aspect per change. Once the execution path exists, the next observed
