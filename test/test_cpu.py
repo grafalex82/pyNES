@@ -465,6 +465,41 @@ def test_step_nop_advances_pc(make_cpu):
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, initial, operand, expected", [
+    # AND
+    (0x29, 0xF0, 0x0F, 0x00),
+    (0x29, 0xFF, 0x80, 0x80),
+    (0x29, 0xAB, 0x3C, 0x28),
+    (0x29, 0xFF, 0xFF, 0xFF),
+    # ORA
+    (0x09, 0x00, 0x00, 0x00),
+    (0x09, 0x10, 0x80, 0x90),
+    (0x09, 0x21, 0x42, 0x63),
+    (0x09, 0xFF, 0x00, 0xFF),
+    # EOR
+    (0x49, 0xFF, 0xFF, 0x00),
+    (0x49, 0x0F, 0x8F, 0x80),
+    (0x49, 0xA5, 0x3C, 0x99),
+    (0x49, 0xFF, 0x80, 0x7F),
+])
+def test_immediate_logic_updates_accumulator_and_nz(make_cpu, opcode, initial, operand, expected):
+    # Set N and Z opposite to their expected values before the instruction.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, operand)
+
+    # The accumulator and N/Z reflect the bitwise result.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 2
+
+
 @pytest.mark.parametrize("opcode, register", [(0xC9, "a"), (0xE0, "x"), (0xC0, "y")])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),

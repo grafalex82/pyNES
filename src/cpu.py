@@ -377,29 +377,47 @@ class CPU:
         self.log_instruction(address, (opcode, operand), mnemonic, f"#${operand:02X}")
 
 
+    def _and_immediate(self, address, opcode):
+        operand = self._fetch_byte()
+        self._a &= operand
+        self._finish_immediate_update(address, opcode, "AND", operand, self._a)
+
+
+    def _ora_immediate(self, address, opcode):
+        operand = self._fetch_byte()
+        self._a |= operand
+        self._finish_immediate_update(address, opcode, "ORA", operand, self._a)
+
+
+    def _eor_immediate(self, address, opcode):
+        operand = self._fetch_byte()
+        self._a ^= operand
+        self._finish_immediate_update(address, opcode, "EOR", operand, self._a)
+
+
+    def _finish_immediate_update(self, address, opcode, mnemonic, operand, value):
+        # N and Z reflect the resulting register byte.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # The trace uses the fetched operand without another memory read.
+        self._cycles += 2
+        self.log_instruction(address, (opcode, operand), mnemonic, f"#${operand:02X}")
+
+
     def _lda_immediate(self, address, opcode):
         self._a = self._fetch_byte()
-        self._finish_immediate_load(address, opcode, "LDA", self._a)
+        self._finish_immediate_update(address, opcode, "LDA", self._a, self._a)
 
 
     def _ldx_immediate(self, address, opcode):
         self._x = self._fetch_byte()
-        self._finish_immediate_load(address, opcode, "LDX", self._x)
+        self._finish_immediate_update(address, opcode, "LDX", self._x, self._x)
 
 
     def _ldy_immediate(self, address, opcode):
         self._y = self._fetch_byte()
-        self._finish_immediate_load(address, opcode, "LDY", self._y)
-
-
-    def _finish_immediate_load(self, address, opcode, mnemonic, value):
-        # Loads set N from bit 7 and Z from the entire byte, leaving the other flags untouched.
-        self._negative = bool(value & 0x80)
-        self._zero = value == 0
-
-        # Immediate loads take two nominal cycles; the fetched value also supplies the trace.
-        self._cycles += 2
-        self.log_instruction(address, (opcode, value), mnemonic, f"#${value:02X}")
+        self._finish_immediate_update(address, opcode, "LDY", self._y, self._y)
 
 
     def _lda_absolute_x(self, address, opcode):
@@ -750,7 +768,7 @@ class CPU:
         None,  # $06
         None,  # $07
         None,  # $08
-        None,  # $09
+        _ora_immediate,  # $09
         _asl_accumulator,  # $0A
         None,  # $0B
         None,  # $0C
@@ -786,7 +804,7 @@ class CPU:
         None,  # $26
         None,  # $27
         None,  # $28
-        None,  # $29
+        _and_immediate,  # $29
         _rol_accumulator,  # $2A
         None,  # $2B
         None,  # $2C
@@ -822,7 +840,7 @@ class CPU:
         None,  # $46
         None,  # $47
         None,  # $48
-        None,  # $49
+        _eor_immediate,  # $49
         _lsr_accumulator,  # $4A
         None,  # $4B
         _jmp_absolute,  # $4C

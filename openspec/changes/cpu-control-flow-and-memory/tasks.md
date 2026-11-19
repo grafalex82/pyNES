@@ -140,18 +140,18 @@ Resume another task only when it is selected for implementation.
 
 ## 24. AND immediate ($29)
 
-- [ ] 24.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 24.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 24.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 24.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 25. ORA immediate ($09)
 
-- [ ] 25.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 25.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 25.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 25.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 26. EOR immediate ($49)
 
-- [ ] 26.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 26.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 26.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 26.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 27. STA indexed-indirect ($81)
 
