@@ -16,10 +16,9 @@ Resume another task only when it is selected for implementation.
 
 ## 3. JSR absolute ($20)
 
-- [ ] 3.1 Implement the selected encoding; verify the target, return-address bytes, stack and PC wrap, operand
-  overlap, and six cycles with focused synthetic pytest cases.
-- [ ] 3.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 3.1 Implement the selected encoding; verify the target, return-address bytes, stack wrap, operand overlap, and
+  six cycles with focused synthetic pytest cases.
+- [x] 3.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 4. RTS implied ($60)
 

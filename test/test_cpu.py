@@ -77,6 +77,44 @@ def test_repeated_reset_preserves_ram(make_cpu, prg_size):
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
+@pytest.mark.parametrize("initial_sp, final_sp, high_address, low_address", [
+    (0xFD, 0xFB, 0x01FD, 0x01FC),
+    (0x00, 0xFE, 0x0100, 0x01FF),
+])
+def test_jsr_absolute_pushes_return_address(make_cpu, initial_sp, final_sp, high_address, low_address):
+    # Asymmetric destination and return addresses expose reversed bytes.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.sp = initial_sp
+    machine.write_byte(0x0567, 0x20)
+    machine.write_byte(0x0568, 0x34)
+    machine.write_byte(0x0569, 0x12)
+
+    # The saved address is the last operand byte, with SP wrapping within the stack page.
+    cpu.step()
+    assert cpu.pc == 0x1234
+    assert cpu.sp == final_sp
+    assert machine.read_byte(high_address) == 0x05
+    assert machine.read_byte(low_address) == 0x69
+    assert cpu.cycles == 6
+
+
+def test_jsr_absolute_fetches_high_operand_after_stack_writes(make_cpu):
+    # Both operand bytes overlap the two stack destinations.
+    cpu, machine = make_cpu(start_address=0x01FA)
+    cpu.sp = 0xFC
+    machine.write_byte(0x01FA, 0x20)
+    machine.write_byte(0x01FB, 0x34)
+    machine.write_byte(0x01FC, 0x99)
+
+    # The low operand was already fetched; the high operand is replaced by the first push.
+    cpu.step()
+    assert cpu.pc == 0x0134
+    assert cpu.sp == 0xFA
+    assert machine.read_byte(0x01FC) == 0x01
+    assert machine.read_byte(0x01FB) == 0xFC
+    assert cpu.cycles == 6
+
+
 def test_jmp_absolute_loads_destination(make_cpu):
     # An asymmetric target exposes reversed operand bytes.
     cpu, machine = make_cpu()

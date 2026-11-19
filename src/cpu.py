@@ -273,6 +273,21 @@ class CPU:
         self._negative = bool(value & 0x80)
 
 
+    def _jsr_absolute(self, address, opcode):
+        # Fetch the low operand before pushing the address of the high operand.
+        low = self._fetch_byte()
+        self._machine.write_byte(0x0100 | self._sp, self._pc >> 8)
+        self._sp = (self._sp - 1) & 0xFF
+        self._machine.write_byte(0x0100 | self._sp, self._pc & 0xFF)
+        self._sp = (self._sp - 1) & 0xFF
+
+        # Fetch the high operand after the writes, which may have changed it in RAM.
+        high = self._fetch_byte()
+        self._pc = low | (high << 8)
+        self._cycles += 6
+        self.log_instruction(address, (opcode, low, high), "JSR", f"${self._pc:04X}")
+
+
     def _jmp_absolute(self, address, opcode):
         # The operand itself is the destination, not a pointer to another address.
         destination = self._fetch_word()
@@ -582,7 +597,7 @@ class CPU:
         None,  # $1F
 
         # $20-$2F
-        None,  # $20
+        _jsr_absolute,  # $20
         None,  # $21
         None,  # $22
         None,  # $23

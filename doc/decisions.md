@@ -5,6 +5,14 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Omitted stack-page read (2026-11-19)
+
+During subroutine calls, the functional CPU omits the hardware's discarded stack-page read to keep bus timing outside
+the model. The omitted access targets internal RAM, whose reads have no side effects in this emulator; bus-cycle and
+DMA effects are not modeled. This applies to every ROM and involves no patch. Focused synthetic tests verify the
+resulting stack contents, stack-pointer wrap, and operand overlap; they do not verify the omitted bus access.
+See section A.5.3 of the [MCS6500 hardware manual](https://xotmatrix.com/6502/6502-single-cycle-execution.html).
+
 ### PPU register write retention (2026-11-19)
 
 Task 1.1 of `ppu-register-writes` connects a separate PPU to each Machine. Writes to $2000-$3FFF select one of
