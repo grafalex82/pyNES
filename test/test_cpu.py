@@ -115,6 +115,27 @@ def test_jsr_absolute_fetches_high_operand_after_stack_writes(make_cpu):
     assert cpu.cycles == 6
 
 
+@pytest.mark.parametrize("initial_sp, final_sp, low_address, high_address", [
+    (0xFB, 0xFD, 0x01FC, 0x01FD),
+    (0xFE, 0x00, 0x01FF, 0x0100),
+])
+def test_rts_pulls_return_address(make_cpu, initial_sp, final_sp, low_address, high_address):
+    # Distinct stack bytes expose reversed pulls, including across the stack boundary.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.sp = initial_sp
+    machine.write_byte(0x0567, 0x60)
+    machine.write_byte(low_address, 0x34)
+    machine.write_byte(high_address, 0x12)
+
+    # Returning resumes after the stored address without consuming the stack bytes.
+    cpu.step()
+    assert cpu.pc == 0x1235
+    assert cpu.sp == final_sp
+    assert machine.read_byte(low_address) == 0x34
+    assert machine.read_byte(high_address) == 0x12
+    assert cpu.cycles == 6
+
+
 def test_jmp_absolute_loads_destination(make_cpu):
     # An asymmetric target exposes reversed operand bytes.
     cpu, machine = make_cpu()

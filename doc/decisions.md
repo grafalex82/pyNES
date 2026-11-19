@@ -5,6 +5,14 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Omitted reads during subroutine return (2026-11-19)
+
+The functional CPU omits three discarded hardware reads during subroutine return: at the next instruction byte,
+the current stack location, and the saved return address. This keeps bus-cycle timing outside the model, but omits
+device read side effects at the first and last addresses; DMA effects are also absent. The simplification applies to
+all ROMs and involves no patch. Synthetic tests verify stack results, not the omitted accesses. See section A.5.7 of
+the [MCS6500 hardware manual](https://xotmatrix.com/6502/6502-single-cycle-execution.html).
+
 ### Omitted stack-page read (2026-11-19)
 
 During subroutine calls, the functional CPU omits the hardware's discarded stack-page read to keep bus timing outside

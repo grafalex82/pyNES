@@ -288,6 +288,19 @@ class CPU:
         self.log_instruction(address, (opcode, low, high), "JSR", f"${self._pc:04X}")
 
 
+    def _rts(self, address, opcode):
+        # Pull the low byte first, wrapping SP within the stack page.
+        self._sp = (self._sp + 1) & 0xFF
+        low = self._machine.read_byte(0x0100 | self._sp)
+        self._sp = (self._sp + 1) & 0xFF
+        high = self._machine.read_byte(0x0100 | self._sp)
+
+        # Resume after the saved address and report the completed instruction.
+        self._pc = ((high << 8 | low) + 1) & 0xFFFF
+        self._cycles += 6
+        self.log_instruction(address, (opcode,), "RTS")
+
+
     def _jmp_absolute(self, address, opcode):
         # The operand itself is the destination, not a pointer to another address.
         destination = self._fetch_word()
@@ -669,7 +682,7 @@ class CPU:
         None,  # $5F
 
         # $60-$6F
-        None,  # $60
+        _rts,  # $60
         None,  # $61
         None,  # $62
         None,  # $63

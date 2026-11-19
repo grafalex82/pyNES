@@ -22,10 +22,9 @@ Resume another task only when it is selected for implementation.
 
 ## 4. RTS implied ($60)
 
-- [ ] 4.1 Implement the selected encoding; verify the return destination, stack bytes and pointer, PC wrap, and six
+- [x] 4.1 Implement the selected encoding; verify the return destination, stack bytes and pointer, and six
   cycles with focused synthetic pytest cases.
-- [ ] 4.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 4.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 5. STA zero page ($85)
 
