@@ -77,6 +77,19 @@ def test_repeated_reset_preserves_ram(make_cpu, prg_size):
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
+def test_jmp_absolute_loads_destination(make_cpu):
+    # An asymmetric target exposes reversed operand bytes.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0x4C)
+    machine.write_byte(0x0001, 0x34)
+    machine.write_byte(0x0002, 0x12)
+
+    # The destination becomes PC without fetching an instruction there.
+    cpu.step()
+    assert cpu.pc == 0x1234
+    assert cpu.cycles == 3
+
+
 def test_fetch_byte_and_word_advance_pc(make_cpu):
     # Distinct bytes reveal a reversed word or an off-by-one fetch.
     cpu, machine = make_cpu(start_address=0x0234)

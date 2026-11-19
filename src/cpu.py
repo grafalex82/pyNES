@@ -273,6 +273,16 @@ class CPU:
         self._negative = bool(value & 0x80)
 
 
+    def _jmp_absolute(self, address, opcode):
+        # The operand itself is the destination, not a pointer to another address.
+        destination = self._fetch_word()
+        self._pc = destination
+
+        # Absolute JMP takes three cycles and traces the already fetched bytes.
+        self._cycles += 3
+        self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), "JMP", f"${destination:04X}")
+
+
     def _lda_immediate(self, address, opcode):
         self._a = self._fetch_byte()
         self._finish_immediate_load(address, opcode, "LDA", self._a)
@@ -607,7 +617,7 @@ class CPU:
         None,  # $49
         None,  # $4A
         None,  # $4B
-        None,  # $4C
+        _jmp_absolute,  # $4C
         None,  # $4D
         None,  # $4E
         None,  # $4F

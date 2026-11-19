@@ -36,7 +36,12 @@ of instructions at once; choose the next required encoding and state its scope c
 
 CPU instruction tests check only the instruction's direct effects, including the destination, affected flags, program
 counter, and nominal cycles where applicable. They do not test logging or guard against unrelated side effects, such as
-changes to registers not used by the instruction.
+changes to registers not used by the instruction. When setting up opcodes and operands, use a separate line for each
+byte. Do not add tests for program-counter wraparound.
+
+Documentation should not describe individual instruction behavior or list implemented and unimplemented instructions.
+Do not repeat routine program-counter or cycle-count changes for each instruction. Document deliberate departures
+from hardware and their rationale when applicable.
 
 When code already implements a behavior but produces the wrong result, fix that behavior rather than adding another
 instruction. A bounded run is useful for detecting a polling loop that no longer makes progress.

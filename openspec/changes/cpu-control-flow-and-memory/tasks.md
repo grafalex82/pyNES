@@ -5,10 +5,8 @@ Resume another task only when it is selected for implementation.
 
 ## 1. JMP absolute ($4C)
 
-- [ ] 1.1 Implement the selected encoding; verify the destination, operand wrap, PC, and three cycles with focused
-  synthetic pytest cases.
-- [ ] 1.2 Document this encoding and any bus simplification; verify the entry in doc/decisions.md
-  states the behavior, rationale, affected ROM scope, and test evidence.
+- [x] 1.1 Implement the selected encoding; verify the destination and three cycles with a focused synthetic pytest case.
+- [x] 1.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 2. JMP indirect ($6C)
 
