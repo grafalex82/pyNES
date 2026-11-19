@@ -167,14 +167,19 @@ def test_fetch_word_preserves_pc_when_second_read_fails(cpu):
     assert cpu.pc == 0x1FFF
 
 
-def test_step_preserves_pc_when_opcode_read_fails(cpu):
-    # The unconnected PPU register cannot supply an opcode.
+def test_step_preserves_state_when_opcode_read_fails(make_cpu):
+    # The unconnected PPU register cannot supply an opcode; retain distinctive CPU and RAM contents.
+    cpu, machine = make_cpu()
+    cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xE1
     cpu.pc = 0x2002
+    machine.write_byte(0x0100, 0xAB)
+    ram = bytes(machine.read_byte(address) for address in range(2048))
 
-    # The read failure propagates from Machine at the original PC.
+    # The read failure propagates from Machine without changing CPU state or RAM.
     with pytest.raises(NotImplementedError, match="CPU read at address 0x2002"):
         cpu.step()
-    assert cpu.pc == 0x2002
+    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xE1, 0x2002)
+    assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
 @pytest.mark.parametrize("initial_i", [False, True])
@@ -281,13 +286,33 @@ def test_step_reports_empty_instruction_table_entry(make_cpu, opcode):
     cpu, machine = make_cpu(start_address=0x0234)
     cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xE1
     machine.write_byte(0x0234, opcode)
+    machine.write_byte(0x0100, 0xAB)
+    ram = bytes(machine.read_byte(address) for address in range(2048))
 
     # A missing handler must report both the byte and its address without consuming it.
     with pytest.raises(NotImplementedError) as error:
         cpu.step()
     assert str(error.value) == f"CPU opcode 0x{opcode:02X} at address 0x0234 is not implemented"
     assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xE1, 0x0234)
-    assert machine.read_byte(0x0234) == opcode
+    assert bytes(machine.read_byte(address) for address in range(2048)) == ram
+
+
+def test_step_retains_completed_instructions_before_unsupported_opcode(make_cpu):
+    # SEI and CLD change distinct flags before the unsupported LDA immediate opcode.
+    cpu, machine = make_cpu(start_address=0x0234)
+    cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xF9
+    program = (0x78, 0xD8, 0xA9, 0x42)
+    for offset, value in enumerate(program):
+        machine.write_byte(0x0234 + offset, value)
+    ram = bytes(machine.read_byte(address) for address in range(2048))
+
+    # The failed step retains the two completed flag changes and the original program bytes.
+    cpu.step()
+    cpu.step()
+    with pytest.raises(NotImplementedError, match="CPU opcode 0xA9 at address 0x0236"):
+        cpu.step()
+    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xF5, 0x0236)
+    assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
 @pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0xABCD)])

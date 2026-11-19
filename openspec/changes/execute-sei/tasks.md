@@ -14,7 +14,7 @@ trace text, or alignment.
 - [x] 1.6 Add SED ($F8); verify D becomes true from either initial value without adding decimal arithmetic.
 - [x] 1.7 Add CLV ($B8); verify V becomes false from either initial value while other state is preserved.
 - [x] 1.8 Add official NOP ($EA); verify PC advances while A/X/Y/SP, every flag, and memory remain unchanged.
-- [ ] 1.9 Keep unsupported opcodes and fetch failures explicit; verify $A9 and unofficial NOP $1A diagnostics,
+- [x] 1.9 Keep unsupported opcodes and fetch failures explicit; verify $A9 and unofficial NOP $1A diagnostics,
   unchanged failed-step state, and retained partial progress before the next unsupported instruction.
 - [ ] 1.10 Add read-only CPU.cycles initialized to zero; verify each selected encoding adds two, including idempotent
   flag changes and NOP, mixed execution adds correctly, counters are independent, and reset/failure add nothing.
