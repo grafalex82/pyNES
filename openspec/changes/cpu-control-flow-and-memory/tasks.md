@@ -165,12 +165,36 @@ Resume another task only when it is selected for implementation.
   address wrapping, PC, and cycles with focused synthetic pytest cases.
 - [x] 28.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
-## 29. Integration
+## 29. LDA indexed-indirect ($A1)
 
-- [ ] 29.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
+- [ ] 29.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page and pointer-byte wrapping,
+  PC, and cycles with focused synthetic pytest cases.
+- [ ] 29.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 30. LDA indirect-indexed ($B1)
+
+- [ ] 30.1 Implement the selected encoding; verify the loaded value, N/Z, pointer-byte wrapping, page crossing,
+  effective address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 30.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 31. ADC immediate ($69)
+
+- [ ] 31.1 Implement the selected encoding; verify A, C/V/N/Z, both incoming carries, signed overflow, binary arithmetic
+  with D clear and set, PC, and cycles with focused synthetic pytest cases.
+- [ ] 31.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 32. SBC immediate ($E9)
+
+- [ ] 32.1 Implement the selected encoding; verify A, C/V/N/Z, both incoming carries, borrow, signed overflow, binary
+  arithmetic with D clear and set, PC, and cycles with focused synthetic pytest cases.
+- [ ] 32.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 33. Integration
+
+- [ ] 33.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
   resolve any failures.
-- [ ] 29.2 Review documentation for hardware departures and their rationale without listing instruction support.
-- [ ] 29.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
+- [ ] 33.2 Review documentation for hardware departures and their rationale without listing instruction support.
+- [ ] 33.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
   implementing it; record actual observations only.
 
 ## Workflow follow-up

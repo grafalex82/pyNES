@@ -3,8 +3,8 @@
 ## Context
 
 CPU.step dispatches opcodes, reads instruction bytes through Machine, accumulates nominal instruction cycles, and
-logs completed instructions using captured bytes. The first 23 encodings in this change have been implemented; the
-immediate logical operations and indirect indexed stores are planned. Each encoding remains an individual learning step.
+logs completed instructions using captured bytes. The first 28 encodings in this change have been implemented; the
+indirect indexed loads and immediate arithmetic are planned. Each encoding remains an individual learning step.
 
 ## Goals / Non-Goals
 
@@ -24,6 +24,15 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
   sets N and Z from the resulting byte. Immediate comparisons set C for an unsigned register value greater than or
   equal to the operand, Z for equality, and N from bit 7 of the eight-bit difference without storing that difference.
 - Immediate logical operations combine the fetched operand with A and set N and Z from the resulting byte.
+- Immediate ADC adds A, the operand, and C; immediate SBC subtracts the operand and the inverse of C. Set C from
+  unsigned carry or no borrow, V from signed overflow, and N/Z from the eight-bit result. The NES stores D but both
+  instructions perform binary arithmetic regardless of D, as the NES CPU does not implement decimal arithmetic.
+- Indexed-indirect loads add X to the zero-page operand modulo 256 and read a wrapping little-endian zero-page pointer.
+  Indirect-indexed loads read that pointer first, then add Y modulo 65536; they take one more cycle on page crossing.
+  Both read the selected byte through Machine and set N/Z from it.
+- Indexed-indirect loads omit the discarded read at the original zero-page operand address. Indirect-indexed loads omit
+  the provisional indexed read only when a page is crossed, which can suppress device read side effects. These
+  omissions maintain the functional bus model for all ROMs; no ROM is patched.
 - Indexed-indirect stores add X to the zero-page operand modulo 256 before reading the little-endian pointer; the
   pointer's high-byte address also wraps within zero page. Indirect-indexed stores read that zero-page pointer first,
   with the same high-byte wrap, and add Y to the resulting address modulo 65536. Both use Machine for all accesses.
@@ -31,7 +40,8 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
   have no side effects in this emulator. Indirect-indexed stores omit the provisional indexed read even when no page is
   crossed, potentially suppressing device read side effects. Both omissions preserve the functional bus model, apply to
   all ROMs, and patch none.
-- Immediate logical operations need no omitted dummy access. Trace the fetched operand without additional reads.
+- Immediate logical and arithmetic operations need no omitted dummy access. Trace the fetched operand without
+  additional reads.
 - Accumulator shifts and rotates omit the hardware's discarded read at the next instruction address, as with existing
   implied instructions. Immediate comparisons need no omitted dummy access. The omission can suppress device read side
   effects for every ROM using these accumulator encodings; no ROM is patched.

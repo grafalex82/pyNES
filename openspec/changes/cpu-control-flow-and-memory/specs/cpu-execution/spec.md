@@ -1,5 +1,73 @@
 ## ADDED Requirements
 
+### Requirement: Execute LDA using indexed-indirect addressing
+
+Opcode $A1 SHALL add X to its one-byte operand modulo 256, read a little-endian pointer from that zero-page address
+and the following zero-page address modulo 256, and read the target byte through Machine into A. It SHALL set N/Z
+from that byte, advance PC by two, add six nominal cycles, and preserve other registers and flags.
+
+#### Scenario: Wrap the indexed pointer address
+- **WHEN** the operand is $F0, X=$20, $10/$11 contain $34/$12, and $1234 provides $80
+- **THEN** A=$80, N=1, Z=0, and six cycles accrue
+
+#### Scenario: Wrap the pointer's high-byte address
+- **WHEN** the operand is $FC, X=$03, and $FF/$00 contain the low and high pointer bytes
+- **THEN** the target byte is read through Machine using those bytes
+
+### Requirement: Execute LDA using indirect-indexed addressing
+
+Opcode $B1 SHALL read a little-endian pointer from the operand's zero-page address and the following zero-page address
+modulo 256, add Y to it modulo 65536, and read the resulting address through Machine into A. It SHALL set N/Z from
+that byte, advance PC by two, add five nominal cycles plus one on page crossing, and preserve other registers and flags.
+
+#### Scenario: Wrap the pointer and cross a page
+- **WHEN** the operand is $FF, $FF/$00 contain $FF/$12, Y=$01, and $1300 provides $00
+- **THEN** A=$00, N=0, Z=1, and six cycles accrue
+
+#### Scenario: Wrap the effective address
+- **WHEN** the pointer is $FFFF and Y=$01
+- **THEN** the byte at $0000 is loaded and six cycles accrue
+
+#### Scenario: Index without crossing a page
+- **WHEN** the pointer is $1230 and Y=$04
+- **THEN** the byte at $1234 is loaded and five cycles accrue
+
+### Requirement: Execute ADC with an immediate operand
+
+Opcode $69 SHALL add A, the next byte, and the incoming C in binary, store the low eight bits in A, and set C from
+unsigned carry, V from signed overflow, and N/Z from the result. It SHALL advance PC by two and add two nominal cycles,
+preserving other registers and flags. D SHALL be preserved and SHALL NOT enable decimal arithmetic.
+
+#### Scenario: Carry out of the byte
+- **WHEN** A=$FF, the operand is $00, and C=1
+- **THEN** A=$00, C=1, V=0, N=0, and Z=1
+
+#### Scenario: Signed overflow
+- **WHEN** A=$7F, the operand is $01, and C=0
+- **THEN** A=$80, C=0, V=1, N=1, and Z=0
+
+#### Scenario: Decimal flag does not change arithmetic
+- **WHEN** A=$09, the operand is $01, C=0, and D=1
+- **THEN** A=$0A and D remains set
+
+### Requirement: Execute SBC with an immediate operand
+
+Opcode $E9 SHALL subtract the next byte and the inverse of incoming C from A in binary, store the low eight bits in A,
+and set C for no unsigned borrow, V from signed overflow, and N/Z from the result. It SHALL advance PC by two and add
+two nominal cycles, preserving other registers and flags. D SHALL be preserved and SHALL NOT enable decimal arithmetic.
+
+#### Scenario: Borrow from the byte
+- **WHEN** A=$00, the operand is $01, and C=1
+- **THEN** A=$FF, C=0, V=0, N=1, and Z=0
+
+#### Scenario: Signed overflow
+- **WHEN** A=$80, the operand is $01, and C=1
+- **THEN** A=$7F, C=1, V=1, N=0, and Z=0
+
+#### Scenario: Decimal flag does not change arithmetic
+- **WHEN** A=$10, the operand is $01, C=1, and D=1
+- **THEN** A=$0F and D remains set
+
 ### Requirement: Execute AND with an immediate operand
 
 Opcode $29 SHALL combine A with the next byte using bitwise AND, store the result in A, and set N and Z from that

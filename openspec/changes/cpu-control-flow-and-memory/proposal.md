@@ -12,6 +12,7 @@ At the user's request, their plans are collected into one reviewable OpenSpec ch
 - Add STA and LDA using absolute,X and absolute,Y; add LDX absolute,Y and LDY absolute,X.
 - Add accumulator ASL, LSR, ROL, and ROR; add immediate CMP, CPX, and CPY.
 - Add immediate AND, ORA, and EOR; add STA with indexed-indirect and indirect-indexed addressing.
+- Add LDA with indexed-indirect and indirect-indexed addressing; add immediate ADC and SBC.
 - Keep other unsupported opcodes explicit and preserve existing execution and trace conventions.
 - Implement and verify one encoding at a time; report the next observed obstacle and stop at that boundary.
 
@@ -23,7 +24,8 @@ None.
 
 ### Modified Capabilities
 
-- cpu-execution: execute the 28 selected control-flow, memory, shift, rotate, comparison, and logical encodings.
+- cpu-execution: execute the 32 selected control-flow, memory, shift, rotate, comparison, logical, and arithmetic
+  encodings.
 
 ## Impact
 
