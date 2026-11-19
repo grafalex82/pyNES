@@ -355,6 +355,27 @@ modified. Focused synthetic tests cover ownership, single steps, budgets, oversh
 Routing blocks through the same `step()` gives future breakpoint checks one instruction boundary without adding a
 breakpoint registry or callbacks now. See [execution control](execution.md) for the implemented API.
 
+## Console execution loop (2026-11-19)
+
+Tasks 3.1-3.3 of `execute-sei` add a root console entry point accepting one cartridge path. It constructs NESFile,
+Machine, and Emulator once, then repeatedly requests 1000-cycle blocks. This keeps host control outside the components
+and gives a future UI a place to alternate execution with its own work; the current loop neither paces nor advances
+devices. Relative cartridge paths use the caller's working directory, while imports resolve relative to the script.
+
+The console enables DEBUG logging before CPU construction and uses message-only output, making startup and instruction
+state visible without component-level logging configuration. Exceptions propagate with their ordinary tracebacks.
+Synthetic subprocess tests verify help, a spaced relative path, the first unsupported opcode, and continuation across
+a block boundary. No cartridge bytes are modified, and reaching an unsupported opcode does not mean a game is playable.
+
+## Console checks with target cartridges (2026-11-19)
+
+Task 4.2 ran both identified files through `main.py`. BattleCity completed SEI at $C070 with CYC=2, then stopped on
+unsupported $A9 at $C071. Super Mario Bros. completed SEI at $8000 with CYC=2 and CLD at $8001 with CYC=4, then
+stopped on unsupported $A9 at $8002. These are observed entry traces, not evidence of playable games.
+
+Each full-file SHA-256 matched [the recorded value](../ROMs/README.md#inspected-local-files-2026-11-18) before and
+after execution. No ROM was patched. The next instruction remains unimplemented.
+
 ## Departures and patches
 
 ### Implied flag instructions and official NOP (2026-11-19)

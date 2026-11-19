@@ -37,17 +37,17 @@ trace text, or alignment.
 
 ## 3. Start execution from the console
 
-- [ ] 3.1 Add main.py with one ROM argument, script-relative imports, message-only logs, and 1000-cycle run() calls;
+- [x] 3.1 Add main.py with one ROM argument, script-relative imports, message-only logs, and 1000-cycle run() calls;
   verify --help, spaced paths from another directory, and the expected $A9 exception/address without log assertions.
-- [ ] 3.2 Add a bounded subprocess case with 501 NOPs from $8000 followed by $A9; verify an unsuccessful exit and
+- [x] 3.2 Add a bounded subprocess case with 501 NOPs from $8000 followed by $A9; verify an unsuccessful exit and
   NotImplementedError for $A9 at $81F5 after crossing the first cycle block, without inspecting instruction traces.
-- [ ] 3.3 Document the console command and supported-entry stop in doc/execution.md, README.md, and doc/development.md;
+- [x] 3.3 Document the console command and supported-entry stop in doc/execution.md, README.md, and doc/development.md;
   record console/logging decisions and verify the example against a synthetic ROM without games.
 
 ## 4. Check the complete ROM-to-instruction path
 
-- [ ] 4.1 Run python -m pytest, strict OpenSpec validation, and style checks; verify existing and new contracts pass,
+- [x] 4.1 Run python -m pytest, strict OpenSpec validation, and style checks; verify existing and new contracts pass,
   lines stay within 120 characters, and opcode support is limited to the eight requested encodings.
-- [ ] 4.2 Run both identified target images through main.py; verify BattleCity executes SEI for two cycles and stops at
+- [x] 4.2 Run both identified target images through main.py; verify BattleCity executes SEI for two cycles and stops at
   $C071:$A9, while the 32 KiB image executes SEI/CLD for four cycles and stops at $8002:$A9. Verify unchanged hashes,
   record observed traces and cycle totals, and stop without implementing $A9, peripherals, or ROM patches.

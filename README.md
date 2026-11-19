@@ -106,6 +106,17 @@ controls. Whole instructions finish even when they exceed a run budget; see [exe
 Routine tests use synthetic files.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 
+Run a supported local cartridge from the repository root:
+
+```text
+python main.py "ROMs/your game.nes"
+python main.py --help
+```
+
+The console shows reset and instruction traces, then stops with a traceback at the first unimplemented behavior.
+Only a small set of instructions is supported, so this does not yet run games to completion. See
+[execution control](doc/execution.md#console-startup) for the execution loop and a synthetic example.
+
 Inspect a valid local cartridge from the repository root (replace the example path with your file):
 
 ```text

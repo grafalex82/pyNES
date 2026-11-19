@@ -68,6 +68,8 @@ through the `cpu` logger, followed by cumulative instruction cycles. The helper 
 the failing PC. Completed instructions emit aligned DEBUG traces with resulting state.
 `Emulator(machine)` provides single-step, cycle-budgeted execution, and repeated reset through one host-facing
 boundary. See [execution control](execution.md) for cycle budgets, overshoot, and state preservation.
+The root `main.py` accepts a ROM path and runs repeated 1000-cycle blocks with DEBUG traces until an exception stops
+execution. See [console startup](execution.md#console-startup) for the command and a synthetic unsupported-opcode stop.
 Peripherals and breakpoints remain future work.
 
 ## Documentation roles
