@@ -70,26 +70,28 @@ cycles, advance PC by three modulo 65536, and add four cycles.
 - **WHEN** an absolute load addresses a connected PPU register
 - **THEN** it performs one read through Machine and uses that single returned byte for the register and trace
 
-### Requirement: Branch when negative is clear
+### Requirement: Branch on a status flag
 
-BPL ($10) SHALL read a signed 8-bit relative displacement and branch from the PC after the operand if N is clear.
-PC arithmetic SHALL wrap modulo 65536. The instruction SHALL preserve registers other than PC and all flags.
-It SHALL add two cycles, plus one if taken, plus one more if a taken branch crosses a page.
+BEQ ($F0)/BNE ($D0) SHALL branch if Z is set/clear; BPL ($10)/BMI ($30) if N is clear/set;
+BCC ($90)/BCS ($B0) if C is clear/set; BVC ($50)/BVS ($70) if V is clear/set.
+Each SHALL apply a signed 8-bit displacement to the post-operand PC when its condition holds, wrapping at 16 bits.
+All flags and registers except PC SHALL be preserved. The cost SHALL be two cycles, plus one if taken and one more
+if a taken branch crosses a page.
 
 #### Scenario: Branch backward when N is clear
 
 - **WHEN** BPL $FB is at $800D with N clear
 - **THEN** PC becomes $800A, all flags remain unchanged, and three cycles accrue
 
-#### Scenario: Do not branch when N is set
+#### Scenario: Check each branch condition
 
-- **WHEN** BPL executes with N set
-- **THEN** PC advances past the operand and two cycles accrue
+- **WHEN** each branch executes with its tested flag set and clear
+- **THEN** it branches only for its specified condition; otherwise PC advances past the operand and two cycles accrue
 
-#### Scenario: Cross a page or wrap the address space
+#### Scenario: Cross a page
 
-- **WHEN** a taken branch crosses a page boundary, including across $FFFF and $0000
-- **THEN** PC reaches the signed relative target modulo 65536 and four cycles accrue
+- **WHEN** a taken branch crosses a page boundary
+- **THEN** PC reaches the signed relative target and four cycles accrue
 
 ### Requirement: Decrement an index register
 

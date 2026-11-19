@@ -395,6 +395,56 @@ class CPU:
         self.log_instruction(address, (opcode,), mnemonic)
 
 
+    def _beq(self, address, opcode):
+        self._branch(address, opcode, "BEQ", self._zero)
+
+
+    def _bne(self, address, opcode):
+        self._branch(address, opcode, "BNE", not self._zero)
+
+
+    def _bpl(self, address, opcode):
+        self._branch(address, opcode, "BPL", not self._negative)
+
+
+    def _bmi(self, address, opcode):
+        self._branch(address, opcode, "BMI", self._negative)
+
+
+    def _bcc(self, address, opcode):
+        self._branch(address, opcode, "BCC", not self._carry)
+
+
+    def _bcs(self, address, opcode):
+        self._branch(address, opcode, "BCS", self._carry)
+
+
+    def _bvc(self, address, opcode):
+        self._branch(address, opcode, "BVC", not self._overflow)
+
+
+    def _bvs(self, address, opcode):
+        self._branch(address, opcode, "BVS", self._overflow)
+
+
+    def _branch(self, address, opcode, mnemonic, condition):
+        # The signed displacement is relative to PC after fetching the operand.
+        operand = self._fetch_byte()
+        displacement = operand if operand < 0x80 else operand - 0x100
+        target = (self._pc + displacement) & 0xFFFF
+
+        # A taken branch costs one extra cycle, plus one for crossing a page.
+        self._cycles += 2
+        if condition:
+            self._cycles += 1
+            if self._pc >> 8 != target >> 8:
+                self._cycles += 1
+            self._pc = target
+
+        # The trace uses the already fetched operand and calculated target.
+        self.log_instruction(address, (opcode, operand), mnemonic, f"${target:04X}")
+
+
     def _clc(self, address, opcode):
         """Clear the carry flag used by arithmetic and rotates."""
         self._carry = False
@@ -471,7 +521,7 @@ class CPU:
         None,  # $0F
 
         # $10-$1F
-        None,  # $10
+        _bpl,  # $10
         None,  # $11
         None,  # $12
         None,  # $13
@@ -507,7 +557,7 @@ class CPU:
         None,  # $2F
 
         # $30-$3F
-        None,  # $30
+        _bmi,  # $30
         None,  # $31
         None,  # $32
         None,  # $33
@@ -543,7 +593,7 @@ class CPU:
         None,  # $4F
 
         # $50-$5F
-        None,  # $50
+        _bvc,  # $50
         None,  # $51
         None,  # $52
         None,  # $53
@@ -579,7 +629,7 @@ class CPU:
         None,  # $6F
 
         # $70-$7F
-        None,  # $70
+        _bvs,  # $70
         None,  # $71
         None,  # $72
         None,  # $73
@@ -615,7 +665,7 @@ class CPU:
         None,  # $8F
 
         # $90-$9F
-        None,  # $90
+        _bcc,  # $90
         None,  # $91
         None,  # $92
         None,  # $93
@@ -651,7 +701,7 @@ class CPU:
         None,  # $AF
 
         # $B0-$BF
-        None,  # $B0
+        _bcs,  # $B0
         None,  # $B1
         None,  # $B2
         None,  # $B3
@@ -687,7 +737,7 @@ class CPU:
         None,  # $CF
 
         # $D0-$DF
-        None,  # $D0
+        _bne,  # $D0
         None,  # $D1
         None,  # $D2
         None,  # $D3
@@ -723,7 +773,7 @@ class CPU:
         None,  # $EF
 
         # $F0-$FF
-        None,  # $F0
+        _beq,  # $F0
         None,  # $F1
         None,  # $F2
         None,  # $F3

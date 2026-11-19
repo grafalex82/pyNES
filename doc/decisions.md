@@ -384,6 +384,15 @@ unsupported opcode, whose PC is restored for inspection. The diagnostic ROM-writ
 Absolute stores perform the opcode and operand reads followed by the write; they require no omitted dummy read.
 See the [6502 bus-cycle reference](https://www.nesdev.org/6502_cpu.txt).
 
+## Functional branch bus activity (2026-11-19)
+
+Taken branches omit the hardware's extra reads, including the additional read on a page crossing. The nominal cycle
+counter still includes their cost, but devices see no side effects from these reads. Interrupt polling and delivery
+remain unimplemented. This applies to any ROM using branches; no ROM is patched. The functional model keeps execution
+at instruction boundaries rather than modeling bus cycles. See the [NESdev instruction reference][branch-cycles].
+
+[branch-cycles]: https://www.nesdev.org/wiki/Instruction_reference
+
 ## Departures and patches
 
 ### Implied flag instructions and official NOP (2026-11-19)

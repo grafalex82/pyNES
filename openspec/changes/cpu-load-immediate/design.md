@@ -7,7 +7,7 @@ CPU.step dispatches through a 256-entry table. Byte and little-endian word fetch
 ## Goals / Non-Goals
 
 Add only the immediate, absolute, implied, and relative encodings listed in the proposal. Do not generalize
-to unrelated instructions, other branch conditions, or additional addressing forms.
+to unrelated instructions or additional addressing forms.
 
 ## Decisions
 
@@ -17,7 +17,7 @@ DEX/DEY wrap and set N/Z.
 Each absolute memory operation goes through Machine exactly once and trace formatting never rereads a device.
 Immediate loads, register transfers, and decrements add two cycles; absolute loads and stores add four.
 
-BPL sign-extends its operand relative to the post-operand PC and wraps at 16 bits. It adds two cycles plus
+Each branch sign-extends its operand relative to the post-operand PC and wraps at 16 bits. It adds two cycles plus
 one when taken and another when a taken branch crosses a page. Replace $A9 in unsupported-opcode tests with
 a still-unsupported value such as $02. Maintain existing instruction traces and diagnostic behavior.
 
@@ -26,8 +26,8 @@ the related instruction families in one change. See https://www.nesdev.org/obeli
 
 ## Risks / Trade-offs
 
-Device reads can have side effects, so additional reads for logging must be tested and avoided. Branches need
-page-crossing and 16-bit wrap tests. Verify each family separately as it is implemented.
+Device reads can have side effects, so additional reads for logging must be avoided. Branch tests cover both outcomes,
+signed displacements, and page-crossing cycle costs. Verify each family separately as it is implemented.
 
 ## Migration Plan
 

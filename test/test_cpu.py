@@ -405,6 +405,46 @@ def test_register_transfer_updates_destination_and_nz(make_cpu, opcode, source, 
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize(
+    "opcode, flag, taken_flag",
+    [
+        (0xF0, "zero", True),
+        (0xD0, "zero", False),
+        (0x10, "negative", False),
+        (0x30, "negative", True),
+        (0x90, "carry", False),
+        (0xB0, "carry", True),
+        (0x50, "overflow", False),
+        (0x70, "overflow", True),
+    ],
+)
+@pytest.mark.parametrize(
+    "start, operand, taken, expected_pc, expected_cycles",
+    [
+        (0x0210, 0x00, True, 0x0212, 3),
+        (0x0210, 0x05, True, 0x0217, 3),
+        (0x0210, 0xFB, True, 0x020D, 3),
+        (0x0270, 0x7F, True, 0x02F1, 3),
+        (0x0290, 0x80, True, 0x0212, 3),
+        (0x02FD, 0x01, True, 0x0300, 4),
+        (0x0300, 0xFC, True, 0x02FE, 4),
+        (0x02F0, 0x7F, False, 0x02F2, 2),
+    ],
+)
+def test_conditional_branch(make_cpu, opcode, flag, taken_flag, start, operand, taken, expected_pc, expected_cycles):
+    # A program in RAM selects each condition and signed displacement independently.
+    cpu, machine = make_cpu()
+    cpu.pc = start
+    setattr(cpu, flag, taken_flag if taken else not taken_flag)
+    machine.write_byte(start, opcode)
+    machine.write_byte(start + 1, operand)
+
+    # PC and cycles reflect whether the branch was taken and crossed a page.
+    cpu.step()
+    assert cpu.pc == expected_pc
+    assert cpu.cycles == expected_cycles
+
+
 def test_cycles_accumulate_across_mixed_instructions(make_cpu):
     # Execute each supported encoding once in a synthetic RAM program.
     cpu, machine = make_cpu()

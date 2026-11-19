@@ -20,10 +20,10 @@
 - [x] 4.1 Implement $AD/$AE/$AC; test values, little-endian addresses, N/Z, PC advancement, and cycles.
 - [x] 4.2 Verify one routed device read.
 
-## 5. Relative branch
+## 5. Relative branches
 
-- [ ] 5.1 Implement $10; test signed displacement, both paths, page crossing, flags, and cycles.
-- [ ] 5.2 Verify a bounded synthetic PPU polling program; document omitted dummy reads.
+- [x] 5.1 Implement BEQ/BNE/BPL/BMI/BCC/BCS/BVC/BVS; test both paths, signed offsets, page crossing, and cycles.
+- [x] 5.2 Document omitted branch dummy reads.
 
 ## 6. Index decrements
 

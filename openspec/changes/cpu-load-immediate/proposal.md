@@ -8,7 +8,7 @@ and an index decrement that are not yet implemented.
 ## What Changes
 
 - Add immediate and absolute LDA/LDX/LDY and absolute STA/STX/STY.
-- Add implied TSX, TXS, TXA, TYA, TAX, TAY, DEX, and DEY, and relative BPL.
+- Add implied TSX, TXS, TXA, TYA, TAX, TAY, DEX, and DEY, and the eight conditional relative branches.
 - Preserve explicit errors for all other unimplemented opcodes and addressing forms.
 
 ## Capabilities
