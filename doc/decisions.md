@@ -289,7 +289,56 @@ Strict OpenSpec validation for `reset-cpu` passes. Code, tests, and related docu
 per line with no trailing whitespace. Source review confirms that CPU only reads the two vector bytes through Machine;
 instruction execution, execution loops, interrupts, peripheral reset, and full-console reset remain unimplemented.
 
+## Opcode handler table (2026-11-19)
+
+At the user's request, CPU uses one shared 256-entry tuple indexed by opcode. Each group of 16 entries is labeled
+with its hexadecimal range so a new handler can be placed at its opcode. The $78 entry holds the `_sei` function.
+Entries with `None` raise `NotImplementedError` with the fetched opcode and original PC before CPU state changes.
+Mesen also dispatches by indexing a handler table with the fetched byte. [Mesen opcode dispatch][mesen-dispatch].
+
+[mesen-dispatch]: https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp#L1689-L1695
+
+## Sequential instruction fetches (2026-11-19)
+
+`_fetch_byte()` and `_fetch_word()` use PC as the address for reads through Machine. They advance the 16-bit PC by
+one or two after a successful fetch. The word helper reads the low byte first and wraps the high-byte address from
+$FFFF to $0000. It commits PC after both reads so a failed second read leaves PC at the start of the word.
+[Mesen's byte and word reads](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.h#L2029-L2049).
+
+`CPU.step()` uses the byte helper for the opcode. An empty handler entry restores the original PC so the failing
+instruction remains available for inspection. The word helper is available for instructions with two-byte operands.
+
 ## Departures and patches
+
+### Functional CLI single step (2026-11-19)
+
+Task 1.4 of `execute-sei` registers implied CLI ($58) in the handler table. The handler clears I, and the shared
+opcode fetch advances PC by one. The focused test writes $58 at $0000 in RAM and checks I from both initial values.
+[MOS programming manual, §3.2.2](https://lbaeza.neocities.org/mcs6500/6500_ch03).
+
+The functional model omits the second-cycle dummy read and hardware IRQ polling delay so this step covers the flag
+effect. IRQ delivery belongs to later interrupt support. [Mesen's implied addressing and IRQ polling][mesen-implied].
+
+### Functional SEI single step (2026-11-19)
+
+Task 1.1 of `execute-sei` adds `CPU.step()` with one Machine read at the current PC. Implied SEI ($78) sets I and
+advances the 16-bit PC by one while preserving A/X/Y/SP, the other flags, and memory. An unsupported opcode raises
+`NotImplementedError` with its byte and address, leaving PC at the failed instruction for inspection.
+[MOS programming manual, §3.2.1][mos-sei] and [Mesen's SEI handler][mesen-sei].
+
+The functional step omits the hardware's second-cycle dummy read at the next address and IRQ polling delay to focus
+on the register effects. The initial synthetic test confirmed that SEI at $1FFF reached $2000 without a PPU read.
+[Mesen's implied addressing and IRQ polling][mesen-implied].
+
+At the user's request, the dedicated SEI test now writes $78 to RAM at $0000 and checks I from both initial values.
+
+Read-only checks on both target ROMs completed one SEI each. The 16 KiB image stopped at $C071 on $A9 and the 32 KiB
+image stopped at $8001 on $D8. Both images matched their recorded SHA-256 hashes before and after the checks.
+[Local ROM notes](../ROMs/README.md).
+
+[mos-sei]: https://lbaeza.neocities.org/mcs6500/6500_ch03
+[mesen-sei]: https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.h
+[mesen-implied]: https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp
 
 ### Functional CPU reset and software B preservation (2026-11-19)
 

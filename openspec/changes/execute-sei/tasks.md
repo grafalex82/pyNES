@@ -2,15 +2,14 @@
 
 ## 1. Add instructions individually and count their cycles
 
-Complete instruction tasks one at a time. Each opcode case checks PC advancement and unrelated state preservation.
-After adding the counter, verify that each case checks its documented cycle increment. Instruction tests do not
-capture logs or assert logger calls, record counts, trace text, or alignment.
+Complete instruction tasks one at a time and verify the effect specified by each task. Task 1.10 covers cycle
+increments for every selected opcode. Instruction tests do not capture logs or assert logger calls, record counts,
+trace text, or alignment.
 
-- [ ] 1.1 Add CPU.step() with implied SEI ($78); verify I clear/set, unrelated state preservation, one-byte PC advance,
-  wrap at $FFFF, and mapped fetch through RAM, a RAM mirror, and both PRG layouts using synthetic data.
+- [x] 1.1 Add CPU.step() for implied SEI ($78). Write $78 to RAM at $0000 and verify I is set from either initial value.
 - [ ] 1.2 Add CLC ($18); verify C becomes false from either initial value while other state is preserved.
 - [ ] 1.3 Add SEC ($38); verify C becomes true from either initial value while other state is preserved.
-- [ ] 1.4 Add CLI ($58); verify I becomes false from either initial value with other state preserved and no IRQ logic.
+- [x] 1.4 Add CLI ($58); verify I becomes false from either initial value with other state preserved and no IRQ logic.
 - [ ] 1.5 Add CLD ($D8); verify D becomes false from either initial value while other state is preserved.
 - [ ] 1.6 Add SED ($F8); verify D becomes true from either initial value without adding decimal arithmetic.
 - [ ] 1.7 Add CLV ($B8); verify V becomes false from either initial value while other state is preserved.

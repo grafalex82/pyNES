@@ -1,4 +1,4 @@
-"""Expose NES CPU registers, separately stored status flags, and functional startup."""
+"""Model NES CPU registers, functional startup, and single-instruction execution."""
 
 import logging
 
@@ -48,6 +48,40 @@ class CPU:
 
         # Report the state only after reset has completed.
         self.log_state("Reset completed")
+
+
+    def step(self):
+        """Execute one instruction at the current program counter."""
+        # Save the instruction address before consuming the opcode.
+        address = self._pc
+        opcode = self._fetch_byte()
+
+        # Leave an unsupported opcode at PC so the caller can inspect or retry it.
+        handler = self._instruction_handlers[opcode]
+        if handler is None:
+            self._pc = address
+            raise NotImplementedError(f"CPU opcode 0x{opcode:02X} at address 0x{address:04X} is not implemented")
+        handler(self)
+
+
+    def _fetch_byte(self):
+        """Read the byte at PC and advance the 16-bit PC by one."""
+        address = self._pc
+        value = self._machine.read_byte(address)
+        self._pc = (address + 1) & 0xFFFF
+        return value
+
+
+    def _fetch_word(self):
+        """Read a little-endian word at PC and advance the 16-bit PC by two."""
+        # Fetch the low byte first and wrap the bus address after $FFFF.
+        address = self._pc
+        low = self._machine.read_byte(address)
+        high = self._machine.read_byte((address + 1) & 0xFFFF)
+
+        # Consume the word after both reads succeed.
+        self._pc = (address + 2) & 0xFFFF
+        return low | (high << 8)
 
 
     def log_state(self, event):
@@ -216,3 +250,305 @@ class CPU:
         self._break_flag = bool(value & 0x10)
         self._overflow = bool(value & 0x40)
         self._negative = bool(value & 0x80)
+
+
+    def _cli(self):
+        """Clear the interrupt-disable flag used to mask IRQs."""
+        self._interrupt_disable = False
+
+
+    def _sei(self):
+        """Set the interrupt-disable flag used to mask IRQs."""
+        self._interrupt_disable = True
+
+
+    # The opcode is the tuple index. None marks an unimplemented instruction.
+    _instruction_handlers = (
+        # $00-$0F
+        None,  # $00
+        None,  # $01
+        None,  # $02
+        None,  # $03
+        None,  # $04
+        None,  # $05
+        None,  # $06
+        None,  # $07
+        None,  # $08
+        None,  # $09
+        None,  # $0A
+        None,  # $0B
+        None,  # $0C
+        None,  # $0D
+        None,  # $0E
+        None,  # $0F
+
+        # $10-$1F
+        None,  # $10
+        None,  # $11
+        None,  # $12
+        None,  # $13
+        None,  # $14
+        None,  # $15
+        None,  # $16
+        None,  # $17
+        None,  # $18
+        None,  # $19
+        None,  # $1A
+        None,  # $1B
+        None,  # $1C
+        None,  # $1D
+        None,  # $1E
+        None,  # $1F
+
+        # $20-$2F
+        None,  # $20
+        None,  # $21
+        None,  # $22
+        None,  # $23
+        None,  # $24
+        None,  # $25
+        None,  # $26
+        None,  # $27
+        None,  # $28
+        None,  # $29
+        None,  # $2A
+        None,  # $2B
+        None,  # $2C
+        None,  # $2D
+        None,  # $2E
+        None,  # $2F
+
+        # $30-$3F
+        None,  # $30
+        None,  # $31
+        None,  # $32
+        None,  # $33
+        None,  # $34
+        None,  # $35
+        None,  # $36
+        None,  # $37
+        None,  # $38
+        None,  # $39
+        None,  # $3A
+        None,  # $3B
+        None,  # $3C
+        None,  # $3D
+        None,  # $3E
+        None,  # $3F
+
+        # $40-$4F
+        None,  # $40
+        None,  # $41
+        None,  # $42
+        None,  # $43
+        None,  # $44
+        None,  # $45
+        None,  # $46
+        None,  # $47
+        None,  # $48
+        None,  # $49
+        None,  # $4A
+        None,  # $4B
+        None,  # $4C
+        None,  # $4D
+        None,  # $4E
+        None,  # $4F
+
+        # $50-$5F
+        None,  # $50
+        None,  # $51
+        None,  # $52
+        None,  # $53
+        None,  # $54
+        None,  # $55
+        None,  # $56
+        None,  # $57
+        _cli,  # $58
+        None,  # $59
+        None,  # $5A
+        None,  # $5B
+        None,  # $5C
+        None,  # $5D
+        None,  # $5E
+        None,  # $5F
+
+        # $60-$6F
+        None,  # $60
+        None,  # $61
+        None,  # $62
+        None,  # $63
+        None,  # $64
+        None,  # $65
+        None,  # $66
+        None,  # $67
+        None,  # $68
+        None,  # $69
+        None,  # $6A
+        None,  # $6B
+        None,  # $6C
+        None,  # $6D
+        None,  # $6E
+        None,  # $6F
+
+        # $70-$7F
+        None,  # $70
+        None,  # $71
+        None,  # $72
+        None,  # $73
+        None,  # $74
+        None,  # $75
+        None,  # $76
+        None,  # $77
+        _sei,  # $78
+        None,  # $79
+        None,  # $7A
+        None,  # $7B
+        None,  # $7C
+        None,  # $7D
+        None,  # $7E
+        None,  # $7F
+
+        # $80-$8F
+        None,  # $80
+        None,  # $81
+        None,  # $82
+        None,  # $83
+        None,  # $84
+        None,  # $85
+        None,  # $86
+        None,  # $87
+        None,  # $88
+        None,  # $89
+        None,  # $8A
+        None,  # $8B
+        None,  # $8C
+        None,  # $8D
+        None,  # $8E
+        None,  # $8F
+
+        # $90-$9F
+        None,  # $90
+        None,  # $91
+        None,  # $92
+        None,  # $93
+        None,  # $94
+        None,  # $95
+        None,  # $96
+        None,  # $97
+        None,  # $98
+        None,  # $99
+        None,  # $9A
+        None,  # $9B
+        None,  # $9C
+        None,  # $9D
+        None,  # $9E
+        None,  # $9F
+
+        # $A0-$AF
+        None,  # $A0
+        None,  # $A1
+        None,  # $A2
+        None,  # $A3
+        None,  # $A4
+        None,  # $A5
+        None,  # $A6
+        None,  # $A7
+        None,  # $A8
+        None,  # $A9
+        None,  # $AA
+        None,  # $AB
+        None,  # $AC
+        None,  # $AD
+        None,  # $AE
+        None,  # $AF
+
+        # $B0-$BF
+        None,  # $B0
+        None,  # $B1
+        None,  # $B2
+        None,  # $B3
+        None,  # $B4
+        None,  # $B5
+        None,  # $B6
+        None,  # $B7
+        None,  # $B8
+        None,  # $B9
+        None,  # $BA
+        None,  # $BB
+        None,  # $BC
+        None,  # $BD
+        None,  # $BE
+        None,  # $BF
+
+        # $C0-$CF
+        None,  # $C0
+        None,  # $C1
+        None,  # $C2
+        None,  # $C3
+        None,  # $C4
+        None,  # $C5
+        None,  # $C6
+        None,  # $C7
+        None,  # $C8
+        None,  # $C9
+        None,  # $CA
+        None,  # $CB
+        None,  # $CC
+        None,  # $CD
+        None,  # $CE
+        None,  # $CF
+
+        # $D0-$DF
+        None,  # $D0
+        None,  # $D1
+        None,  # $D2
+        None,  # $D3
+        None,  # $D4
+        None,  # $D5
+        None,  # $D6
+        None,  # $D7
+        None,  # $D8
+        None,  # $D9
+        None,  # $DA
+        None,  # $DB
+        None,  # $DC
+        None,  # $DD
+        None,  # $DE
+        None,  # $DF
+
+        # $E0-$EF
+        None,  # $E0
+        None,  # $E1
+        None,  # $E2
+        None,  # $E3
+        None,  # $E4
+        None,  # $E5
+        None,  # $E6
+        None,  # $E7
+        None,  # $E8
+        None,  # $E9
+        None,  # $EA
+        None,  # $EB
+        None,  # $EC
+        None,  # $ED
+        None,  # $EE
+        None,  # $EF
+
+        # $F0-$FF
+        None,  # $F0
+        None,  # $F1
+        None,  # $F2
+        None,  # $F3
+        None,  # $F4
+        None,  # $F5
+        None,  # $F6
+        None,  # $F7
+        None,  # $F8
+        None,  # $F9
+        None,  # $FA
+        None,  # $FB
+        None,  # $FC
+        None,  # $FD
+        None,  # $FE
+        None,  # $FF
+    )

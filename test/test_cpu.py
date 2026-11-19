@@ -1,4 +1,4 @@
-"""Verify CPU startup, repeated reset, register ranges, and status conversion."""
+"""Verify CPU startup, repeated reset, instruction execution, and register state."""
 
 import logging
 
@@ -26,18 +26,22 @@ def make_ines_header(*, prg_rom_banks, chr_rom_banks=0, mapper=0):
 
 @pytest.fixture
 def make_cpu(tmp_path):
-    # Tests can select a PRG layout and RAM entry point without replacing memory operations.
-    def create_cpu(*, prg_size=PRG_ROM_BANK_SIZE, start_address=0x0000):
-        # The reset vector occupies the fourth and third bytes before the end of either PRG layout.
+    # Tests can select the memory layout and entry point while using real memory operations.
+    def create_cpu(*, prg_size=PRG_ROM_BANK_SIZE, start_address=0x0000, prg_program=b""):
+        # Place PRG code at the mapped entry and install the reset vector in the last bank.
         prg = bytearray(prg_size)
+        prg_offset = (start_address - 0x8000) & (prg_size - 1)
+        prg[prg_offset:prg_offset + len(prg_program)] = prg_program
         prg[-4:-2] = start_address.to_bytes(2, "little")
+
+        # Connect the cartridge before CPU construction reads its reset vector.
         header = make_ines_header(prg_rom_banks=prg_size // PRG_ROM_BANK_SIZE, chr_rom_banks=0, mapper=0)
         filename = tmp_path / "cpu.nes"
         filename.write_bytes(header + prg)
         machine = Machine(NESFile(filename))
         return CPU(machine), machine
 
-    # Both components remain available for test-specific registers, data, and future instruction bytes in RAM.
+    # Both components remain available for test-specific registers, data, and instruction bytes in RAM.
     return create_cpu
 
 
@@ -127,6 +131,93 @@ def test_repeated_reset_preserves_ram(make_cpu, prg_size):
     cpu.reset()
     cpu.reset()
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
+
+
+def test_fetch_byte_and_word_advance_pc(make_cpu):
+    # Distinct bytes reveal a reversed word or an off-by-one fetch.
+    cpu, machine = make_cpu(start_address=0x0234)
+    machine.write_byte(0x0234, 0xA5)
+    machine.write_byte(0x0235, 0x34)
+    machine.write_byte(0x0236, 0x12)
+
+    # Each fetch starts where the previous one left PC.
+    assert cpu._fetch_byte() == 0xA5
+    assert cpu.pc == 0x0235
+    assert cpu._fetch_word() == 0x1234
+    assert cpu.pc == 0x0237
+
+
+def test_fetch_word_wraps_from_prg_rom_to_ram(make_cpu):
+    # The last PRG byte and first RAM byte form the word across the address boundary.
+    cpu, machine = make_cpu(start_address=0xFFFF, prg_program=b"\x34")
+    machine.write_byte(0x0000, 0x12)
+
+    # The high byte is read at $0000 and the next PC is $0001.
+    assert cpu._fetch_word() == 0x1234
+    assert cpu.pc == 0x0001
+
+
+def test_fetch_word_preserves_pc_when_second_read_fails(cpu):
+    # The last RAM mirror byte is mapped, but the next address is a PPU register.
+    cpu.pc = 0x1FFF
+
+    # A partial word leaves PC at the start of the fetch.
+    with pytest.raises(NotImplementedError, match="CPU read at address 0x2000"):
+        cpu._fetch_word()
+    assert cpu.pc == 0x1FFF
+
+
+def test_step_preserves_pc_when_opcode_read_fails(cpu):
+    # The unconnected PPU register cannot supply an opcode.
+    cpu.pc = 0x2002
+
+    # The read failure propagates from Machine at the original PC.
+    with pytest.raises(NotImplementedError, match="CPU read at address 0x2002"):
+        cpu.step()
+    assert cpu.pc == 0x2002
+
+
+@pytest.mark.parametrize("initial_i", [False, True])
+def test_step_sei_sets_interrupt_disable(make_cpu, initial_i):
+    # Place SEI at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0x78)
+    cpu.interrupt_disable = initial_i
+
+    # SEI sets I from either initial value.
+    cpu.step()
+    assert cpu.interrupt_disable is True
+
+
+@pytest.mark.parametrize("initial_i", [False, True])
+def test_step_cli_clears_interrupt_disable(make_cpu, initial_i):
+    # Place CLI at the default reset address in RAM.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0x58)
+    cpu.interrupt_disable = initial_i
+
+    # CLI clears I from either initial value.
+    cpu.step()
+    assert cpu.interrupt_disable is False
+
+
+def test_instruction_table_has_one_entry_per_opcode():
+    assert len(CPU._instruction_handlers) == 256
+
+
+@pytest.mark.parametrize("opcode", [0x1A, 0xA9, 0xFF])
+def test_step_reports_empty_instruction_table_entry(make_cpu, opcode):
+    # Pick a nonzero PC and known register values to verify state at the failed instruction.
+    cpu, machine = make_cpu(start_address=0x0234)
+    cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xE1
+    machine.write_byte(0x0234, opcode)
+
+    # A missing handler must report both the byte and its address without consuming it.
+    with pytest.raises(NotImplementedError) as error:
+        cpu.step()
+    assert str(error.value) == f"CPU opcode 0x{opcode:02X} at address 0x0234 is not implemented"
+    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xE1, 0x0234)
+    assert machine.read_byte(0x0234) == opcode
 
 
 @pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0xABCD)])

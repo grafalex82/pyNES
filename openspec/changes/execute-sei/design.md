@@ -23,7 +23,7 @@ No instruction execution, host execution loop, or application entry point curren
 **Non-Goals:**
 
 - Instructions outside the eight selected encodings, IRQ/NMI delivery, bus-cycle scheduling, and peripheral progression.
-- Breakpoint storage or callbacks, scheduling frameworks, threads, command dispatch registries, and pygame integration.
+- Breakpoint storage or callbacks, scheduling frameworks, threads, host command registries, and pygame integration.
 - ROM changes, corrupted-input handling, exception wrappers, or a new packaging/build setup.
 
 ## Decisions
@@ -50,10 +50,14 @@ connections consistent. Constructing the CPU once inside Emulator is sufficient 
 
 ### Execute the selected implied instructions in CPU.step()
 
-Capture the original PC and read its opcode through Machine.read_byte(). Use direct branches for the selected
-encodings, changing only the existing flag named below. An official NOP branch selects its mnemonic without changing
-registers or flags. Share the successful PC advancement, cycle increment, and trace after dispatch.
-No operand decoder, instruction class hierarchy, or generic handler framework is needed.
+Capture the original PC and consume its opcode through `_fetch_byte()`. The fetch helpers read through Machine and
+advance the 16-bit PC after the requested reads succeed. `_fetch_word()` reads two consecutive bytes, low byte first,
+wrapping the second address to $0000 when the first is $FFFF.
+
+Use the opcode to index a fixed 256-entry table, with a comment naming the hexadecimal range of each group of 16
+entries. Each implemented opcode has a reference to its CPU handler, starting with SEI at $78. Empty entries hold
+None and trigger the existing NotImplementedError diagnostic. Pass the current CPU to the selected handler. Apply
+the shared cycle increment and trace after the handler returns.
 
 | Instruction | Opcode | Effect | Bytes | Cycles |
 | --- | --- | --- | --- | --- |
@@ -99,11 +103,9 @@ The counter is a foundation for later timing; it does not advance PPU/APU, wait 
 
 ### Stop on missing behavior without consuming the failed opcode
 
-For any byte outside the selected eight, raise NotImplementedError with its instruction address and opcode in hex.
-Do this before changing PC, flags, or cycles. Preserve CPU state if the opcode read itself raises and propagate
-Machine's exception unchanged. Keep the failing address inspectable for the next educational change.
-An alternative is to advance PC during fetch and restore it after failure; updating PC only after decoding avoids
-rollback logic. Unsupported instructions never become silent no-ops and receive no completed-instruction trace.
+If the fetched opcode has no handler, restore the original PC and raise NotImplementedError with the instruction
+address and opcode in hex. A failed opcode read propagates Machine's exception before the fetch advances PC.
+Both stops keep the failing address available for inspection and skip the completed-instruction trace.
 
 This diagnostic stop policy is emulator behavior, not a claim about physical execution of unsupported opcodes.
 Completed instructions in a block retain their effects; a later exception does not roll back the block.
@@ -112,8 +114,7 @@ Completed instructions in a block retain their effects; a later exception does n
 
 Call a small CPU.log_instruction(address, instruction_bytes, mnemonic, operands="") helper once after a supported
 instruction updates flags, PC, and cycles. It formats the instruction prefix and delegates the state suffix to
-log_state(). Keep the eight execution branches responsible for their mnemonic and their currently empty operands;
-this does not add a general disassembler or support for more opcodes.
+log_state(). Have each instruction handler supply its mnemonic and the empty operand text for implied addressing.
 
 Use the exact instruction-message layout below. Column numbers are one-based:
 
@@ -240,8 +241,8 @@ Implement no $A9 or later opcode in this change. No game patch is needed or perm
 ### Verify observable behavior with synthetic programs
 
 Extend the existing CPU tests with explicit bytes for the eight selected instructions in real mapped memory.
-Use RAM writes through Machine where possible. For ROM and $FFFF cases, construct PRG bytes before connecting the
-cartridge; never patch the ROM device.
+Use RAM writes through Machine where possible. The SEI test writes $78 at $0000 and checks that I is set from each
+initial value. For ROM and $FFFF cases, construct synthetic PRG bytes before connecting the cartridge.
 Check target flags initially clear/set, unrelated state preservation, NOP behavior, PC wrapping, and fetch failures.
 Verify cycles starts at zero, gains two per instruction, accumulates across mixed sequences, survives reset, and
 stays unchanged on failure. Check unsupported-opcode diagnostics. Instruction tests cover CPU/memory results, PC,

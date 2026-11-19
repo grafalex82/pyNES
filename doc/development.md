@@ -64,9 +64,8 @@ The initial register profile is deterministic. Software B starts false and survi
 displayed as 1. Reset omits dummy bus reads and timing and leaves Machine, RAM, and peripherals untouched.
 Completed resets use `log_state(event)` to log hexadecimal A/X/Y/SP/PC and a symbolic NV1BDIZC mask at DEBUG
 through the `cpu` logger. The helper also accepts caller-supplied event text for inspecting the current state.
-Instruction execution, peripherals, bounded execution, and breakpoints remain future work.
-The memory interface lets tests and exploration scripts access bytes before those execution capabilities are added.
-The next missing CPU capability is single-instruction execution; reset loads PC without fetching an opcode.
+`CPU.step()` executes implied SEI ($78) and CLI ($58) through the existing memory interface. Unsupported opcodes
+raise `NotImplementedError` at the failing PC. Peripherals, bounded execution, and breakpoints remain future work.
 
 ## Documentation roles
 
