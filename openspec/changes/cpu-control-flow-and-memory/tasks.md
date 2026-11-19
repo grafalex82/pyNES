@@ -185,9 +185,9 @@ Resume another task only when it is selected for implementation.
 
 ## 32. SBC immediate ($E9)
 
-- [ ] 32.1 Implement the selected encoding; verify A, C/V/N/Z, both incoming carries, borrow, signed overflow, binary
+- [x] 32.1 Implement the selected encoding; verify A, C/V/N/Z, both incoming carries, borrow, signed overflow, binary
   arithmetic with D clear and set, PC, and cycles with focused synthetic pytest cases.
-- [ ] 32.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 32.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 33. Integration
 

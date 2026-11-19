@@ -501,6 +501,42 @@ def test_adc_immediate(make_cpu, initial, operand, incoming_carry, expected, car
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("initial, operand, incoming_carry, expected, carry, overflow", [
+    (0x00, 0x00, True, 0x00, True, False),
+    (0x00, 0x00, False, 0xFF, False, False),
+    (0x00, 0x01, True, 0xFF, False, False),
+    (0x80, 0x01, True, 0x7F, True, True),
+    (0x7F, 0xFF, True, 0x80, False, True),
+    (0x42, 0x42, True, 0x00, True, False),
+    (0x10, 0x01, True, 0x0F, True, False),
+    (0xFF, 0x00, True, 0xFF, True, False),
+    (0x00, 0xFF, False, 0x00, False, False),
+])
+@pytest.mark.parametrize("decimal", [False, True])
+def test_sbc_immediate(make_cpu, initial, operand, incoming_carry, expected, carry, overflow, decimal):
+    # Set the relevant flags and place each instruction byte in RAM.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.carry = incoming_carry
+    cpu.decimal = decimal
+    cpu.overflow = not overflow
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0xE9)
+    machine.write_byte(0x0568, operand)
+
+    # Binary subtraction updates A and C/V/N/Z independently of D.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.overflow is overflow
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.decimal is decimal
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 2
+
+
 @pytest.mark.parametrize("opcode, initial, operand, expected", [
     # AND
     (0x29, 0xF0, 0x0F, 0x00),

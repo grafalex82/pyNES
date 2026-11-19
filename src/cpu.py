@@ -417,6 +417,18 @@ class CPU:
         self._finish_immediate_update(address, opcode, "ADC", operand, self._a)
 
 
+    def _sbc_immediate(self, address, opcode):
+        # The NES subtracts in binary; a clear C represents an incoming borrow.
+        operand = self._fetch_byte()
+        difference = self._a - operand - (not self._carry)
+
+        # C means no unsigned borrow; V detects signed subtraction overflow.
+        self._overflow = bool((self._a ^ operand) & (self._a ^ difference) & 0x80)
+        self._carry = difference >= 0
+        self._a = difference & 0xFF
+        self._finish_immediate_update(address, opcode, "SBC", operand, self._a)
+
+
     def _and_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a &= operand
@@ -1091,7 +1103,7 @@ class CPU:
         None,  # $E6
         None,  # $E7
         _inx,  # $E8
-        None,  # $E9
+        _sbc_immediate,  # $E9
         _nop,  # $EA
         None,  # $EB
         None,  # $EC
