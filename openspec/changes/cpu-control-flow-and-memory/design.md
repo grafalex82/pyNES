@@ -3,8 +3,8 @@
 ## Context
 
 CPU.step dispatches opcodes, reads instruction bytes through Machine, accumulates nominal instruction cycles, and
-logs completed instructions using captured bytes. The current implementation has absolute loads and stores but lacks
-the encodings selected here. The proposal groups their plans; each task remains an individual learning step.
+logs completed instructions using captured bytes. The first 16 encodings in this change have been implemented; the
+accumulator shifts and rotates and immediate comparisons are planned. Each encoding remains an individual learning step.
 
 ## Goals / Non-Goals
 
@@ -20,8 +20,15 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
   restored address. SP wraps within the stack page; PC wraps at 16 bits.
 - Zero-page operands are zero-extended. Indexed absolute addresses add X or Y modulo 65536. Loads update N and Z;
   stores write the selected register. Loads add a cycle on page crossing; indexed stores always take five cycles.
+- Accumulator shifts move the outgoing bit into C; rotates additionally insert the old C at the opposite end. Each
+  sets N and Z from the resulting byte. Immediate comparisons set C for an unsigned register value greater than or
+  equal to the operand, Z for equality, and N from bit 7 of the eight-bit difference without storing that difference.
+- Accumulator shifts and rotates omit the hardware's discarded read at the next instruction address, as with existing
+  implied instructions. Immediate comparisons need no omitted dummy access. The omission can suppress device read side
+  effects for every ROM using these accumulator encodings; no ROM is patched.
 - Preserve existing instruction trace behavior using fetched bytes and without extra reads. As requested, focused
-  instruction tests check direct effects and do not test logging or unrelated registers and flags.
+  instruction tests check direct effects and do not test logging, PC wrap, or unrelated registers and flags. Place
+  each opcode or operand byte on a separate setup line.
 - Follow the existing functional bus model: indexed stores and page-crossing indexed loads omit provisional reads;
   JSR omits its internal dummy read; RTS omits its opcode-adjacent, stack-page, and final return-address dummy reads.
   Their device-visible read side effects are therefore not modeled. Plain JMP and zero-page encodings need no omitted

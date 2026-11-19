@@ -1,5 +1,99 @@
 ## ADDED Requirements
 
+### Requirement: Execute ASL on the accumulator
+
+Opcode $0A SHALL shift A left by one bit, set C from the old bit 7, insert zero into bit 0, and set N and Z from the
+eight-bit result. It SHALL advance PC by one and add two nominal cycles, preserving the other registers and flags.
+
+#### Scenario: Shift out the high bit
+- **WHEN** A=$80 and ASL executes
+- **THEN** A=$00, C=1, Z=1, and N=0
+
+#### Scenario: Set the negative flag
+- **WHEN** A=$40 and ASL executes
+- **THEN** A=$80, C=0, Z=0, and N=1
+
+### Requirement: Execute LSR on the accumulator
+
+Opcode $4A SHALL shift A right by one bit, set C from the old bit 0, insert zero into bit 7, and set N and Z from the
+eight-bit result. It SHALL advance PC by one and add two nominal cycles, preserving the other registers and flags.
+
+#### Scenario: Shift out the low bit
+- **WHEN** A=$01 and LSR executes
+- **THEN** A=$00, C=1, Z=1, and N=0
+
+#### Scenario: Shift the high bit
+- **WHEN** A=$80 and LSR executes
+- **THEN** A=$40, C=0, Z=0, and N=0
+
+### Requirement: Execute ROL on the accumulator
+
+Opcode $2A SHALL shift A left by one bit, set C from the old bit 7, insert the old C into bit 0, and set N and Z from
+the eight-bit result. It SHALL advance PC by one and add two nominal cycles, preserving the other registers and flags.
+
+#### Scenario: Rotate through a set carry
+- **WHEN** A=$80, C=1, and ROL executes
+- **THEN** A=$01, C=1, Z=0, and N=0
+
+#### Scenario: Rotate with a clear carry
+- **WHEN** A=$40, C=0, and ROL executes
+- **THEN** A=$80, C=0, Z=0, and N=1
+
+### Requirement: Execute ROR on the accumulator
+
+Opcode $6A SHALL shift A right by one bit, set C from the old bit 0, insert the old C into bit 7, and set N and Z from
+the eight-bit result. It SHALL advance PC by one and add two nominal cycles, preserving the other registers and flags.
+
+#### Scenario: Rotate through a set carry
+- **WHEN** A=$01, C=1, and ROR executes
+- **THEN** A=$80, C=1, Z=0, and N=1
+
+#### Scenario: Rotate with a clear carry
+- **WHEN** A=$02, C=0, and ROR executes
+- **THEN** A=$01, C=0, Z=0, and N=0
+
+### Requirement: Execute CMP with an immediate operand
+
+Opcode $C9 SHALL compare A with the next byte, set C if A is unsigned greater than or equal to the operand, set Z on
+equality, and set N from bit 7 of the eight-bit difference. It SHALL advance PC by two and add two nominal cycles,
+preserving all registers other than PC and flags other than N/Z/C.
+
+#### Scenario: Compare equal values
+- **WHEN** A=$42 and CMP #$42 executes
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Compare unequal values
+- **WHEN** A=$00 with operand $01, or A=$80 with operand $01, is compared
+- **THEN** N/Z/C are respectively 1/0/0 and 0/0/1
+
+### Requirement: Execute CPX with an immediate operand
+
+Opcode $E0 SHALL compare X with the next byte, set C if X is unsigned greater than or equal to the operand, set Z on
+equality, and set N from bit 7 of the eight-bit difference. It SHALL advance PC by two and add two nominal cycles,
+preserving all registers other than PC and flags other than N/Z/C.
+
+#### Scenario: Compare equal values
+- **WHEN** X=$42 and CPX #$42 executes
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Compare unequal values
+- **WHEN** X=$00 with operand $01, or X=$80 with operand $01, is compared
+- **THEN** N/Z/C are respectively 1/0/0 and 0/0/1
+
+### Requirement: Execute CPY with an immediate operand
+
+Opcode $C0 SHALL compare Y with the next byte, set C if Y is unsigned greater than or equal to the operand, set Z on
+equality, and set N from bit 7 of the eight-bit difference. It SHALL advance PC by two and add two nominal cycles,
+preserving all registers other than PC and flags other than N/Z/C.
+
+#### Scenario: Compare equal values
+- **WHEN** Y=$42 and CPY #$42 executes
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Compare unequal values
+- **WHEN** Y=$00 with operand $01, or Y=$80 with operand $01, is compared
+- **THEN** N/Z/C are respectively 1/0/0 and 0/0/1
+
 ### Requirement: Execute JMP using absolute addressing
 
 Opcode $4C SHALL load PC from its little-endian two-byte operand and add three cycles. All other registers, flags, and

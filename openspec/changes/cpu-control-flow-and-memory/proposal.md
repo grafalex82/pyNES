@@ -2,7 +2,7 @@
 
 ## Why
 
-The selected control-flow and memory instructions extend the educational CPU in small, understandable steps.
+The selected CPU instructions extend the educational emulator in small, understandable steps.
 At the user's request, their plans are collected into one reviewable OpenSpec change.
 
 ## What Changes
@@ -10,6 +10,7 @@ At the user's request, their plans are collected into one reviewable OpenSpec ch
 - Add JMP absolute and indirect, JSR, and RTS.
 - Add STA, STX, STY, LDA, LDX, and LDY using zero-page addressing.
 - Add STA and LDA using absolute,X and absolute,Y; add LDX absolute,Y and LDY absolute,X.
+- Add accumulator ASL, LSR, ROL, and ROR; add immediate CMP, CPX, and CPY.
 - Keep other unsupported opcodes explicit and preserve existing execution and trace conventions.
 - Implement and verify one encoding at a time; report the next observed obstacle and stop at that boundary.
 
@@ -21,7 +22,7 @@ None.
 
 ### Modified Capabilities
 
-- cpu-execution: execute the 16 selected control-flow, zero-page, and indexed-absolute encodings.
+- cpu-execution: execute the 23 selected control-flow, memory, shift, rotate, and comparison encodings.
 
 ## Impact
 

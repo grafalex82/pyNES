@@ -98,12 +98,52 @@ Resume another task only when it is selected for implementation.
   cycles with focused synthetic pytest cases.
 - [x] 16.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
-## 17. Integration
+## 17. ASL accumulator ($0A)
 
-- [ ] 17.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
+- [ ] 17.1 Implement the selected encoding; verify A, C/N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 17.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 18. LSR accumulator ($4A)
+
+- [ ] 18.1 Implement the selected encoding; verify A, C/N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 18.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 19. ROL accumulator ($2A)
+
+- [ ] 19.1 Implement the selected encoding; verify both incoming carry values, A, C/N/Z, PC, and cycles with focused
+  synthetic pytest cases.
+- [ ] 19.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 20. ROR accumulator ($6A)
+
+- [ ] 20.1 Implement the selected encoding; verify both incoming carry values, A, C/N/Z, PC, and cycles with focused
+  synthetic pytest cases.
+- [ ] 20.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 21. CMP immediate ($C9)
+
+- [ ] 21.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
+  focused synthetic pytest cases.
+- [ ] 21.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 22. CPX immediate ($E0)
+
+- [ ] 22.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
+  focused synthetic pytest cases.
+- [ ] 22.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 23. CPY immediate ($C0)
+
+- [ ] 23.1 Implement the selected encoding; verify equal, lower, and greater values, C/N/Z, PC, and cycles with
+  focused synthetic pytest cases.
+- [ ] 23.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 24. Integration
+
+- [ ] 24.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
   resolve any failures.
-- [ ] 17.2 Update the relevant CPU execution documentation and verify that it describes only implemented behavior.
-- [ ] 17.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
+- [ ] 24.2 Review documentation for hardware departures and their rationale without listing instruction support.
+- [ ] 24.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
   implementing it; record actual observations only.
 
 ## Workflow follow-up
