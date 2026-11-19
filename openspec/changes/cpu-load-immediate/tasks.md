@@ -31,9 +31,9 @@
 
 ## 7. Integration
 
-- [ ] 7.1 Update CPU documentation and the decision record for all selected instructions and bus approximations.
-- [ ] 7.2 Run focused and full pytest suites and validate this change in strict mode.
-- [ ] 7.3 Run applicable local ROMs with a bounded cycle budget and report the next obstacle without implementing it.
+- [x] 7.1 Review CPU documentation and the decision record for nontrivial execution and bus behavior.
+- [x] 7.2 Run focused and full pytest suites and validate this change in strict mode.
+- [x] 7.3 Run applicable local ROMs with a bounded cycle budget and report the next obstacle without implementing it.
 
 ## Workflow follow-up
 

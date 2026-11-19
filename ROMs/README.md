@@ -23,9 +23,12 @@ corrupt-input detection and repair are outside scope, and filesystem/parsing exc
 
 All three headers declare mapper 0, submapper 0, no trainer, and no nonvolatile memory. Their mapper/submapper, trainer,
 and PRG-size declarations fall within [Machine's current construction limits](../doc/memory.md#supported-configuration).
-Byte routing is verified with synthetic cartridges. CPU reset and execution remain future work; no local game execution
-is claimed. Filenames are local labels; exact game revisions have not been confirmed.
+Byte routing is verified with synthetic cartridges. These inspection checks did not execute games.
+Filenames are local labels; exact game revisions have not been confirmed.
 Each CLI inspection matched the expected metadata and left the full-file SHA-256 unchanged.
+
+Bounded entry checks on 2026-11-19 confirmed the recorded hashes for all three images before and after execution.
+Each stopped at an unconnected PPU register. No image was modified; these checks do not establish game playability.
 
 ### BattleCity (Japan).nes
 

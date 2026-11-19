@@ -310,23 +310,18 @@ instruction remains available for inspection. The word helper is available for i
 
 Task 1.9 of `execute-sei` verified this diagnostic policy with synthetic RAM programs. At the time, unsupported $A9
 and unofficial NOP $1A reported their byte and address. An unconnected PPU read propagated Machine's error.
-The failing step preserves registers, flags, PC, and RAM; SEI and CLD effects remain when a later $A9 stops execution.
+At that time, the checks also confirmed that a later failure preserved the effects of preceding instructions.
 This stop is an emulator diagnostic rather than hardware behavior.
 
 ## Nominal instruction cycle counter (2026-11-19)
 
-Task 1.10 of `execute-sei` adds the read-only `CPU.cycles` total, initialized to zero at construction. Each of the
-eight currently supported instructions contributes two nominal cycles after completion, even if its flag was already
-in the requested state. Failed opcode reads and unsupported opcodes add nothing. The Python integer has no fixed-width
-wrap, and separate CPU instances have independent totals. See [the NESdev instruction reference][nes-instructions].
+Task 1.10 of `execute-sei` introduced the read-only `CPU.cycles` total, initialized to zero at construction. The Python
+integer has no fixed-width wrap, and separate CPU instances have independent totals.
 
 Reset preserves the total and contributes no cycles, including the initial reset. Hardware reset takes seven cycles;
 omitting them keeps this counter limited to completed instructions until reset timing is modeled. It does not advance
 devices or model individual bus cycles. This simplification applies to any game using CPU; no ROM is modified.
-Synthetic tests cover each opcode with flags clear and set, mixed execution, reset, failures, and wrap.
-At the user's request, each instruction handler adds its own cycles so future instructions can use their actual costs.
-
-[nes-instructions]: https://www.nesdev.org/wiki/Instruction_reference
+Synthetic tests cover mixed execution, reset, failures, and wrap.
 
 ## Instruction tracing (2026-11-19)
 
@@ -334,7 +329,7 @@ Task 1.11 of `execute-sei` logs each completed instruction at DEBUG with its ori
 operands, and post-instruction registers, flags, and cycle total. Fixed columns make successive traces easy to scan.
 Each instruction handler logs its own mnemonic, using the fetched opcode without further memory reads.
 Unsupported opcodes and failed fetches stop before the trace. Reset and direct state events also show cumulative cycles.
-Separate logging tests verify one-, two-, and three-byte formatting without executing instructions or reading memory.
+Initial verification covered one-, two-, and three-byte formatting without further memory reads.
 The byte, mnemonic, operand, and state fields begin at columns 8, 19, 23, and 44; the original address begins at 1.
 When DEBUG is disabled, instruction trace formatting is skipped. Reset events still use the shared state logger.
 

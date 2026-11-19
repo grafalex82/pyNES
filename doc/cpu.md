@@ -2,7 +2,7 @@
 
 [`CPU`](../src/cpu.py) provides register and status properties. Construct it as `CPU(machine)` after connecting
 memory with [`Machine`](memory.md). CPU uses that Machine reference to read its initial reset vector.
-The component stores state, converts status bytes, and performs functional startup without instruction execution.
+Construction initializes the state and performs functional startup without executing an instruction.
 
 ## Register properties
 
@@ -59,10 +59,8 @@ This resets CPU state only. It does not reconstruct Machine, reset peripherals, 
 
 ## Instruction cycles
 
-`cpu.cycles` is a read-only cumulative integer, initially zero. Each completed instruction adds its nominal cycle cost,
-even when its effect leaves a register or flag unchanged. A failed fetch or unsupported opcode adds nothing. Reset
-preserves the count and adds no cycles; the counter does not wrap.
-It measures completed instructions only, not hardware reset time, individual bus activity, or peripheral progression.
+`cpu.cycles` is a read-only cumulative integer, initially zero, used for execution budgets. Reset preserves the count;
+it does not wrap. The total excludes hardware reset time, individual bus activity, and peripheral progression.
 See [the decision record](decisions.md#nominal-instruction-cycle-counter-2026-11-19) for the timing simplification.
 
 ## Instruction trace
@@ -82,9 +80,9 @@ The trace uses the original address while the register suffix shows the resultin
 bytes to `log_instruction()`; formatting does not read memory or change CPU state. If DEBUG is disabled, the helper
 returns before formatting. A failed instruction produces no completed trace.
 
-Instruction timing is functional rather than cycle-accurate. Implied instructions omit the hardware's dummy read;
-interrupt polling and delivery are not yet modeled. These omissions and their rationale are in
-[the decision record](decisions.md#functional-sei-single-step-2026-11-19).
+Instruction timing is functional rather than cycle-accurate. Implied instructions and taken branches omit hardware
+dummy reads, so any device side effects of those reads are absent. Interrupt polling and delivery are not yet modeled.
+The omissions and rationale are in [the decision record](decisions.md#functional-branch-bus-activity-2026-11-19).
 
 ## Seven booleans and the status byte
 
