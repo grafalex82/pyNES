@@ -93,10 +93,16 @@ if a taken branch crosses a page.
 - **WHEN** a taken branch crosses a page boundary
 - **THEN** PC reaches the signed relative target and four cycles accrue
 
-### Requirement: Decrement an index register
+### Requirement: Increment or decrement an index register
 
-DEX ($CA) SHALL decrement X and DEY ($88) SHALL decrement Y modulo 256. Each SHALL set N from result bit 7,
-set Z exactly when the result is zero, preserve other registers and flags, advance PC by one, and add two cycles.
+INX ($E8) and INY ($C8) SHALL increment X and Y; DEX ($CA) and DEY ($88) SHALL decrement X and Y, modulo 256.
+Each SHALL set N from result bit 7, set Z exactly when the result is zero, preserve other registers and flags,
+advance PC by one, and add two cycles.
+
+#### Scenario: Increment each boundary value
+
+- **WHEN** INX or INY executes with its selected register at $00, $7F, or $FF
+- **THEN** the result is $01, $80, or $00 respectively and N and Z reflect the result
 
 #### Scenario: Decrement each boundary value
 

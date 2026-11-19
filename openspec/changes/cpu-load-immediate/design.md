@@ -13,9 +13,9 @@ to unrelated instructions or additional addressing forms.
 
 Implement the selected opcode handlers using existing fetch and trace helpers rather than a new framework.
 LDA/LDX/LDY, TSX, and transfers between A and X/Y set N/Z; STA/STX/STY and TXS preserve flags.
-DEX/DEY wrap and set N/Z.
+INX/DEX/INY/DEY wrap and set N/Z.
 Each absolute memory operation goes through Machine exactly once and trace formatting never rereads a device.
-Immediate loads, register transfers, and decrements add two cycles; absolute loads and stores add four.
+Immediate loads, register transfers, and index increments/decrements add two cycles; absolute loads and stores add four.
 
 Each branch sign-extends its operand relative to the post-operand PC and wraps at 16 bits. It adds two cycles plus
 one when taken and another when a taken branch crosses a page. Replace $A9 in unsupported-opcode tests with

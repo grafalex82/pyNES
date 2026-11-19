@@ -406,6 +406,44 @@ def test_register_transfer_updates_destination_and_nz(make_cpu, opcode, source, 
 
 
 @pytest.mark.parametrize(
+    "opcode, register, initial, expected",
+    [
+        # INX
+        (0xE8, "x", 0x00, 0x01),
+        (0xE8, "x", 0x7F, 0x80),
+        (0xE8, "x", 0xFF, 0x00),
+        # INY
+        (0xC8, "y", 0x00, 0x01),
+        (0xC8, "y", 0x7F, 0x80),
+        (0xC8, "y", 0xFF, 0x00),
+        # DEX
+        (0xCA, "x", 0x00, 0xFF),
+        (0xCA, "x", 0x01, 0x00),
+        (0xCA, "x", 0x80, 0x7F),
+        # DEY
+        (0x88, "y", 0x00, 0xFF),
+        (0x88, "y", 0x01, 0x00),
+        (0x88, "y", 0x80, 0x7F),
+    ],
+)
+def test_index_increment_and_decrement(make_cpu, opcode, register, initial, expected):
+    # Opposite initial flags show that the instruction updates both N and Z.
+    cpu, machine = make_cpu()
+    setattr(cpu, register, initial)
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0000, opcode)
+
+    # Check the index result, its flags, and the instruction cost.
+    cpu.step()
+    assert getattr(cpu, register) == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0001
+    assert cpu.cycles == 2
+
+
+@pytest.mark.parametrize(
     "opcode, flag, taken_flag",
     [
         (0xF0, "zero", True),

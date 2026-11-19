@@ -25,9 +25,9 @@
 - [x] 5.1 Implement BEQ/BNE/BPL/BMI/BCC/BCS/BVC/BVS; test both paths, signed offsets, page crossing, and cycles.
 - [x] 5.2 Document omitted branch dummy reads.
 
-## 6. Index decrements
+## 6. Index increments and decrements
 
-- [ ] 6.1 Implement $CA/$88; test wrap, N/Z, other flags, PC, and cycles.
+- [x] 6.1 Implement INX/DEX/INY/DEY; test register wrap, N/Z, PC, and cycles.
 
 ## 7. Integration
 

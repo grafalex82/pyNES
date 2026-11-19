@@ -367,26 +367,46 @@ class CPU:
 
     def _txa(self, address, opcode):
         self._a = self._x
-        self._finish_register_transfer(address, opcode, "TXA", self._a)
+        self._finish_register_update(address, opcode, "TXA", self._a)
 
 
     def _tya(self, address, opcode):
         self._a = self._y
-        self._finish_register_transfer(address, opcode, "TYA", self._a)
+        self._finish_register_update(address, opcode, "TYA", self._a)
 
 
     def _tax(self, address, opcode):
         self._x = self._a
-        self._finish_register_transfer(address, opcode, "TAX", self._x)
+        self._finish_register_update(address, opcode, "TAX", self._x)
 
 
     def _tay(self, address, opcode):
         self._y = self._a
-        self._finish_register_transfer(address, opcode, "TAY", self._y)
+        self._finish_register_update(address, opcode, "TAY", self._y)
 
 
-    def _finish_register_transfer(self, address, opcode, mnemonic, value):
-        # Register transfers set N and Z from the transferred byte.
+    def _inx(self, address, opcode):
+        self._x = (self._x + 1) & 0xFF
+        self._finish_register_update(address, opcode, "INX", self._x)
+
+
+    def _dex(self, address, opcode):
+        self._x = (self._x - 1) & 0xFF
+        self._finish_register_update(address, opcode, "DEX", self._x)
+
+
+    def _iny(self, address, opcode):
+        self._y = (self._y + 1) & 0xFF
+        self._finish_register_update(address, opcode, "INY", self._y)
+
+
+    def _dey(self, address, opcode):
+        self._y = (self._y - 1) & 0xFF
+        self._finish_register_update(address, opcode, "DEY", self._y)
+
+
+    def _finish_register_update(self, address, opcode, mnemonic, value):
+        # N and Z reflect the resulting byte.
         self._negative = bool(value & 0x80)
         self._zero = value == 0
 
@@ -655,7 +675,7 @@ class CPU:
         None,  # $85
         None,  # $86
         None,  # $87
-        None,  # $88
+        _dey,  # $88
         None,  # $89
         _txa,  # $8A
         None,  # $8B
@@ -727,9 +747,9 @@ class CPU:
         None,  # $C5
         None,  # $C6
         None,  # $C7
-        None,  # $C8
+        _iny,  # $C8
         None,  # $C9
-        None,  # $CA
+        _dex,  # $CA
         None,  # $CB
         None,  # $CC
         None,  # $CD
@@ -763,7 +783,7 @@ class CPU:
         None,  # $E5
         None,  # $E6
         None,  # $E7
-        None,  # $E8
+        _inx,  # $E8
         None,  # $E9
         _nop,  # $EA
         None,  # $EB
