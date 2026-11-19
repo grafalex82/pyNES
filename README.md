@@ -134,6 +134,10 @@ is [archived](openspec/changes/archive/2026-11-18-load-nes-rom/).
 The memory capability is documented in [its main specification](openspec/specs/cpu-memory/spec.md).
 The completed `connect-memory` change is [archived](openspec/changes/archive/2026-11-18-connect-memory/).
 
+The CPU register and functional-reset capability is documented in
+[its main specification](openspec/specs/cpu-reset/spec.md).
+The completed `reset-cpu` change is [archived](openspec/changes/archive/2026-11-19-reset-cpu/).
+
 ## License
 
 The emulator's original code and documentation are licensed under the [MIT License](LICENSE). Third-party materials
