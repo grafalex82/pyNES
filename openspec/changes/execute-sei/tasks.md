@@ -16,7 +16,7 @@ trace text, or alignment.
 - [x] 1.8 Add official NOP ($EA); verify PC advances while A/X/Y/SP, every flag, and memory remain unchanged.
 - [x] 1.9 Keep unsupported opcodes and fetch failures explicit; verify $A9 and unofficial NOP $1A diagnostics,
   unchanged failed-step state, and retained partial progress before the next unsupported instruction.
-- [ ] 1.10 Add read-only CPU.cycles initialized to zero; verify each selected encoding adds two, including idempotent
+- [x] 1.10 Add read-only CPU.cycles initialized to zero; verify each selected encoding adds two, including idempotent
   flag changes and NOP, mixed execution adds correctly, counters are independent, and reset/failure add nothing.
 - [ ] 1.11 Add aligned tracing through log_instruction() and log_state(); review post-execution wiring and keep small
   direct-helper cases in test/test_cpu_logging.py for layout, blank operands, state/CYC, and observational behavior.

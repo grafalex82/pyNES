@@ -24,6 +24,7 @@ class CPU:
         self._y = 0
         self._sp = 0
         self._pc = 0
+        self._cycles = 0
         self._carry = False
         self._zero = False
         self._interrupt_disable = False
@@ -95,6 +96,12 @@ class CPU:
             "%s: A=%02X X=%02X Y=%02X SP=%02X PC=%04X P=%s",
             event, self._a, self._x, self._y, self._sp, self._pc, flags,
         )
+
+
+    @property
+    def cycles(self):
+        """Return the total nominal cycles of completed instructions."""
+        return self._cycles
 
 
     @property
@@ -255,41 +262,48 @@ class CPU:
     def _clc(self):
         """Clear the carry flag used by arithmetic and rotates."""
         self._carry = False
+        self._cycles += 2
 
 
     def _sec(self):
         """Set the carry flag used by arithmetic and rotates."""
         self._carry = True
+        self._cycles += 2
 
 
     def _cli(self):
         """Clear the interrupt-disable flag used to mask IRQs."""
         self._interrupt_disable = False
+        self._cycles += 2
 
 
     def _sei(self):
         """Set the interrupt-disable flag used to mask IRQs."""
         self._interrupt_disable = True
+        self._cycles += 2
 
 
     def _clv(self):
         """Clear the overflow flag used to report signed arithmetic overflow."""
         self._overflow = False
+        self._cycles += 2
 
 
     def _cld(self):
         """Clear the decimal flag stored in the status register."""
         self._decimal = False
+        self._cycles += 2
 
 
     def _nop(self):
         """Complete the no-op after the shared fetch advances PC."""
-        pass
+        self._cycles += 2
 
 
     def _sed(self):
         """Set the decimal flag, which the NES CPU stores even with binary arithmetic."""
         self._decimal = True
+        self._cycles += 2
 
 
     # The opcode is the tuple index. None marks an unimplemented instruction.

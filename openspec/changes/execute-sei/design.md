@@ -56,8 +56,8 @@ wrapping the second address to $0000 when the first is $FFFF.
 
 Use the opcode to index a fixed 256-entry table, with a comment naming the hexadecimal range of each group of 16
 entries. Each implemented opcode has a reference to its CPU handler, starting with SEI at $78. Empty entries hold
-None and trigger the existing NotImplementedError diagnostic. Pass the current CPU to the selected handler. Apply
-the shared cycle increment and trace after the handler returns.
+None and trigger the existing NotImplementedError diagnostic. Pass the current CPU to the selected handler. Each
+handler adds its instruction's cycles; emit the trace after the handler returns.
 
 | Instruction | Opcode | Effect | Bytes | Cycles |
 | --- | --- | --- | --- | --- |

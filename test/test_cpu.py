@@ -192,6 +192,7 @@ def test_step_sei_sets_interrupt_disable(make_cpu, initial_i):
     # SEI sets I from either initial value.
     cpu.step()
     assert cpu.interrupt_disable is True
+    assert cpu.cycles == 2
 
 
 @pytest.mark.parametrize("initial_i", [False, True])
@@ -204,6 +205,7 @@ def test_step_cli_clears_interrupt_disable(make_cpu, initial_i):
     # CLI clears I from either initial value.
     cpu.step()
     assert cpu.interrupt_disable is False
+    assert cpu.cycles == 2
 
 
 @pytest.mark.parametrize("initial_c", [False, True])
@@ -216,6 +218,7 @@ def test_step_clc_clears_carry(make_cpu, initial_c):
     # CLC clears C from either initial value.
     cpu.step()
     assert cpu.carry is False
+    assert cpu.cycles == 2
 
 
 @pytest.mark.parametrize("initial_c", [False, True])
@@ -228,6 +231,7 @@ def test_step_sec_sets_carry(make_cpu, initial_c):
     # SEC sets C from either initial value.
     cpu.step()
     assert cpu.carry is True
+    assert cpu.cycles == 2
 
 
 @pytest.mark.parametrize("initial_d", [False, True])
@@ -240,6 +244,7 @@ def test_step_cld_clears_decimal_flag(make_cpu, initial_d):
     # CLD clears D from either initial value.
     cpu.step()
     assert cpu.decimal is False
+    assert cpu.cycles == 2
 
 
 @pytest.mark.parametrize("initial_d", [False, True])
@@ -252,6 +257,7 @@ def test_step_sed_sets_decimal_flag(make_cpu, initial_d):
     # SED sets D from either initial value.
     cpu.step()
     assert cpu.decimal is True
+    assert cpu.cycles == 2
 
 
 @pytest.mark.parametrize("initial_v", [False, True])
@@ -264,6 +270,7 @@ def test_step_clv_clears_overflow(make_cpu, initial_v):
     # CLV clears V from either initial value.
     cpu.step()
     assert cpu.overflow is False
+    assert cpu.cycles == 2
 
 
 def test_step_nop_advances_pc(make_cpu):
@@ -274,6 +281,64 @@ def test_step_nop_advances_pc(make_cpu):
     # The opcode fetch advances PC by one byte.
     cpu.step()
     assert cpu.pc == 0x0001
+    assert cpu.cycles == 2
+
+
+def test_cycles_accumulate_across_mixed_instructions(make_cpu):
+    # Execute each supported encoding once in a synthetic RAM program.
+    cpu, machine = make_cpu()
+    program = (0x18, 0x38, 0x58, 0x78, 0xD8, 0xF8, 0xB8, 0xEA)
+    for address, opcode in enumerate(program):
+        machine.write_byte(address, opcode)
+
+    # Each step contributes two, yielding sixteen cycles in total.
+    for expected_cycles in range(2, 17, 2):
+        cpu.step()
+        assert cpu.cycles == expected_cycles
+
+
+def test_cycles_do_not_wrap_at_16_bits(make_cpu):
+    # Reuse one RAM NOP to advance the cumulative counter past $FFFF.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0xEA)
+    for _ in range(32769):
+        cpu.pc = 0x0000
+        cpu.step()
+
+    # The Python integer is not limited to a 16-bit CPU register width.
+    assert cpu.cycles == 65538
+
+
+def test_cycles_are_read_only_and_preserved_by_reset(make_cpu):
+    # A new CPU starts at zero and counts a completed instruction.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0xEA)
+    assert cpu.cycles == 0
+    cpu.step()
+    assert cpu.cycles == 2
+
+    # Reset does not charge instruction cycles, and callers cannot assign the counter.
+    cpu.reset()
+    cpu.reset()
+    assert cpu.cycles == 2
+    with pytest.raises(AttributeError):
+        cpu.cycles = 0
+    assert cpu.cycles == 2
+
+
+@pytest.mark.parametrize("failed_pc", [0x0001, 0x2002])
+def test_failed_step_preserves_accumulated_cycles(make_cpu, failed_pc):
+    # A completed NOP precedes either an unsupported opcode or an unconnected read.
+    cpu, machine = make_cpu()
+    machine.write_byte(0x0000, 0xEA)
+    machine.write_byte(0x0001, 0xA9)
+    cpu.step()
+    cpu.pc = failed_pc
+
+    # Neither failure adds cycles or removes the completed instruction's contribution.
+    with pytest.raises(NotImplementedError):
+        cpu.step()
+    assert cpu.cycles == 2
 
 
 def test_instruction_table_has_one_entry_per_opcode():

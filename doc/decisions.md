@@ -311,7 +311,22 @@ instruction remains available for inspection. The word helper is available for i
 Task 1.9 of `execute-sei` verifies this diagnostic policy with synthetic RAM programs. Unsupported $A9 and unofficial
 NOP $1A report their byte and address, and a read from an unconnected PPU register propagates Machine's error.
 The failing step preserves registers, flags, PC, and RAM; SEI and CLD effects remain when a later $A9 stops execution.
-This stop is an emulator diagnostic rather than hardware behavior. Cycle accounting is still a separate pending task.
+This stop is an emulator diagnostic rather than hardware behavior.
+
+## Nominal instruction cycle counter (2026-11-19)
+
+Task 1.10 of `execute-sei` adds the read-only `CPU.cycles` total, initialized to zero at construction. Each of the
+eight currently supported instructions contributes two nominal cycles after completion, even if its flag was already
+in the requested state. Failed opcode reads and unsupported opcodes add nothing. The Python integer has no fixed-width
+wrap, and separate CPU instances have independent totals. See [the NESdev instruction reference][nes-instructions].
+
+Reset preserves the total and contributes no cycles, including the initial reset. Hardware reset takes seven cycles;
+omitting them keeps this counter limited to completed instructions until reset timing is modeled. It does not advance
+devices or model individual bus cycles. This simplification applies to any game using CPU; no ROM is modified.
+Synthetic tests cover each opcode with flags clear and set, mixed execution, reset, failures, and wrap.
+At the user's request, each instruction handler adds its own cycles so future instructions can use their actual costs.
+
+[nes-instructions]: https://www.nesdev.org/wiki/Instruction_reference
 
 ## Departures and patches
 

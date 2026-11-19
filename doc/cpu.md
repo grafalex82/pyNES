@@ -56,6 +56,14 @@ including when the vector points to an unimplemented device such as PPU status a
 
 This resets CPU state only. It does not reconstruct Machine, reset peripherals, or execute an instruction.
 
+## Instruction cycles
+
+`cpu.cycles` is a read-only cumulative integer, initially zero. Each currently supported instruction adds two nominal
+cycles after it completes, including NOP and flag instructions that leave their target flag unchanged. An unsupported
+opcode or a failed opcode read adds nothing. Reset preserves the count and adds no cycles; the counter does not wrap.
+It measures completed instructions only, not hardware reset time, individual bus activity, or peripheral progression.
+See [the decision record](decisions.md#nominal-instruction-cycle-counter-2026-11-19) for the timing simplification.
+
 ## Seven booleans and the status byte
 
 The six hardware flags and software B field each have their own private boolean and read/write property.
@@ -127,7 +135,7 @@ bytes through `machine.write_byte`. RAM starts filled with zeros; the factory do
 The `cpu` fixture takes `prg_size` and `start_address`; tests override them with `pytest.mark.parametrize`.
 
 Two startup cases cover 16 KiB and 32 KiB PRG layouts. They check only initial registers and flags, including the
-little-endian PC from the reset vector. Reads and writes are not mocked. Instruction execution remains unimplemented.
+little-endian PC from the reset vector. Reads and writes are not mocked.
 
 Repeated-reset cases check every register and flag separately after two successive resets, with preserved flags
 both clear and set, several initial stack pointers, and RAM or unimplemented-PPU vector targets.
