@@ -405,6 +405,18 @@ class CPU:
         self.log_instruction(address, (opcode, operand), mnemonic, f"#${operand:02X}")
 
 
+    def _adc_immediate(self, address, opcode):
+        # The NES adds in binary even when the stored decimal flag is set.
+        operand = self._fetch_byte()
+        total = self._a + operand + self._carry
+
+        # Signed overflow occurs when equal-sign inputs produce the opposite sign.
+        self._overflow = bool(~(self._a ^ operand) & (self._a ^ total) & 0x80)
+        self._carry = total > 0xFF
+        self._a = total & 0xFF
+        self._finish_immediate_update(address, opcode, "ADC", operand, self._a)
+
+
     def _and_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a &= operand
@@ -935,7 +947,7 @@ class CPU:
         None,  # $66
         None,  # $67
         None,  # $68
-        None,  # $69
+        _adc_immediate,  # $69
         _ror_accumulator,  # $6A
         None,  # $6B
         _jmp_indirect,  # $6C
