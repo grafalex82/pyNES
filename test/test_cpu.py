@@ -1,64 +1,8 @@
 """Verify CPU startup, repeated reset, instruction execution, and register state."""
 
-import logging
-
 import pytest
 
 from cpu import CPU
-from machine import Machine
-from nesfile import NESFile
-
-
-PRG_ROM_BANK_SIZE = 16384
-
-
-def make_ines_header(*, prg_rom_banks, chr_rom_banks=0, mapper=0):
-    """Build an ordinary iNES header with horizontal mirroring and no trainer or battery."""
-    # Bytes 4/5 count PRG/CHR banks; bytes 6/7 hold the low/high mapper nibbles.
-    header = bytearray(16)
-    header[:4] = b"NES\x1a"
-    header[4] = prg_rom_banks
-    header[5] = chr_rom_banks
-    header[6] = (mapper & 0x0F) << 4
-    header[7] = mapper & 0xF0
-    return bytes(header)
-
-
-@pytest.fixture
-def make_cpu(tmp_path):
-    # Tests can select the memory layout and entry point while using real memory operations.
-    def create_cpu(*, prg_size=PRG_ROM_BANK_SIZE, start_address=0x0000, prg_program=b""):
-        # Place PRG code at the mapped entry and install the reset vector in the last bank.
-        prg = bytearray(prg_size)
-        prg_offset = (start_address - 0x8000) & (prg_size - 1)
-        prg[prg_offset:prg_offset + len(prg_program)] = prg_program
-        prg[-4:-2] = start_address.to_bytes(2, "little")
-
-        # Connect the cartridge before CPU construction reads its reset vector.
-        header = make_ines_header(prg_rom_banks=prg_size // PRG_ROM_BANK_SIZE, chr_rom_banks=0, mapper=0)
-        filename = tmp_path / "cpu.nes"
-        filename.write_bytes(header + prg)
-        machine = Machine(NESFile(filename))
-        return CPU(machine), machine
-
-    # Both components remain available for test-specific registers, data, and instruction bytes in RAM.
-    return create_cpu
-
-
-@pytest.fixture
-def prg_size():
-    return PRG_ROM_BANK_SIZE
-
-
-@pytest.fixture
-def start_address():
-    return 0x0000
-
-
-@pytest.fixture
-def cpu(make_cpu, prg_size, start_address):
-    cpu, _ = make_cpu(prg_size=prg_size, start_address=start_address)
-    return cpu
 
 
 @pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0x0678)])
@@ -378,82 +322,6 @@ def test_step_retains_completed_instructions_before_unsupported_opcode(make_cpu)
         cpu.step()
     assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xF5, 0x0236)
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
-
-
-@pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0xABCD)])
-def test_logs_completed_startup_reset(make_cpu, caplog, prg_size, start_address):
-    # Capture construction itself so a duplicate startup event cannot go unnoticed.
-    with caplog.at_level(logging.DEBUG, logger="cpu"):
-        make_cpu(prg_size=prg_size, start_address=start_address)
-
-    # Compare the full message, including register order, separators, and flag formatting.
-    assert len(caplog.records) == 1
-    record = caplog.records[0]
-    assert record.name == "cpu"
-    assert record.levelno == logging.DEBUG
-    assert record.getMessage() == f"Reset completed: A=00 X=00 Y=00 SP=FD PC={start_address:04X} P=--1--I--"
-
-
-@pytest.mark.parametrize("prg_size, start_address", [(16384, 0x0234), (32768, 0x2002)])
-@pytest.mark.parametrize("initial_p, expected_p", [(0x00, "--1--I--"), (0xDB, "NV1BDIZC")])
-def test_logs_completed_repeated_reset(cpu, caplog, start_address, initial_p, expected_p):
-    # Nonzero registers, wrapping SP, and clear I distinguish the result from the pre-reset state.
-    cpu.a = 0x12
-    cpu.x = 0x34
-    cpu.y = 0x56
-    cpu.sp = 0x01
-    cpu.p = initial_p
-
-    # Each call must report one fresh snapshot after SP, I, and PC have changed.
-    with caplog.at_level(logging.DEBUG, logger="cpu"):
-        for expected_sp in ("FE", "FB"):
-            caplog.clear()
-            cpu.pc = 0xABCD
-            cpu.interrupt_disable = False
-            cpu.reset()
-            assert len(caplog.records) == 1
-            record = caplog.records[0]
-            assert record.name == "cpu"
-            assert record.levelno == logging.DEBUG
-            expected = f"Reset completed: A=12 X=34 Y=56 SP={expected_sp} PC={start_address:04X} P={expected_p}"
-            assert record.getMessage() == expected
-
-
-@pytest.mark.parametrize(
-    "value, expected_flags",
-    [
-        (0x00, "--1-----"),
-        (0x01, "--1----C"),
-        (0x02, "--1---Z-"),
-        (0x04, "--1--I--"),
-        (0x08, "--1-D---"),
-        (0x10, "--1B----"),
-        (0x40, "-V1-----"),
-        (0x80, "N-1-----"),
-        (0x05, "--1--I-C"),
-        (0xFF, "NV1BDIZC"),
-    ],
-)
-def test_log_state_reports_current_registers_and_flags(cpu, caplog, value, expected_flags):
-    # Calling the helper directly must preserve the caller's registers and flags, including clear I.
-    cpu.a = 0x12
-    cpu.x = 0x34
-    cpu.y = 0x56
-    cpu.sp = 0x9A
-    cpu.pc = 0xBCDE
-    cpu.p = value
-
-    # Percent signs in event text remain literal; only the logger's own format supplies register fields.
-    with caplog.at_level(logging.DEBUG, logger="cpu"):
-        cpu.log_state("Checkpoint 50%")
-
-    # Check one current-state snapshot, including the fixed bit 5 and every mutable flag position.
-    assert len(caplog.records) == 1
-    record = caplog.records[0]
-    assert record.name == "cpu"
-    assert record.levelno == logging.DEBUG
-    assert record.getMessage() == f"Checkpoint 50%: A=12 X=34 Y=56 SP=9A PC=BCDE P={expected_flags}"
-    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.pc, cpu.p) == (0x12, 0x34, 0x56, 0x9A, 0xBCDE, value | 0x20)
 
 
 @pytest.mark.parametrize(

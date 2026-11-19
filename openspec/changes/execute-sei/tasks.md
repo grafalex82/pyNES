@@ -18,7 +18,7 @@ trace text, or alignment.
   unchanged failed-step state, and retained partial progress before the next unsupported instruction.
 - [x] 1.10 Add read-only CPU.cycles initialized to zero; verify each selected encoding adds two, including idempotent
   flag changes and NOP, mixed execution adds correctly, counters are independent, and reset/failure add nothing.
-- [ ] 1.11 Add aligned tracing through log_instruction() and log_state(); review post-execution wiring and keep small
+- [x] 1.11 Add aligned tracing through log_instruction() and log_state(); review post-execution wiring and keep small
   direct-helper cases in test/test_cpu_logging.py for layout, blank operands, state/CYC, and observational behavior.
   Move existing reset/log_state logging-only cases there and update CYC expectations; add no per-instruction log tests.
 - [ ] 1.12 Update doc/cpu.md and doc/decisions.md with the eight encodings, trace layout, cycle/reset rules, and timing

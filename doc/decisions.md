@@ -328,6 +328,14 @@ At the user's request, each instruction handler adds its own cycles so future in
 
 [nes-instructions]: https://www.nesdev.org/wiki/Instruction_reference
 
+## Instruction tracing (2026-11-19)
+
+Task 1.11 of `execute-sei` logs each completed instruction at DEBUG with its original address, fetched bytes, mnemonic,
+operands, and post-instruction registers, flags, and cycle total. Fixed columns make successive traces easy to scan.
+Each instruction handler logs its own mnemonic, using the fetched opcode without further memory reads.
+Unsupported opcodes and failed fetches stop before the trace. Reset and direct state events also show cumulative cycles.
+Separate logging tests verify one-, two-, and three-byte formatting without executing instructions or reading memory.
+
 ## Departures and patches
 
 ### Implied flag instructions and official NOP (2026-11-19)
@@ -339,8 +347,8 @@ Each handler assigns its own flag and the RAM tests cover both initial values.
 The NES keeps D visible in the status register and uses binary arithmetic.
 [NESdev 2A03 reference](https://www.nesdev.org/wiki/2A03).
 
-The official NOP ($EA) uses an empty handler because the shared opcode fetch advances PC. Its RAM test checks that
-PC moves from $0000 to $0001. These implied instructions follow the functional model that omits the second-cycle
+The official NOP ($EA) leaves CPU data and flags unchanged; the shared opcode fetch advances PC. Its RAM test checks
+that PC moves from $0000 to $0001. These implied instructions follow the functional model that omits the second-cycle
 dummy read. [Mesen's implied addressing and IRQ polling][mesen-implied].
 
 The 32 KiB target image completes SEI and CLD before stopping on $A9 at $8002. The 16 KiB target stops on $A9 at

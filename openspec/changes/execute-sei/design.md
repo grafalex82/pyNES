@@ -56,8 +56,8 @@ wrapping the second address to $0000 when the first is $FFFF.
 
 Use the opcode to index a fixed 256-entry table, with a comment naming the hexadecimal range of each group of 16
 entries. Each implemented opcode has a reference to its CPU handler, starting with SEI at $78. Empty entries hold
-None and trigger the existing NotImplementedError diagnostic. Pass the current CPU to the selected handler. Each
-handler adds its instruction's cycles; emit the trace after the handler returns.
+None and trigger the existing NotImplementedError diagnostic. Pass the current CPU, original address, and fetched
+opcode to the selected handler. Each handler adds its instruction's cycles and emits its own trace.
 
 | Instruction | Opcode | Effect | Bytes | Cycles |
 | --- | --- | --- | --- | --- |
@@ -112,9 +112,9 @@ Completed instructions in a block retain their effects; a later exception does n
 
 ### Format aligned instruction traces after execution
 
-Call a small CPU.log_instruction(address, instruction_bytes, mnemonic, operands="") helper once after a supported
-instruction updates flags, PC, and cycles. It formats the instruction prefix and delegates the state suffix to
-log_state(). Have each instruction handler supply its mnemonic and the empty operand text for implied addressing.
+Each handler calls CPU.log_instruction(address, instruction_bytes, mnemonic, operands="") once after updating flags,
+PC, and cycles. The helper formats the instruction prefix and delegates the state suffix to log_state(). Each handler
+supplies its mnemonic and, for implied addressing, uses the empty operand text.
 
 Use the exact instruction-message layout below. Column numbers are one-based:
 

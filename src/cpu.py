@@ -62,7 +62,7 @@ class CPU:
         if handler is None:
             self._pc = address
             raise NotImplementedError(f"CPU opcode 0x{opcode:02X} at address 0x{address:04X} is not implemented")
-        handler(self)
+        handler(self, address, opcode)
 
 
     def _fetch_byte(self):
@@ -85,7 +85,21 @@ class CPU:
         return low | (high << 8)
 
 
-    def log_state(self, event):
+    def log_instruction(self, address, instruction_bytes, mnemonic, operands=""):
+        """Log supplied instruction metadata and the current CPU state."""
+        # Skip all trace formatting when the effective logger level disables DEBUG.
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+
+        # Align fetched bytes and decoded text without accessing emulated memory.
+        byte_text = " ".join(f"{byte:02X}" for byte in instruction_bytes)
+        prefix = f"{address:04X}   {byte_text:<8}   {mnemonic:<3} {operands:<20}"
+
+        # The shared state logger appends registers and cycles at column 44.
+        self.log_state(prefix, separator=" ")
+
+
+    def log_state(self, event, separator=": "):
         """Log an event with the current registers and symbolic status flags at DEBUG level."""
         # Display status from N to C, with the constant bit 5 shown as 1.
         p = self.p
@@ -93,8 +107,8 @@ class CPU:
 
         # Treat the event text as data and append a snapshot of the current registers.
         logger.debug(
-            "%s: A=%02X X=%02X Y=%02X SP=%02X PC=%04X P=%s",
-            event, self._a, self._x, self._y, self._sp, self._pc, flags,
+            "%s%sA=%02X X=%02X Y=%02X SP=%02X PC=%04X P=%s CYC=%d",
+            event, separator, self._a, self._x, self._y, self._sp, self._pc, flags, self._cycles,
         )
 
 
@@ -259,51 +273,59 @@ class CPU:
         self._negative = bool(value & 0x80)
 
 
-    def _clc(self):
+    def _clc(self, address, opcode):
         """Clear the carry flag used by arithmetic and rotates."""
         self._carry = False
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "CLC")
 
 
-    def _sec(self):
+    def _sec(self, address, opcode):
         """Set the carry flag used by arithmetic and rotates."""
         self._carry = True
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "SEC")
 
 
-    def _cli(self):
+    def _cli(self, address, opcode):
         """Clear the interrupt-disable flag used to mask IRQs."""
         self._interrupt_disable = False
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "CLI")
 
 
-    def _sei(self):
+    def _sei(self, address, opcode):
         """Set the interrupt-disable flag used to mask IRQs."""
         self._interrupt_disable = True
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "SEI")
 
 
-    def _clv(self):
+    def _clv(self, address, opcode):
         """Clear the overflow flag used to report signed arithmetic overflow."""
         self._overflow = False
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "CLV")
 
 
-    def _cld(self):
+    def _cld(self, address, opcode):
         """Clear the decimal flag stored in the status register."""
         self._decimal = False
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "CLD")
 
 
-    def _nop(self):
+    def _nop(self, address, opcode):
         """Complete the no-op after the shared fetch advances PC."""
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "NOP")
 
 
-    def _sed(self):
+    def _sed(self, address, opcode):
         """Set the decimal flag, which the NES CPU stores even with binary arithmetic."""
         self._decimal = True
         self._cycles += 2
+        self.log_instruction(address, (opcode,), "SED")
 
 
     # The opcode is the tuple index. None marks an unimplemented instruction.

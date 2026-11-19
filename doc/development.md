@@ -63,9 +63,10 @@ Repeated-reset tests cover preserved registers/flags, stack-pointer wrapping, ve
 The initial register profile is deterministic. Software B starts false and survives repeated reset; bit 5 is always
 displayed as 1. Reset omits dummy bus reads and timing and leaves Machine, RAM, and peripherals untouched.
 Completed resets use `log_state(event)` to log hexadecimal A/X/Y/SP/PC and a symbolic NV1BDIZC mask at DEBUG
-through the `cpu` logger. The helper also accepts caller-supplied event text for inspecting the current state.
+through the `cpu` logger, followed by cumulative instruction cycles. The helper also accepts caller-supplied event text.
 `CPU.step()` executes seven implied flag instructions and official NOP ($EA) through Machine. Unsupported opcodes
-raise `NotImplementedError` at the failing PC. Peripherals, bounded execution, and breakpoints remain future work.
+raise `NotImplementedError` at the failing PC. Completed instructions emit aligned DEBUG traces with resulting state.
+Peripherals, bounded execution, and breakpoints remain future work.
 
 ## Documentation roles
 

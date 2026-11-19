@@ -39,12 +39,13 @@ The initial profile and these omissions are recorded in
 [the decision record](decisions.md#functional-cpu-startup-2026-11-18).
 After PC is loaded, reset calls `log_state("Reset completed")` to emit one DEBUG event through the standard `cpu`
 logger. Construction uses the same reset event, with no separate startup message. CPU does not configure logging
-handlers; the caller controls logging. Instruction tracing remains unimplemented.
+handlers; the caller controls logging. Each completed instruction also emits a DEBUG trace through the same logger.
 
 The helper `cpu.log_state(event)` accepts event text and appends current hexadecimal A/X/Y/SP/PC and symbolic P.
 P uses eight positions in NV1BDIZC order: `-` for each clear flag, its uppercase letter for each set flag, and `1`
 at bit 5. For example, P=$05 appears as `--1--I-C`; all flags clear gives `--1-----`, and all set gives `NV1BDIZC`.
-Calling `cpu.log_state("Checkpoint")` observes the current state without changing registers or performing a reset.
+The suffix also includes cumulative cycles as `CYC=<total>`. Calling `cpu.log_state("Checkpoint")` observes the current
+state without changing registers or performing a reset.
 
 ## Repeated CPU reset
 
@@ -128,7 +129,7 @@ Future stack instructions and interrupts will define their hardware behavior sep
 Two parameterized tests in [`test/test_cpu.py`](../test/test_cpu.py) check packing and unpacking with individual
 flag bits, all-set/clear bytes, B, and ignored input bit 5. Unpacking starts from all fields set, so zero bits must
 clear previous values. One shared parameterized test checks accepted endpoints and rejected out-of-range values
-for each register. All CPU tests use real NESFile, Machine, and CPU instances through the `make_cpu` factory fixture.
+for each register. All CPU tests use real NESFile, Machine, and CPU instances through the shared `make_cpu` fixture.
 Its iNES header helper names PRG/CHR bank counts and mapper explicitly. By default the reset vector points to `$0000`
 in RAM. The factory returns `(cpu, machine)`, so tests can set registers and write their own data or future instruction
 bytes through `machine.write_byte`. RAM starts filled with zeros; the factory does not preload test data.
@@ -141,9 +142,9 @@ Repeated-reset cases check every register and flag separately after two successi
 both clear and set, several initial stack pointers, and RAM or unimplemented-PPU vector targets.
 A separate test fills RAM through Machine and checks that both resets preserve every byte, including the stack page.
 
-Logging tests use `caplog` for startup and two successive resets in both PRG layouts. They verify one DEBUG event per
-reset from the `cpu` logger and all six resulting register values, including wrapped SP and displayed P with I set.
+Logging tests in `test/test_cpu_logging.py` use `caplog` for startup and two successive resets in both PRG layouts.
+They verify one DEBUG event per reset from the `cpu` logger and all resulting registers, including wrapped SP and P.
 Direct helper cases check custom event text, each flag position, the constant `1`, the `--1--I-C` example, all-set/clear
 masks, and unchanged CPU state. Every logging case compares the complete message, including separators and field order.
 
-Run them from the repository root with `python -m pytest test/test_cpu.py`.
+Run them from the repository root with `python -m pytest test/test_cpu.py test/test_cpu_logging.py`.
