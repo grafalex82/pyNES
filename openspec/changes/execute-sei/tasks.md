@@ -26,13 +26,13 @@ trace text, or alignment.
 
 ## 2. Add the shared Emulator control interface
 
-- [ ] 2.1 Add Emulator(machine), its read-only cpu property, and step() in src/emulator.py; verify one startup,
+- [x] 2.1 Add Emulator(machine), its read-only cpu property, and step() in src/emulator.py; verify one startup,
   no instruction during construction, preserved RAM, independent CPU/cycle state, and exactly one delegated step.
-- [ ] 2.2 Add run(cycles) through self.step() using the CPU.cycles delta at call entry; verify budgets 0/1/2/3/6,
+- [x] 2.2 Add run(cycles) through self.step() using the CPU.cycles delta at call entry; verify budgets 0/1/2/3/6,
   nonzero entry counters, whole-instruction overshoot, independent successive budgets, and partial progress on failure.
-- [ ] 2.3 Add reset() through CPU.reset(); verify preserved Machine/RAM/cycles and repeated-reset PC/SP/flags,
+- [x] 2.3 Add reset() through CPU.reset(); verify preserved Machine/RAM/cycles and repeated-reset PC/SP/flags,
   without reconstruction, duplicate reset, instruction execution, or assertions about logging.
-- [ ] 2.4 Add doc/execution.md and a decision entry on ownership, controls, cycle budgets, overshoot, and cycle totals;
+- [x] 2.4 Add doc/execution.md and a decision entry on ownership, controls, cycle budgets, overshoot, and cycle totals;
   explain future breakpoint placement and verify the documented API matches tests without breakpoint placeholders.
 
 ## 3. Start execution from the console

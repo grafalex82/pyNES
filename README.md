@@ -101,6 +101,8 @@ A/X/Y/SP/PC, a symbolic NV1BDIZC mask for P, and accumulated instruction cycles.
 with its byte and address. The read-only `CPU.cycles` accumulates nominal instruction cycles; startup and reset add
 none, and failed fetches and unsupported opcodes leave the total unchanged. It does not advance devices.
 Each completed instruction emits a DEBUG trace with its address, fetched bytes, mnemonic, and resulting CPU state.
+[`Emulator`](src/emulator.py) owns the connected CPU and provides single-step, cycle-budgeted run, and repeated reset
+controls. Whole instructions finish even when they exceed a run budget; see [execution control](doc/execution.md).
 Routine tests use synthetic files.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
 

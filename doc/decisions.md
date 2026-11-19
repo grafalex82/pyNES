@@ -338,6 +338,23 @@ Separate logging tests verify one-, two-, and three-byte formatting without exec
 The byte, mnemonic, operand, and state fields begin at columns 8, 19, 23, and 44; the original address begins at 1.
 When DEBUG is disabled, instruction trace formatting is skipped. Reset events still use the shared state logger.
 
+## Shared execution controls (2026-11-19)
+
+Tasks 2.1-2.4 of `execute-sei` introduce `Emulator(machine)` as the host's control boundary. It retains the supplied
+Machine, constructs one CPU, and exposes that CPU read-only for inspection. Startup uses CPU's existing reset once;
+`step()` delegates one instruction and `reset()` applies the existing repeated reset without reconstructing either
+component or clearing RAM. CPU retains ownership of instruction effects and Machine retains address routing.
+
+`run(cycles)` calls the facade's `step()` until the increase in `CPU.cycles` reaches the nonnegative budget. A zero
+budget does nothing; a final instruction may overshoot, and each later call starts from the actual current total.
+Two successive three-cycle budgets therefore consume eight cycles with two-cycle instructions. Failures propagate
+with completed progress retained. The total counts nominal completed-instruction cycles, survives reset, and does not
+advance devices or model reset timing. This preserves the previously documented reset-cycle simplification; no ROM is
+modified. Focused synthetic tests cover ownership, single steps, budgets, overshoot, failure, and repeated reset.
+
+Routing blocks through the same `step()` gives future breakpoint checks one instruction boundary without adding a
+breakpoint registry or callbacks now. See [execution control](execution.md) for the implemented API.
+
 ## Departures and patches
 
 ### Implied flag instructions and official NOP (2026-11-19)

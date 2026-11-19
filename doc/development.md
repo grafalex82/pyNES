@@ -66,7 +66,9 @@ Completed resets use `log_state(event)` to log hexadecimal A/X/Y/SP/PC and a sym
 through the `cpu` logger, followed by cumulative instruction cycles. The helper also accepts caller-supplied event text.
 `CPU.step()` fetches and executes one instruction through Machine. Missing behavior raises `NotImplementedError` at
 the failing PC. Completed instructions emit aligned DEBUG traces with resulting state.
-Peripherals, bounded execution, and breakpoints remain future work.
+`Emulator(machine)` provides single-step, cycle-budgeted execution, and repeated reset through one host-facing
+boundary. See [execution control](execution.md) for cycle budgets, overshoot, and state preservation.
+Peripherals and breakpoints remain future work.
 
 ## Documentation roles
 
@@ -76,6 +78,7 @@ Peripherals, bounded execution, and breakpoints remain future work.
 | `AGENTS.md` | Instructions for contributors and coding assistants |
 | `doc/memory.md` | Implemented memory routing, supported limits, and a synthetic byte-access example |
 | `doc/cpu.md` | Register widths, boolean status fields, P conversion, and the software B convention |
+| `doc/execution.md` | Emulator controls, cycle budgets, and reset behavior |
 | `openspec/config.yaml` | Concise context and rules for OpenSpec artifacts |
 | `openspec/specs/` | Durable capability specifications maintained as changes are completed |
 | `openspec/changes/` | Individually scoped proposals, designs, scenarios, and tasks |
@@ -89,7 +92,7 @@ Peripherals, bounded execution, and breakpoints remain future work.
 - Define instruction/reset/interrupt behavior for the NES CPU variant as those features are introduced.
 - Choose the simplest approximate PPU progression that satisfies the first observed status loop or interrupt need.
 - Define the audio interface responses required by observed software, without adding audio output.
-- Decide the initial bounded-execution API and breakpoint callback semantics when those capabilities are needed.
+- Define breakpoint callback semantics when that capability is needed.
 
 None of these questions requires a full implementation before the next small step. No mapper is selected by game name.
 
