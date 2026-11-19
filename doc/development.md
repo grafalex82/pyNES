@@ -70,7 +70,7 @@ the failing PC. Completed instructions emit aligned DEBUG traces with resulting 
 boundary. See [execution control](execution.md) for cycle budgets, overshoot, and state preservation.
 The root `main.py` accepts a ROM path and runs repeated 1000-cycle blocks with DEBUG traces until an exception stops
 execution. See [console startup](execution.md#console-startup) for the command and a synthetic unsupported-opcode stop.
-Peripherals and breakpoints remain future work.
+PPU register writes are retained for inspection without hardware effects; PPU reads and breakpoints remain future work.
 
 ## Documentation roles
 

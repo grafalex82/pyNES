@@ -115,27 +115,8 @@ def test_propagates_the_original_rom_exception(make_cartridge, monkeypatch):
 
 
 @pytest.mark.parametrize("operation", ["read", "write"])
-@pytest.mark.parametrize(
-    "address",
-    [
-        pytest.param(0x2000, id="ppu-start"),
-        pytest.param(0x2002, id="ppu-status"),
-        pytest.param(0x2007, id="ppu-end"),
-        pytest.param(0x2008, id="ppu-mirror-start"),
-        pytest.param(0x3FFF, id="ppu-mirror-end"),
-        pytest.param(0x4000, id="apu-start"),
-        pytest.param(0x4014, id="oam-dma"),
-        pytest.param(0x4015, id="apu-status"),
-        pytest.param(0x4016, id="controller-1"),
-        pytest.param(0x4017, id="controller-2-and-apu"),
-        pytest.param(0x4018, id="test-mode-start"),
-        pytest.param(0x401F, id="test-mode-end"),
-        pytest.param(0x4020, id="expansion-start"),
-        pytest.param(0x5FFF, id="expansion-end"),
-        pytest.param(0x6000, id="cartridge-ram-start"),
-        pytest.param(0x7FFF, id="cartridge-ram-end"),
-    ],
-)
+@pytest.mark.parametrize("address", [0x4000, 0x4014, 0x4015, 0x4016, 0x4017, 0x4018, 0x401F, 0x4020, 0x5FFF,
+                                     0x6000, 0x7FFF])
 def test_rejects_unconnected_access_without_changing_memory(make_cartridge, operation, address):
     # Existing bytes expose accidental routing to RAM or ROM instead of an unconnected device.
     prg = bytes(range(256)) * 64
@@ -143,7 +124,7 @@ def test_rejects_unconnected_access_without_changing_memory(make_cartridge, oper
     machine.write_byte(0x0000, 0x12)
     machine.write_byte(0x07FF, 0xAB)
 
-    # Every unconnected range reports which CPU operation and address still need implementation.
+    # Unconnected ranges report the operation and CPU address.
     with pytest.raises(NotImplementedError, match=rf"{operation}.*0x{address:04X}"):
         if operation == "read":
             machine.read_byte(address)
@@ -154,6 +135,74 @@ def test_rejects_unconnected_access_without_changing_memory(make_cartridge, oper
     expected_ram = b"\x12" + bytes(2046) + b"\xAB"
     assert bytes(machine.read_byte(index) for index in range(0x2000)) == expected_ram * 4
     assert bytes(machine.read_byte(index) for index in range(0x8000, 0x10000)) == prg * 2
+
+
+def test_ppu_writes_route_all_mirrors_and_preserve_other_offsets(make_cartridge):
+    # Every CPU address in the window must select exactly one of the eight offsets.
+    machine = Machine(make_cartridge(bytes(16384)))
+    expected = [None] * 8
+    assert machine.ppu.last_writes == tuple(expected)
+    for address in range(0x2000, 0x4000):
+        value = (address // 8 + address) & 0xFF
+        machine.write_byte(address, value)
+        expected[address & 7] = value
+        assert machine.ppu.last_writes == tuple(expected)
+
+
+def test_status_writes_through_mirrors_only_retain_the_last_byte(make_cartridge):
+    # Give all other register offsets and RAM distinct contents before writing PPUSTATUS.
+    prg = bytes(range(256)) * 64
+    machine = Machine(make_cartridge(prg))
+    machine.write_byte(0x123, 0xA5)
+    for offset in range(8):
+        if offset != 2:
+            machine.write_byte(0x2000 + offset, 0x10 + offset)
+
+    # PPUSTATUS is read-only on hardware; this model records writes without register effects.
+    for address, value in ((0x2002, 0x00), (0x200A, 0x80), (0x3FFA, 0xFF)):
+        machine.write_byte(address, value)
+        assert machine.ppu.last_writes == (0x10, 0x11, value, 0x13, 0x14, 0x15, 0x16, 0x17)
+        assert machine.read_byte(0x123) == 0xA5
+        assert machine.read_byte(0x8000) == prg[0]
+
+    # Reading status is still unsupported and must not expose or change the retained byte.
+    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x02"):
+        machine.read_byte(0x2002)
+    assert machine.ppu.last_writes[2] == 0xFF
+
+
+@pytest.mark.parametrize("offset", range(8))
+def test_ppu_register_reads_remain_explicitly_unsupported(make_cartridge, offset):
+    machine = Machine(make_cartridge(bytes(16384)))
+    with pytest.raises(NotImplementedError, match=rf"PPU read at register offset 0x{offset:02X}"):
+        machine.read_byte(0x3FF8 + offset)
+
+
+def test_ppu_reads_route_all_mirrors_to_register_offsets(make_cartridge, monkeypatch):
+    # A stand-in read exposes the offset and verifies that Machine returns the device's result.
+    machine = Machine(make_cartridge(bytes(16384)))
+    monkeypatch.setattr(machine.ppu, "read_byte", lambda offset: 0x80 | offset)
+    for address in range(0x2000, 0x4000):
+        assert machine.read_byte(address) == 0x80 | (address & 7)
+
+
+def test_ppu_read_error_reports_register_offset(make_cartridge):
+    # Unsupported mirrored reads propagate the PPU's device-relative diagnostic directly.
+    machine = Machine(make_cartridge(bytes(16384)))
+    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x02"):
+        machine.read_byte(0x3FFA)
+
+
+def test_each_machine_owns_independent_ppu(make_cartridge):
+    # Constructing and writing a second Machine cannot change the first PPU's retained bytes.
+    cartridge = make_cartridge(bytes(16384))
+    first = Machine(cartridge)
+    first.write_byte(0x2001, 0xAB)
+    second = Machine(cartridge)
+    assert second.ppu.last_writes == (None,) * 8
+    second.write_byte(0x3FF9, 0xCD)
+    assert first.ppu.last_writes[1] == 0xAB
+    assert second.ppu.last_writes[1] == 0xCD
 
 
 @pytest.mark.parametrize(

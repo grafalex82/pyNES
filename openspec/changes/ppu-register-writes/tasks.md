@@ -2,9 +2,9 @@
 
 ## 1. Register writes
 
-- [ ] 1.1 Add a per-Machine PPU and mirrored writes; verify retained bytes, all offsets, and independent instances.
-- [ ] 1.2 Verify writes to $2002 and mirrors are retained without hardware effects; keep unsupported reads explicit.
-- [ ] 1.3 Update memory tests and docs; record the register-write and warmup departures in the decision record.
+- [x] 1.1 Add a per-Machine PPU and mirrored writes; verify retained bytes, all offsets, and independent instances.
+- [x] 1.2 Verify writes to $2002 and mirrors are retained without hardware effects; keep unsupported reads explicit.
+- [x] 1.3 Update memory tests and docs; record the register-write and warmup departures in the decision record.
 
 ## 2. Status reads
 

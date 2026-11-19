@@ -5,6 +5,21 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU register write retention (2026-11-19)
+
+Task 1.1 of `ppu-register-writes` connects a separate PPU to each Machine. Writes to $2000-$3FFF select one of
+eight offsets through the low address bits, matching the register mirrors described by the
+[NESdev PPU reference](https://www.nesdev.org/wiki/PPU_programmer_reference). The last value for each offset is
+retained for inspection, with `None` indicating no write. Reads remain unimplemented.
+
+This deliberately retains all writes without register effects, including to read-only PPUSTATUS. It records writes
+immediately, whereas hardware ignores writes to $2000, $2001, $2005, and $2006 during its initial warmup; see the
+[NESdev power-up reference](https://www.nesdev.org/wiki/PPU_power_up_state). Retention keeps the first device boundary
+inspectable without implementing the effects or timing of real PPU registers. The simplification applies to all
+connected cartridges, including BattleCity (Japan), Space Invaders (J), and Super Mario Bros. (Europe) listed in
+[ROM notes](../ROMs/README.md). No ROM was patched or run for these tasks. Synthetic tests cover every mirrored address,
+independent Machines, status-register writes, unchanged neighboring bytes, and unsupported reads.
+
 ## Learning through one behavior at a time
 
 Implement one instruction or one peripheral aspect per change. Once the execution path exists, the next observed

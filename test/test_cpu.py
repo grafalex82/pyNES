@@ -106,7 +106,7 @@ def test_fetch_word_preserves_pc_when_second_read_fails(cpu):
     cpu.pc = 0x1FFF
 
     # A partial word leaves PC at the start of the fetch.
-    with pytest.raises(NotImplementedError, match="CPU read at address 0x2000"):
+    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x00"):
         cpu._fetch_word()
     assert cpu.pc == 0x1FFF
 
@@ -124,7 +124,7 @@ def test_step_preserves_state_when_opcode_read_fails(make_cpu):
     ram = bytes(machine.read_byte(address) for address in range(2048))
 
     # The read failure propagates from Machine without changing CPU state or RAM.
-    with pytest.raises(NotImplementedError, match="CPU read at address 0x2002"):
+    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x02"):
         cpu.step()
     assert cpu.a == 0x12
     assert cpu.x == 0x34
@@ -314,12 +314,12 @@ def test_absolute_stores_write_register_without_changing_flags(make_cpu, opcode,
 @pytest.mark.parametrize(
     "high_byte, error, message",
     [
-        (0x20, NotImplementedError, "CPU write at address 0x2000"),
+        (0x40, NotImplementedError, "CPU write at address 0x4000"),
         (0x80, PermissionError, "ROM at offset 0x0000"),
     ],
 )
 def test_absolute_store_propagates_write_error(make_cpu, opcode, register, high_byte, error, message):
-    # Target either the unconnected PPU area or the beginning of PRG ROM.
+    # Target either unconnected I/O or the beginning of PRG ROM.
     cpu, machine = make_cpu(start_address=0x0200)
     setattr(cpu, register, 0xA5)
     machine.write_byte(0x0200, opcode)

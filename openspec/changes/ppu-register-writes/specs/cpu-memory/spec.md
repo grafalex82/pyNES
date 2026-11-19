@@ -4,12 +4,13 @@
 
 Reads at $2000-$3FFF except status-register aliases and reads at $4000-$7FFF SHALL raise NotImplementedError.
 Writes at $4000-$7FFF SHALL raise NotImplementedError. PPU-window writes and status reads SHALL route to the PPU.
-Errors SHALL identify the operation and CPU address; unimplemented ranges SHALL NOT act as RAM.
+PPU read errors SHALL identify the operation and register offset; other errors SHALL identify the operation and CPU
+address. Unimplemented ranges SHALL NOT act as RAM.
 
 #### Scenario: Access an unimplemented address
 
 - **WHEN** a read targets a non-status PPU register or $4000-$7FFF, or a write targets $4000-$7FFF
-- **THEN** NotImplementedError identifies the attempted operation and CPU address
+- **THEN** NotImplementedError identifies the attempted operation and PPU register offset or CPU address, respectively
 
 #### Scenario: Write a PPU register mirror
 

@@ -87,6 +87,9 @@ mapper/submapper 0 and no trainer. ROM writes raise `PermissionError`; unconnect
 configurations raise `NotImplementedError`. See [the memory guide](doc/memory.md) for the map, supported limits,
 deliberate hardware departures, and a synthetic byte-access example.
 
+Each Machine also owns a minimal [`PPU`](src/ppu.py). Writes to $2000-$3FFF retain the last byte for each mirrored
+register offset for inspection, without register effects; PPU reads remain unimplemented.
+
 [`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and seven boolean status fields as read/write properties.
 Reading `p` assembles NV1BDIZC; assigning it replaces all seven fields and ignores bit 5, which always reads as 1.
 `break_flag` represents B in bit 4 as a software convention for inspection, rather than a physical CPU latch.
