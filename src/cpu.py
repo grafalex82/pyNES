@@ -320,6 +320,23 @@ class CPU:
         self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), mnemonic, f"${destination:04X}")
 
 
+    def _tsx(self, address, opcode):
+        # TSX updates N and Z from the copied stack pointer.
+        self._x = self._sp
+        self._negative = bool(self._x & 0x80)
+        self._zero = self._x == 0
+
+        # The implied instruction takes two nominal cycles.
+        self._cycles += 2
+        self.log_instruction(address, (opcode,), "TSX")
+
+
+    def _txs(self, address, opcode):
+        self._sp = self._x
+        self._cycles += 2
+        self.log_instruction(address, (opcode,), "TXS")
+
+
     def _clc(self, address, opcode):
         """Clear the carry flag used by arithmetic and rotates."""
         self._carry = False
@@ -550,7 +567,7 @@ class CPU:
         None,  # $97
         None,  # $98
         None,  # $99
-        None,  # $9A
+        _txs,  # $9A
         None,  # $9B
         None,  # $9C
         None,  # $9D
@@ -586,7 +603,7 @@ class CPU:
         None,  # $B7
         _clv,  # $B8
         None,  # $B9
-        None,  # $BA
+        _tsx,  # $BA
         None,  # $BB
         None,  # $BC
         None,  # $BD

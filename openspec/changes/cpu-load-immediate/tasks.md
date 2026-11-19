@@ -12,7 +12,7 @@
 
 ## 3. Stack transfer
 
-- [ ] 3.1 Implement $9A; test SP boundaries, preserved X and flags, PC, and cycles.
+- [x] 3.1 Implement $9A/$BA; test transferred values, flags, PC, and cycles.
 
 ## 4. Absolute loads
 

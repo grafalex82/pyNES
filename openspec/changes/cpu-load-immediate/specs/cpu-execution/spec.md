@@ -26,15 +26,22 @@ Each SHALL preserve registers and flags other than advancing PC by three modulo 
 - **WHEN** a store targets an unconnected address or read-only ROM
 - **THEN** the device error propagates and no completed instruction trace or cycles are added
 
-### Requirement: Transfer X to the stack pointer
+### Requirement: Transfer between X and the stack pointer
 
 TXS ($9A) SHALL copy X to SP, advance PC by one modulo 65536, and add two cycles. It SHALL preserve X,
 all other registers, every status flag, and memory.
+TSX ($BA) SHALL copy SP to X, set N from bit 7 and Z when the result is zero, advance PC by one modulo 65536,
+and add two cycles. It SHALL preserve SP, all other registers, flags other than N/Z, and memory.
 
 #### Scenario: Transfer boundary values
 
 - **WHEN** TXS executes with X set to $00 or $FF
 - **THEN** SP equals X, flags remain unchanged, and the instruction adds two cycles
+
+#### Scenario: Transfer stack pointer to X
+
+- **WHEN** TSX executes with SP set to $00, $7F, $80, or $FF
+- **THEN** X equals SP, N and Z reflect the result, and the instruction adds two cycles
 
 ### Requirement: Load a register using absolute addressing
 

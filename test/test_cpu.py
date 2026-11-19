@@ -310,6 +310,55 @@ def test_absolute_store_propagates_write_error(make_cpu, opcode, register, high_
     assert cpu.cycles == 0
 
 
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_tsx_transfers_stack_pointer_and_updates_nz(make_cpu, value):
+    # Begin with opposite flag values so TSX must update both flags.
+    cpu, machine = make_cpu()
+    cpu.sp = value
+    cpu.x = 0x55
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0000, 0xBA)
+
+    # TSX copies SP to X and sets N and Z from the copied value.
+    cpu.step()
+    assert cpu.x == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0001
+    assert cpu.cycles == 2
+
+
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+@pytest.mark.parametrize("flag", [False, True])
+def test_txs_transfers_x_without_changing_flags(make_cpu, value, flag):
+    # Both initial flag states reveal any unintended status changes.
+    cpu, machine = make_cpu()
+    cpu.x = value
+    cpu.sp = 0x55
+    cpu.negative = flag
+    cpu.overflow = flag
+    cpu.break_flag = flag
+    cpu.decimal = flag
+    cpu.interrupt_disable = flag
+    cpu.zero = flag
+    cpu.carry = flag
+    machine.write_byte(0x0000, 0x9A)
+
+    # Unlike TSX, TXS does not update flags from the transferred value.
+    cpu.step()
+    assert cpu.sp == value
+    assert cpu.negative is flag
+    assert cpu.overflow is flag
+    assert cpu.break_flag is flag
+    assert cpu.decimal is flag
+    assert cpu.interrupt_disable is flag
+    assert cpu.zero is flag
+    assert cpu.carry is flag
+    assert cpu.pc == 0x0001
+    assert cpu.cycles == 2
+
+
 def test_cycles_accumulate_across_mixed_instructions(make_cpu):
     # Execute each supported encoding once in a synthetic RAM program.
     cpu, machine = make_cpu()
