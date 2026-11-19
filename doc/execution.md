@@ -16,8 +16,8 @@ This budget does not provide frame scheduling, peripheral progression, or real-t
 
 The console enables DEBUG logging before CPU startup and prints message-only reset and completed-instruction traces.
 Errors propagate with their ordinary traceback. For a synthetic mapper-0 ROM whose reset vector points to SEI ($78)
-at $8000 followed by unsupported $A9 at $8001, SEI completes at CYC=2 and the process stops with `NotImplementedError`
-identifying $A9 at $8001. This is an early diagnostic stop, not a playable game.
+at $8000 followed by unsupported $02 at $8001, SEI completes at CYC=2 and the process stops with `NotImplementedError`
+identifying $02 at $8001. This is an early diagnostic stop, not a playable game.
 
 ## Host controls
 

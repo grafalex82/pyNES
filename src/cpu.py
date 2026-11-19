@@ -273,6 +273,31 @@ class CPU:
         self._negative = bool(value & 0x80)
 
 
+    def _lda_immediate(self, address, opcode):
+        self._a = self._fetch_byte()
+        self._finish_immediate_load(address, opcode, "LDA", self._a)
+
+
+    def _ldx_immediate(self, address, opcode):
+        self._x = self._fetch_byte()
+        self._finish_immediate_load(address, opcode, "LDX", self._x)
+
+
+    def _ldy_immediate(self, address, opcode):
+        self._y = self._fetch_byte()
+        self._finish_immediate_load(address, opcode, "LDY", self._y)
+
+
+    def _finish_immediate_load(self, address, opcode, mnemonic, value):
+        # Loads set N from bit 7 and Z from the entire byte, leaving the other flags untouched.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # Immediate loads take two nominal cycles; the fetched value also supplies the trace.
+        self._cycles += 2
+        self.log_instruction(address, (opcode, value), mnemonic, f"#${value:02X}")
+
+
     def _clc(self, address, opcode):
         """Clear the carry flag used by arithmetic and rotates."""
         self._carry = False
@@ -511,16 +536,16 @@ class CPU:
         None,  # $9F
 
         # $A0-$AF
-        None,  # $A0
+        _ldy_immediate,  # $A0
         None,  # $A1
-        None,  # $A2
+        _ldx_immediate,  # $A2
         None,  # $A3
         None,  # $A4
         None,  # $A5
         None,  # $A6
         None,  # $A7
         None,  # $A8
-        None,  # $A9
+        _lda_immediate,  # $A9
         None,  # $AA
         None,  # $AB
         None,  # $AC

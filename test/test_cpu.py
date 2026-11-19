@@ -114,7 +114,11 @@ def test_fetch_word_preserves_pc_when_second_read_fails(cpu):
 def test_step_preserves_state_when_opcode_read_fails(make_cpu):
     # The unconnected PPU register cannot supply an opcode; retain distinctive CPU and RAM contents.
     cpu, machine = make_cpu()
-    cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xE1
+    cpu.a = 0x12
+    cpu.x = 0x34
+    cpu.y = 0x56
+    cpu.sp = 0x9A
+    cpu.p = 0xE1
     cpu.pc = 0x2002
     machine.write_byte(0x0100, 0xAB)
     ram = bytes(machine.read_byte(address) for address in range(2048))
@@ -122,7 +126,12 @@ def test_step_preserves_state_when_opcode_read_fails(make_cpu):
     # The read failure propagates from Machine without changing CPU state or RAM.
     with pytest.raises(NotImplementedError, match="CPU read at address 0x2002"):
         cpu.step()
-    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xE1, 0x2002)
+    assert cpu.a == 0x12
+    assert cpu.x == 0x34
+    assert cpu.y == 0x56
+    assert cpu.sp == 0x9A
+    assert cpu.p == 0xE1
+    assert cpu.pc == 0x2002
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
@@ -228,6 +237,24 @@ def test_step_nop_advances_pc(make_cpu):
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, register", [(0xA9, "a"), (0xA2, "x"), (0xA0, "y")])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, value):
+    # Start the destination at a value different from every tested operand.
+    cpu, machine = make_cpu(start_address=0x0234)
+    setattr(cpu, register, 0x55)
+    machine.write_byte(0x0234, opcode)
+    machine.write_byte(0x0235, value)
+
+    # Check the destination, flags, PC, and completed-instruction cycles.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0236
+    assert cpu.cycles == 2
+
+
 def test_cycles_accumulate_across_mixed_instructions(make_cpu):
     # Execute each supported encoding once in a synthetic RAM program.
     cpu, machine = make_cpu()
@@ -275,7 +302,7 @@ def test_failed_step_preserves_accumulated_cycles(make_cpu, failed_pc):
     # A completed NOP precedes either an unsupported opcode or an unconnected read.
     cpu, machine = make_cpu()
     machine.write_byte(0x0000, 0xEA)
-    machine.write_byte(0x0001, 0xA9)
+    machine.write_byte(0x0001, 0x02)
     cpu.step()
     cpu.pc = failed_pc
 
@@ -289,11 +316,15 @@ def test_instruction_table_has_one_entry_per_opcode():
     assert len(CPU._instruction_handlers) == 256
 
 
-@pytest.mark.parametrize("opcode", [0x1A, 0xA9, 0xFF])
+@pytest.mark.parametrize("opcode", [0x1A, 0x02, 0xFF])
 def test_step_reports_empty_instruction_table_entry(make_cpu, opcode):
     # Pick a nonzero PC and known register values to verify state at the failed instruction.
     cpu, machine = make_cpu(start_address=0x0234)
-    cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xE1
+    cpu.a = 0x12
+    cpu.x = 0x34
+    cpu.y = 0x56
+    cpu.sp = 0x9A
+    cpu.p = 0xE1
     machine.write_byte(0x0234, opcode)
     machine.write_byte(0x0100, 0xAB)
     ram = bytes(machine.read_byte(address) for address in range(2048))
@@ -302,15 +333,24 @@ def test_step_reports_empty_instruction_table_entry(make_cpu, opcode):
     with pytest.raises(NotImplementedError) as error:
         cpu.step()
     assert str(error.value) == f"CPU opcode 0x{opcode:02X} at address 0x0234 is not implemented"
-    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xE1, 0x0234)
+    assert cpu.a == 0x12
+    assert cpu.x == 0x34
+    assert cpu.y == 0x56
+    assert cpu.sp == 0x9A
+    assert cpu.p == 0xE1
+    assert cpu.pc == 0x0234
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 
 def test_step_retains_completed_instructions_before_unsupported_opcode(make_cpu):
-    # SEI and CLD change distinct flags before the unsupported LDA immediate opcode.
+    # SEI and CLD change distinct flags before the unsupported opcode.
     cpu, machine = make_cpu(start_address=0x0234)
-    cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xF9
-    program = (0x78, 0xD8, 0xA9, 0x42)
+    cpu.a = 0x12
+    cpu.x = 0x34
+    cpu.y = 0x56
+    cpu.sp = 0x9A
+    cpu.p = 0xF9
+    program = (0x78, 0xD8, 0x02, 0x42)
     for offset, value in enumerate(program):
         machine.write_byte(0x0234 + offset, value)
     ram = bytes(machine.read_byte(address) for address in range(2048))
@@ -318,9 +358,14 @@ def test_step_retains_completed_instructions_before_unsupported_opcode(make_cpu)
     # The failed step retains the two completed flag changes and the original program bytes.
     cpu.step()
     cpu.step()
-    with pytest.raises(NotImplementedError, match="CPU opcode 0xA9 at address 0x0236"):
+    with pytest.raises(NotImplementedError, match="CPU opcode 0x02 at address 0x0236"):
         cpu.step()
-    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.p, cpu.pc) == (0x12, 0x34, 0x56, 0x9A, 0xF5, 0x0236)
+    assert cpu.a == 0x12
+    assert cpu.x == 0x34
+    assert cpu.y == 0x56
+    assert cpu.sp == 0x9A
+    assert cpu.p == 0xF5
+    assert cpu.pc == 0x0236
     assert bytes(machine.read_byte(address) for address in range(2048)) == ram
 
 

@@ -25,7 +25,7 @@ def test_construction_starts_cpu_once_without_executing_or_clearing_ram(make_mac
     # SEI followed by an unsupported opcode reveals any execution during construction.
     machine = make_machine(start_address=0x0200)
     machine.write_byte(0x0200, 0x78)
-    machine.write_byte(0x0201, 0xA9)
+    machine.write_byte(0x0201, 0x02)
     machine.write_byte(0x0100, 0xA5)
     emulator = Emulator(machine)
 
@@ -45,7 +45,7 @@ def test_step_executes_exactly_one_instruction(make_machine):
     # The following unsupported opcode would fail if step fetched more than once.
     machine = make_machine()
     machine.write_byte(0, 0x78)
-    machine.write_byte(1, 0xA9)
+    machine.write_byte(1, 0x02)
     emulator = Emulator(machine)
     emulator.cpu.interrupt_disable = False
 
@@ -128,7 +128,7 @@ def test_run_uses_fresh_budgets_after_prior_execution_and_overshoot(make_machine
 def test_run_propagates_failure_after_retaining_completed_instruction(make_machine):
     machine = make_machine()
     machine.write_byte(0, 0x78)
-    machine.write_byte(1, 0xA9)
+    machine.write_byte(1, 0x02)
     emulator = Emulator(machine)
     emulator.cpu.interrupt_disable = False
 
@@ -141,24 +141,27 @@ def test_run_propagates_failure_after_retaining_completed_instruction(make_machi
     # A longer budget propagates the failure and leaves the completed SEI intact.
     emulator.cpu.pc = 0
     emulator.cpu.interrupt_disable = False
-    with pytest.raises(NotImplementedError, match="opcode 0xA9 at address 0x0001"):
+    with pytest.raises(NotImplementedError, match="opcode 0x02 at address 0x0001"):
         emulator.run(3)
     assert emulator.cpu.pc == 1
     assert emulator.cpu.cycles == 4
     assert emulator.cpu.interrupt_disable is True
-    assert machine.read_byte(1) == 0xA9
+    assert machine.read_byte(1) == 0x02
 
 
 def test_reset_preserves_connected_cpu_memory_and_cycles(make_machine):
     # Keep code and stack-page data in the supplied Machine across repeated resets.
     machine = make_machine(start_address=0x0200)
     machine.write_byte(0x0200, 0xEA)
-    machine.write_byte(0x0201, 0xA9)
+    machine.write_byte(0x0201, 0x02)
     machine.write_byte(0x0100, 0xA5)
     emulator = Emulator(machine)
     cpu = emulator.cpu
     emulator.step()
-    cpu.a, cpu.x, cpu.y, cpu.sp = 0x12, 0x34, 0x56, 0x01
+    cpu.a = 0x12
+    cpu.x = 0x34
+    cpu.y = 0x56
+    cpu.sp = 0x01
     cpu.p = 0xDB
 
     # Each reset loads the vector once, wraps SP, sets I, and preserves other state.
@@ -175,7 +178,7 @@ def test_reset_preserves_connected_cpu_memory_and_cycles(make_machine):
         assert cpu.p == 0xFF
         assert cpu.cycles == 2
         assert machine.read_byte(0x0200) == 0xEA
-        assert machine.read_byte(0x0201) == 0xA9
+        assert machine.read_byte(0x0201) == 0x02
         assert machine.read_byte(0x0100) == 0xA5
 
     # Executing the preserved RAM instruction confirms the CPU still uses the supplied Machine.

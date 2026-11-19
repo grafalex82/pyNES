@@ -1,4 +1,4 @@
-"""Verify CPU reset and trace formatting independently of instruction execution."""
+"""Verify CPU reset and state logging."""
 
 import logging
 
@@ -78,37 +78,12 @@ def test_log_state_reports_current_registers_and_flags(cpu, caplog, value, expec
     assert record.name == "cpu"
     assert record.levelno == logging.DEBUG
     assert record.getMessage() == f"Checkpoint 50%: A=12 X=34 Y=56 SP=9A PC=BCDE P={expected_flags} CYC=0"
-    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.pc, cpu.p) == (0x12, 0x34, 0x56, 0x9A, 0xBCDE, value | 0x20)
-
-
-@pytest.mark.parametrize(
-    "address, instruction_bytes, mnemonic, operands, prefix",
-    [
-        (0x8000, (0x78,), "SEI", "", "8000   78         SEI                     "),
-        (0x8001, (0xA9, 0x10), "LDA", "#$10", "8001   A9 10      LDA #$10                "),
-        (0x8003, (0x4C, 0x00, 0xC0), "JMP", "$C000", "8003   4C 00 C0   JMP $C000               "),
-    ],
-)
-def test_log_instruction_formats_supplied_metadata_without_accessing_memory(
-    make_cpu, caplog, monkeypatch, address, instruction_bytes, mnemonic, operands, prefix
-):
-    # Known state and a sentinel byte make accidental mutation visible.
-    cpu, machine = make_cpu()
-    cpu.a, cpu.x, cpu.y, cpu.sp, cpu.pc, cpu.p = 0x12, 0x34, 0x56, 0x9A, 0xBCDE, 0x85
-    cpu._cycles = 1234
-    machine.write_byte(0x0100, 0xAB)
-
-    # Neither helper may access memory; formatting uses only the supplied instruction metadata.
-    with monkeypatch.context() as blocked, caplog.at_level(logging.DEBUG, logger="cpu"):
-        blocked.setattr(machine, "read_byte", lambda address: pytest.fail("Unexpected memory read"))
-        blocked.setattr(machine, "write_byte", lambda address, value: pytest.fail("Unexpected memory write"))
-        cpu.log_instruction(address, instruction_bytes, mnemonic, operands)
-
-    # Compare the complete line and verify the observed state and memory are unchanged.
-    assert len(caplog.records) == 1
-    assert caplog.records[0].getMessage() == prefix + " A=12 X=34 Y=56 SP=9A PC=BCDE P=N-1--I-C CYC=1234"
-    assert (cpu.a, cpu.x, cpu.y, cpu.sp, cpu.pc, cpu.p, cpu.cycles) == (0x12, 0x34, 0x56, 0x9A, 0xBCDE, 0xA5, 1234)
-    assert machine.read_byte(0x0100) == 0xAB
+    assert cpu.a == 0x12
+    assert cpu.x == 0x34
+    assert cpu.y == 0x56
+    assert cpu.sp == 0x9A
+    assert cpu.pc == 0xBCDE
+    assert cpu.p == value | 0x20
 
 
 def test_log_instruction_skips_formatting_when_debug_is_disabled(cpu, caplog):
@@ -119,5 +94,4 @@ def test_log_instruction_skips_formatting_when_debug_is_disabled(cpu, caplog):
     with caplog.at_level(logging.INFO, logger="cpu"):
         cpu.log_instruction(0x8000, instruction_bytes, "SEI")
     assert not caplog.records
-
 

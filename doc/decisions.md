@@ -308,8 +308,8 @@ $FFFF to $0000. It commits PC after both reads so a failed second read leaves PC
 `CPU.step()` uses the byte helper for the opcode. An empty handler entry restores the original PC so the failing
 instruction remains available for inspection. The word helper is available for instructions with two-byte operands.
 
-Task 1.9 of `execute-sei` verifies this diagnostic policy with synthetic RAM programs. Unsupported $A9 and unofficial
-NOP $1A report their byte and address, and a read from an unconnected PPU register propagates Machine's error.
+Task 1.9 of `execute-sei` verified this diagnostic policy with synthetic RAM programs. At the time, unsupported $A9
+and unofficial NOP $1A reported their byte and address. An unconnected PPU read propagated Machine's error.
 The failing step preserves registers, flags, PC, and RAM; SEI and CLD effects remain when a later $A9 stops execution.
 This stop is an emulator diagnostic rather than hardware behavior.
 
