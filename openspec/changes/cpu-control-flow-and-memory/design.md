@@ -3,8 +3,8 @@
 ## Context
 
 CPU.step dispatches opcodes, reads instruction bytes through Machine, accumulates nominal instruction cycles, and
-logs completed instructions using captured bytes. The first 16 encodings in this change have been implemented; the
-accumulator shifts and rotates and immediate comparisons are planned. Each encoding remains an individual learning step.
+logs completed instructions using captured bytes. The first 23 encodings in this change have been implemented; the
+immediate logical operations and indirect indexed stores are planned. Each encoding remains an individual learning step.
 
 ## Goals / Non-Goals
 
@@ -23,6 +23,15 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
 - Accumulator shifts move the outgoing bit into C; rotates additionally insert the old C at the opposite end. Each
   sets N and Z from the resulting byte. Immediate comparisons set C for an unsigned register value greater than or
   equal to the operand, Z for equality, and N from bit 7 of the eight-bit difference without storing that difference.
+- Immediate logical operations combine the fetched operand with A and set N and Z from the resulting byte.
+- Indexed-indirect stores add X to the zero-page operand modulo 256 before reading the little-endian pointer; the
+  pointer's high-byte address also wraps within zero page. Indirect-indexed stores read that zero-page pointer first,
+  with the same high-byte wrap, and add Y to the resulting address modulo 65536. Both use Machine for all accesses.
+- Indexed-indirect stores omit the hardware's discarded read at the original zero-page operand address, where RAM reads
+  have no side effects in this emulator. Indirect-indexed stores omit the provisional indexed read even when no page is
+  crossed, potentially suppressing device read side effects. Both omissions preserve the functional bus model, apply to
+  all ROMs, and patch none.
+- Immediate logical operations need no omitted dummy access. Trace the fetched operand without additional reads.
 - Accumulator shifts and rotates omit the hardware's discarded read at the next instruction address, as with existing
   implied instructions. Immediate comparisons need no omitted dummy access. The omission can suppress device read side
   effects for every ROM using these accumulator encodings; no ROM is patched.

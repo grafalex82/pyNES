@@ -138,12 +138,39 @@ Resume another task only when it is selected for implementation.
   focused synthetic pytest cases.
 - [x] 23.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
-## 24. Integration
+## 24. AND immediate ($29)
 
-- [ ] 24.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
+- [ ] 24.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 24.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 25. ORA immediate ($09)
+
+- [ ] 25.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 25.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 26. EOR immediate ($49)
+
+- [ ] 26.1 Implement the selected encoding; verify A, N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 26.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 27. STA indexed-indirect ($81)
+
+- [ ] 27.1 Implement the selected encoding; verify the written value, indexed zero-page and pointer-byte wrapping, PC,
+  and cycles with focused synthetic pytest cases.
+- [ ] 27.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 28. STA indirect-indexed ($91)
+
+- [ ] 28.1 Implement the selected encoding; verify the written value, pointer-byte wrapping, page crossing, effective
+  address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 28.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 29. Integration
+
+- [ ] 29.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
   resolve any failures.
-- [ ] 24.2 Review documentation for hardware departures and their rationale without listing instruction support.
-- [ ] 24.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
+- [ ] 29.2 Review documentation for hardware departures and their rationale without listing instruction support.
+- [ ] 29.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
   implementing it; record actual observations only.
 
 ## Workflow follow-up

@@ -1,5 +1,76 @@
 ## ADDED Requirements
 
+### Requirement: Execute AND with an immediate operand
+
+Opcode $29 SHALL combine A with the next byte using bitwise AND, store the result in A, and set N and Z from that
+byte. It SHALL advance PC by two and add two nominal cycles, preserving other registers and flags.
+
+#### Scenario: Produce zero
+- **WHEN** A=$F0 and AND #$0F executes
+- **THEN** A=$00, N=0, and Z=1
+
+#### Scenario: Set the negative flag
+- **WHEN** A=$FF and AND #$80 executes
+- **THEN** A=$80, N=1, and Z=0
+
+### Requirement: Execute ORA with an immediate operand
+
+Opcode $09 SHALL combine A with the next byte using bitwise OR, store the result in A, and set N and Z from that
+byte. It SHALL advance PC by two and add two nominal cycles, preserving other registers and flags.
+
+#### Scenario: Produce zero
+- **WHEN** A=$00 and ORA #$00 executes
+- **THEN** A=$00, N=0, and Z=1
+
+#### Scenario: Combine distinct bits
+- **WHEN** A=$10 and ORA #$80 executes
+- **THEN** A=$90, N=1, and Z=0
+
+### Requirement: Execute EOR with an immediate operand
+
+Opcode $49 SHALL combine A with the next byte using bitwise exclusive OR, store the result in A, and set N and Z from
+that byte. It SHALL advance PC by two and add two nominal cycles, preserving other registers and flags.
+
+#### Scenario: Produce zero
+- **WHEN** A=$FF and EOR #$FF executes
+- **THEN** A=$00, N=0, and Z=1
+
+#### Scenario: Toggle matching bits
+- **WHEN** A=$0F and EOR #$8F executes
+- **THEN** A=$80, N=1, and Z=0
+
+### Requirement: Execute STA using indexed-indirect addressing
+
+Opcode $81 SHALL add X to its one-byte operand modulo 256, read the little-endian target pointer from that zero-page
+address and the following zero-page address modulo 256, and write A through Machine to the target. It SHALL advance
+PC by two, add six nominal cycles, and preserve other registers and flags.
+
+#### Scenario: Wrap the indexed pointer address
+- **WHEN** the operand is $F0, X=$20, and $10/$11 contain $34/$12
+- **THEN** the write targets $1234 through Machine
+
+#### Scenario: Wrap the pointer's high-byte address
+- **WHEN** the operand is $FC, X=$03, and $FF/$00 contain $34/$12
+- **THEN** the write targets $1234 through Machine
+
+### Requirement: Execute STA using indirect-indexed addressing
+
+Opcode $91 SHALL read a little-endian target pointer from the one-byte operand's zero-page address and the following
+zero-page address modulo 256, add Y to the pointer modulo 65536, and write A through Machine to the result. It SHALL
+advance PC by two, add six nominal cycles regardless of page crossing, and preserve other registers and flags.
+
+#### Scenario: Wrap the pointer and cross a page
+- **WHEN** the operand is $FF, $FF/$00 contain $FF/$12, and Y=$01
+- **THEN** the write targets $1300 through Machine
+
+#### Scenario: Wrap the effective address
+- **WHEN** the pointer is $FFFF and Y=$01
+- **THEN** the write targets $0000 through Machine
+
+#### Scenario: Index without crossing a page
+- **WHEN** the pointer is $1230 and Y=$04
+- **THEN** the write targets $1234 through Machine and adds six nominal cycles
+
 ### Requirement: Execute ASL on the accumulator
 
 Opcode $0A SHALL shift A left by one bit, set C from the old bit 7, insert zero into bit 0, and set N and Z from the
