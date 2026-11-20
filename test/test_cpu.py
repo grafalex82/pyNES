@@ -246,6 +246,93 @@ def test_ror_accumulator(make_cpu, initial, incoming_carry, expected, carry):
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, initial, expected", [
+    # INC
+    (0xE6, 0x00, 0x01),
+    (0xE6, 0x7F, 0x80),
+    (0xE6, 0xFE, 0xFF),
+    (0xE6, 0xFF, 0x00),
+    # DEC
+    (0xC6, 0x00, 0xFF),
+    (0xC6, 0x01, 0x00),
+    (0xC6, 0x80, 0x7F),
+    (0xC6, 0x81, 0x80),
+])
+@pytest.mark.parametrize("destination", [0x00, 0xFF])
+def test_zero_page_increment_and_decrement(make_cpu, monkeypatch, opcode, initial, expected, destination):
+    # Place the instruction away from the addressed byte and set N/Z opposite to the result.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, destination)
+    machine.write_byte(destination, initial)
+
+    # Observe both writes while still forwarding them to Machine.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # The original and updated bytes are written in order; N/Z reflect the result.
+    cpu.step()
+    assert writes == [(destination, initial), (destination, expected)]
+    assert machine.read_byte(destination) == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 5
+
+
+@pytest.mark.parametrize("opcode, initial, expected", [
+    # INC
+    (0xF6, 0x00, 0x01),
+    (0xF6, 0x7F, 0x80),
+    (0xF6, 0xFE, 0xFF),
+    (0xF6, 0xFF, 0x00),
+    # DEC
+    (0xD6, 0x00, 0xFF),
+    (0xD6, 0x01, 0x00),
+    (0xD6, 0x80, 0x7F),
+    (0xD6, 0x81, 0x80),
+])
+@pytest.mark.parametrize("operand, index, destination", [(0x20, 0x04, 0x24), (0xF0, 0x20, 0x10)])
+def test_indexed_zero_page_increment_and_decrement(
+    make_cpu, monkeypatch, opcode, initial, expected, operand, index, destination,
+):
+    # Set the index and N/Z before addressing the byte within zero page.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.x = index
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(destination, initial)
+
+    # Observe both writes while still forwarding them to Machine.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # Both writes target the wrapped address and N/Z reflect the updated byte.
+    cpu.step()
+    assert writes == [(destination, initial), (destination, expected)]
+    assert machine.read_byte(destination) == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
 @pytest.mark.parametrize("opcode, initial, incoming_carry, expected, carry", [
     # ASL
     (0x06, 0x00, False, 0x00, False),

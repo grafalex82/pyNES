@@ -450,27 +450,27 @@ Resume another task only when it is selected for implementation.
 
 ## 76. INC zero page ($E6)
 
-- [ ] 76.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+- [x] 76.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
   zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
-- [ ] 76.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 76.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 77. INC zero page,X ($F6)
 
-- [ ] 77.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+- [x] 77.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
   indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 77.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 77.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 78. DEC zero page ($C6)
 
-- [ ] 78.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+- [x] 78.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
   zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
-- [ ] 78.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 78.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 79. DEC zero page,X ($D6)
 
-- [ ] 79.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+- [x] 79.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
   indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 79.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 79.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 80. BIT zero page ($24)
 

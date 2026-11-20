@@ -885,6 +885,30 @@ class CPU:
         self.log_instruction(address, (opcode,), "TXS")
 
 
+    def _inc_zero_page(self, address, opcode):
+        self._modify_zero_page(address, opcode, "INC", self._increment_byte)
+
+
+    def _inc_zero_page_x(self, address, opcode):
+        self._modify_zero_page(address, opcode, "INC", self._increment_byte, indexed=True)
+
+
+    def _increment_byte(self, value):
+        return (value + 1) & 0xFF
+
+
+    def _dec_zero_page(self, address, opcode):
+        self._modify_zero_page(address, opcode, "DEC", self._decrement_byte)
+
+
+    def _dec_zero_page_x(self, address, opcode):
+        self._modify_zero_page(address, opcode, "DEC", self._decrement_byte, indexed=True)
+
+
+    def _decrement_byte(self, value):
+        return (value - 1) & 0xFF
+
+
     def _asl_accumulator(self, address, opcode):
         self._a = self._shift_left(self._a)
         self._finish_register_update(address, opcode, "ASL", self._a)
@@ -926,10 +950,13 @@ class CPU:
         return (value << 1) & 0xFF
 
 
-    def _modify_zero_page(self, address, opcode, mnemonic, operation):
+    def _modify_zero_page(self, address, opcode, mnemonic, operation, indexed=False):
+        # Indexed zero-page addresses wrap at $FF; the discarded read is omitted.
+        operand = self._fetch_byte()
+        destination = (operand + self._x) & 0xFF if indexed else operand
+
         # The 6502 writes the original byte as a bus cycle before writing the modified byte.
         # This first write does not change zero-page RAM.
-        destination = self._fetch_byte()
         original = self._machine.read_byte(destination)
         self._machine.write_byte(destination, original)
         value = operation(original)
@@ -938,8 +965,9 @@ class CPU:
         # The resulting byte sets N/Z; the fetched address supplies the trace.
         self._negative = bool(value & 0x80)
         self._zero = value == 0
-        self._cycles += 5
-        self.log_instruction(address, (opcode, destination), mnemonic, f"${destination:02X}")
+        self._cycles += 5 + indexed
+        operand_text = f"${operand:02X},X" if indexed else f"${operand:02X}"
+        self.log_instruction(address, (opcode, operand), mnemonic, operand_text)
 
 
     def _lsr_accumulator(self, address, opcode):
@@ -1392,7 +1420,7 @@ class CPU:
         None,  # $C3
         None,  # $C4
         None,  # $C5
-        None,  # $C6
+        _dec_zero_page,  # $C6
         None,  # $C7
         _iny,  # $C8
         _cmp_immediate,  # $C9
@@ -1410,7 +1438,7 @@ class CPU:
         None,  # $D3
         None,  # $D4
         None,  # $D5
-        None,  # $D6
+        _dec_zero_page_x,  # $D6
         None,  # $D7
         _cld,  # $D8
         _cmp_absolute_y,  # $D9
@@ -1428,7 +1456,7 @@ class CPU:
         None,  # $E3
         None,  # $E4
         _sbc_zero_page,  # $E5
-        None,  # $E6
+        _inc_zero_page,  # $E6
         None,  # $E7
         _inx,  # $E8
         _sbc_immediate,  # $E9
@@ -1446,7 +1474,7 @@ class CPU:
         None,  # $F3
         None,  # $F4
         None,  # $F5
-        None,  # $F6
+        _inc_zero_page_x,  # $F6
         None,  # $F7
         _sed,  # $F8
         _sbc_absolute_y,  # $F9
