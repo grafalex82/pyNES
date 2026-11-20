@@ -281,33 +281,33 @@ Resume another task only when it is selected for implementation.
 
 ## 48. CMP absolute ($CD)
 
-- [ ] 48.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
+- [x] 48.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 48.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 48.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 49. CMP absolute,X ($DD)
 
-- [ ] 49.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, page crossing and
+- [x] 49.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, page crossing and
   effective address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 49.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 49.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 50. CMP absolute,Y ($D9)
 
-- [ ] 50.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, page crossing and
+- [x] 50.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, page crossing and
   effective address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 50.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 50.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 51. CPX absolute ($EC)
 
-- [ ] 51.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
+- [x] 51.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 51.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 51.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 52. CPY absolute ($CC)
 
-- [ ] 52.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
+- [x] 52.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 52.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 52.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 53. ADC absolute ($6D)
 

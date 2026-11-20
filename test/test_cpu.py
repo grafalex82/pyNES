@@ -776,6 +776,76 @@ def test_immediate_compare_updates_cnz(make_cpu, opcode, register, value, operan
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, register", [(0xCD, "a"), (0xEC, "x"), (0xCC, "y")])
+@pytest.mark.parametrize("value, operand, carry, zero, negative", [
+    (0x00, 0x00, True, True, False),
+    (0x42, 0x42, True, True, False),
+    (0x00, 0x01, False, False, True),
+    (0x00, 0xFF, False, False, False),
+    (0x80, 0x01, True, False, False),
+    (0xFF, 0x00, True, False, True),
+])
+def test_absolute_compare_updates_cnz(make_cpu, opcode, register, value, operand, carry, zero, negative):
+    # Use distinct address bytes and start the affected flags opposite to the expected result.
+    cpu, machine = make_cpu(start_address=0x0200)
+    setattr(cpu, register, value)
+    cpu.carry = not carry
+    cpu.zero = not zero
+    cpu.negative = not negative
+    machine.write_byte(0x0200, opcode)
+    machine.write_byte(0x0201, 0x56)
+    machine.write_byte(0x0202, 0x04)
+    machine.write_byte(0x0456, operand)
+
+    # Comparison changes C/N/Z without storing the difference in the register.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.carry is carry
+    assert cpu.zero is zero
+    assert cpu.negative is negative
+    assert cpu.pc == 0x0203
+    assert cpu.cycles == 4
+
+
+@pytest.mark.parametrize("opcode, index_register", [(0xDD, "x"), (0xD9, "y")])
+@pytest.mark.parametrize("base, index, source, cycles", [
+    (0x0120, 0x12, 0x0132, 4),
+    (0x00FF, 0x01, 0x0100, 5),
+    (0xFFFF, 0x01, 0x0000, 5),
+])
+@pytest.mark.parametrize("value, operand, carry, zero, negative", [
+    (0x00, 0x00, True, True, False),
+    (0x42, 0x42, True, True, False),
+    (0x00, 0x01, False, False, True),
+    (0x00, 0xFF, False, False, False),
+    (0x80, 0x01, True, False, False),
+    (0xFF, 0x00, True, False, True),
+])
+def test_indexed_absolute_compare_updates_cnz(
+    make_cpu, opcode, index_register, base, index, source, cycles, value, operand, carry, zero, negative,
+):
+    # Compare A with data at the indexed address, starting with opposite flags.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value
+    setattr(cpu, index_register, index)
+    cpu.carry = not carry
+    cpu.zero = not zero
+    cpu.negative = not negative
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, base & 0xFF)
+    machine.write_byte(0x0569, base >> 8)
+    machine.write_byte(source, operand)
+
+    # The flags reflect the selected byte and cycles include any page crossing.
+    cpu.step()
+    assert cpu.a == value
+    assert cpu.carry is carry
+    assert cpu.zero is zero
+    assert cpu.negative is negative
+    assert cpu.pc == 0x056A
+    assert cpu.cycles == cycles
+
+
 @pytest.mark.parametrize("opcode, register", [(0xA9, "a"), (0xA2, "x"), (0xA0, "y")])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, value):

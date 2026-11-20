@@ -425,16 +425,62 @@ class CPU:
 
 
     def _compare_immediate(self, address, opcode, mnemonic, value):
-        # C uses an unsigned comparison; N and Z use the eight-bit difference.
+        # Compare the register with the fetched immediate byte.
         operand = self._fetch_byte()
+        self._compare(value, operand)
+
+        # The fetched operand is reused for the trace.
+        self._cycles += 2
+        self.log_instruction(address, (opcode, operand), mnemonic, f"#${operand:02X}")
+
+
+    def _compare(self, value, operand):
+        # C uses an unsigned comparison; N and Z use the eight-bit difference.
         difference = (value - operand) & 0xFF
         self._carry = value >= operand
         self._zero = difference == 0
         self._negative = bool(difference & 0x80)
 
-        # The fetched operand is reused for the trace.
-        self._cycles += 2
-        self.log_instruction(address, (opcode, operand), mnemonic, f"#${operand:02X}")
+
+    def _cmp_absolute(self, address, opcode):
+        self._compare_absolute(address, opcode, "CMP", self._a)
+
+
+    def _cpx_absolute(self, address, opcode):
+        self._compare_absolute(address, opcode, "CPX", self._x)
+
+
+    def _cpy_absolute(self, address, opcode):
+        self._compare_absolute(address, opcode, "CPY", self._y)
+
+
+    def _cmp_absolute_x(self, address, opcode):
+        self._compare_absolute_indexed(address, opcode, self._x, "X")
+
+
+    def _cmp_absolute_y(self, address, opcode):
+        self._compare_absolute_indexed(address, opcode, self._y, "Y")
+
+
+    def _compare_absolute_indexed(self, address, opcode, index, index_name):
+        # Compare A with the indexed byte using the existing functional read model.
+        base, operand, crossed = self._read_absolute_indexed(index)
+        self._compare(self._a, operand)
+
+        # Account for page crossing and trace the fetched base address.
+        self._cycles += 4 + crossed
+        self.log_instruction(address, (opcode, base & 0xFF, base >> 8), "CMP", f"${base:04X},{index_name}")
+
+
+    def _compare_absolute(self, address, opcode, mnemonic, value):
+        # Compare against the byte selected by the little-endian address.
+        destination = self._fetch_word()
+        operand = self._machine.read_byte(destination)
+        self._compare(value, operand)
+
+        # Reuse the fetched address for the trace.
+        self._cycles += 4
+        self.log_instruction(address, (opcode, destination & 0xFF, destination >> 8), mnemonic, f"${destination:04X}")
 
 
     def _adc_immediate(self, address, opcode):
@@ -1209,8 +1255,8 @@ class CPU:
         _cmp_immediate,  # $C9
         _dex,  # $CA
         None,  # $CB
-        None,  # $CC
-        None,  # $CD
+        _cpy_absolute,  # $CC
+        _cmp_absolute,  # $CD
         None,  # $CE
         None,  # $CF
 
@@ -1224,11 +1270,11 @@ class CPU:
         None,  # $D6
         None,  # $D7
         _cld,  # $D8
-        None,  # $D9
+        _cmp_absolute_y,  # $D9
         None,  # $DA
         None,  # $DB
         None,  # $DC
-        None,  # $DD
+        _cmp_absolute_x,  # $DD
         None,  # $DE
         None,  # $DF
 
@@ -1245,7 +1291,7 @@ class CPU:
         _sbc_immediate,  # $E9
         _nop,  # $EA
         None,  # $EB
-        None,  # $EC
+        _cpx_absolute,  # $EC
         None,  # $ED
         None,  # $EE
         None,  # $EF
