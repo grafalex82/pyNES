@@ -1,5 +1,83 @@
 ## ADDED Requirements
 
+### Requirement: Execute STA using zero-page,X addressing
+
+Opcode $95 SHALL add X to its one-byte operand modulo 256 and write A through Machine to that zero-page address. It
+SHALL advance PC by two, add four nominal cycles, and preserve all other registers and all flags.
+
+#### Scenario: Index within zero page
+- **WHEN** A=$A5, the operand is $20, and X=$04
+- **THEN** $A5 is written to $0024
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the write targets $0010
+
+### Requirement: Execute STX using zero-page,Y addressing
+
+Opcode $96 SHALL add Y to its one-byte operand modulo 256 and write X through Machine to that zero-page address. It
+SHALL advance PC by two, add four nominal cycles, and preserve all other registers and all flags.
+
+#### Scenario: Index within zero page
+- **WHEN** X=$A5, the operand is $20, and Y=$04
+- **THEN** $A5 is written to $0024
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and Y=$20
+- **THEN** the write targets $0010
+
+### Requirement: Execute STY using zero-page,X addressing
+
+Opcode $94 SHALL add X to its one-byte operand modulo 256 and write Y through Machine to that zero-page address. It
+SHALL advance PC by two, add four nominal cycles, and preserve all other registers and all flags.
+
+#### Scenario: Index within zero page
+- **WHEN** Y=$A5, the operand is $20, and X=$04
+- **THEN** $A5 is written to $0024
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the write targets $0010
+
+### Requirement: Execute LDA using zero-page,X addressing
+
+Opcode $B5 SHALL add X to its one-byte operand modulo 256 and read that zero-page address through Machine into A. It
+SHALL set N/Z from the loaded byte, advance PC by two, add four nominal cycles, and preserve other registers and flags.
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0, X=$20, and $0010 contains $80
+- **THEN** A=$80, N=1, and Z=0
+
+#### Scenario: Set N and Z from the loaded byte
+- **WHEN** addressed memory provides $00, $7F, $80, or $FF
+- **THEN** A holds the value, N equals bit 7, and Z is set only for $00
+
+### Requirement: Execute LDX using zero-page,Y addressing
+
+Opcode $B6 SHALL add Y to its one-byte operand modulo 256 and read that zero-page address through Machine into X. It
+SHALL set N/Z from the loaded byte, advance PC by two, add four nominal cycles, and preserve other registers and flags.
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0, Y=$20, and $0010 contains $80
+- **THEN** X=$80, N=1, and Z=0
+
+#### Scenario: Set N and Z from the loaded byte
+- **WHEN** addressed memory provides $00, $7F, $80, or $FF
+- **THEN** X holds the value, N equals bit 7, and Z is set only for $00
+
+### Requirement: Execute LDY using zero-page,X addressing
+
+Opcode $B4 SHALL add X to its one-byte operand modulo 256 and read that zero-page address through Machine into Y. It
+SHALL set N/Z from the loaded byte, advance PC by two, add four nominal cycles, and preserve other registers and flags.
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0, X=$20, and $0010 contains $80
+- **THEN** Y=$80, N=1, and Z=0
+
+#### Scenario: Set N and Z from the loaded byte
+- **WHEN** addressed memory provides $00, $7F, $80, or $FF
+- **THEN** Y holds the value, N equals bit 7, and Z is set only for $00
+
 ### Requirement: Execute ADC using zero-page addressing
 
 Opcode $65 SHALL read the zero-extended one-byte address through Machine, add its value and incoming C to A in binary,
