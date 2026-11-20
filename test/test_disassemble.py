@@ -208,7 +208,8 @@ def test_listing_does_not_infer_indirect_jump_or_data_targets():
 def test_listing_uses_equ_for_targets_outside_or_inside_an_instruction():
     program = b"\x4C\x04\xC0\xA9\x42\x20\x00\x20\x4C\x0B\xC0"
     assert disassemble_prg(program, 0xC000).splitlines() == [
-        "L_2000 EQU $2000",
+        "PPUCTRL EQU $2000",
+        "L_2000 EQU PPUCTRL",
         "L_C004 EQU $C004",
         "L_C00B EQU $C00B",
         "",
@@ -314,3 +315,130 @@ def test_32k_listing_does_not_treat_lower_prg_as_a_mirror(make_cartridge_file):
     assert "L_BFFF:" in lines
     assert not any("mirror of" in line for line in lines)
     _assert_listing_covers_prg(lines, prg_rom, 0x8000)
+
+
+@pytest.mark.parametrize(
+    "address, symbol",
+    [
+        (0x2000, "PPUCTRL"), (0x2001, "PPUMASK"), (0x2002, "PPUSTATUS"), (0x2003, "OAMADDR"),
+        (0x2004, "OAMDATA"), (0x2005, "PPUSCROLL"), (0x2006, "PPUADDR"), (0x2007, "PPUDATA"),
+        (0x4000, "PULSE1_CTRL"), (0x4001, "PULSE1_SWEEP"), (0x4002, "PULSE1_TIMER_LO"),
+        (0x4003, "PULSE1_TIMER_HI"), (0x4004, "PULSE2_CTRL"), (0x4005, "PULSE2_SWEEP"),
+        (0x4006, "PULSE2_TIMER_LO"), (0x4007, "PULSE2_TIMER_HI"), (0x4008, "TRIANGLE_CTRL"),
+        (0x400A, "TRIANGLE_TIMER_LO"), (0x400B, "TRIANGLE_TIMER_HI"), (0x400C, "NOISE_CTRL"),
+        (0x400E, "NOISE_PERIOD"), (0x400F, "NOISE_LENGTH"), (0x4010, "DMC_CTRL"), (0x4011, "DMC_OUTPUT"),
+        (0x4012, "DMC_ADDRESS"), (0x4013, "DMC_LENGTH"), (0x4014, "OAMDMA"), (0x4015, "APU_STATUS"),
+        (0x4016, "JOY1_STROBE"), (0x4017, "JOY2_APU_FRAME"),
+    ],
+)
+def test_listing_names_each_hardware_register(address, symbol):
+    program = bytes([0xAD, address & 0xFF, address >> 8])
+    lines = disassemble_prg(program, 0xC000).splitlines()
+    assert len(lines) == 3
+    assert lines[0].startswith(f"{symbol} EQU ${address:04X}")
+    assert lines[1] == ""
+    assert lines[2] == f"$C000: AD {address & 0xFF:02X} {address >> 8:02X} LDA {symbol}"
+
+
+@pytest.mark.parametrize(
+    "base, symbol",
+    [(0x2000, "PPUCTRL"), (0x2001, "PPUMASK"), (0x2002, "PPUSTATUS"), (0x2003, "OAMADDR"),
+     (0x2004, "OAMDATA"), (0x2005, "PPUSCROLL"), (0x2006, "PPUADDR"), (0x2007, "PPUDATA")],
+)
+def test_listing_preserves_each_ppu_mirror_address(base, symbol):
+    # Every mirror retains its own address while naming the repeated register.
+    for address in range(base + 8, 0x4000, 8):
+        program = bytes([0xAD, address & 0xFF, address >> 8])
+        lines = disassemble_prg(program, 0xC000).splitlines()
+        alias = f"{symbol}_{address:04X}"
+        assert lines[0] == f"{alias} EQU ${address:04X} ; mirror of {symbol} (${base:04X})"
+        assert lines[2] == f"$C000: AD {address & 0xFF:02X} {address >> 8:02X} LDA {alias}"
+
+
+def test_listing_preserves_ppu_mirrors_and_indexed_bases():
+    program = b"\xBD\x00\x20\xB9\x08\x20\xAD\x08\x20\xAD\xFF\x3F"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "PPUCTRL EQU $2000",
+        "PPUCTRL_2008 EQU $2008 ; mirror of PPUCTRL ($2000)",
+        "PPUDATA_3FFF EQU $3FFF ; mirror of PPUDATA ($2007)",
+        "",
+        "$C000: BD 00 20 LDA PPUCTRL,X",
+        "$C003: B9 08 20 LDA PPUCTRL_2008,Y",
+        "$C006: AD 08 20 LDA PPUCTRL_2008",
+        "$C009: AD FF 3F LDA PPUDATA_3FFF",
+    ]
+
+
+def test_listing_identifies_shared_controller_and_apu_addresses():
+    program = (
+        b"\xAD\x17\x40\x8D\x17\x40\xEE\x17\x40\xBD\x17\x40\x6C\x17\x40\x4C\x17\x40"
+        b"\xAD\x16\x40\x8D\x16\x40\xAD\x15\x40\x8D\x15\x40"
+    )
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "APU_STATUS EQU $4015 ; read APU status, write channel enables",
+        "JOY1_STROBE EQU $4016 ; read controller 1, write controller strobe",
+        "JOY2_APU_FRAME EQU $4017 ; read controller 2, write APU frame counter",
+        "L_4017 EQU JOY2_APU_FRAME",
+        "",
+        "$C000: AD 17 40 LDA JOY2_APU_FRAME",
+        "$C003: 8D 17 40 STA JOY2_APU_FRAME",
+        "$C006: EE 17 40 INC JOY2_APU_FRAME",
+        "$C009: BD 17 40 LDA JOY2_APU_FRAME,X",
+        "$C00C: 6C 17 40 JMP (JOY2_APU_FRAME)",
+        "$C00F: 4C 17 40 JMP L_4017",
+        "$C012: AD 16 40 LDA JOY1_STROBE",
+        "$C015: 8D 16 40 STA JOY1_STROBE",
+        "$C018: AD 15 40 LDA APU_STATUS",
+        "$C01B: 8D 15 40 STA APU_STATUS",
+    ]
+
+
+def test_listing_links_hardware_control_targets_to_register_symbols():
+    program = b"\x20\x08\x20\x4C\x00\x20\x6C\x08\x20"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "PPUCTRL EQU $2000",
+        "PPUCTRL_2008 EQU $2008 ; mirror of PPUCTRL ($2000)",
+        "L_2000 EQU PPUCTRL",
+        "L_2008 EQU PPUCTRL_2008",
+        "",
+        "$C000: 20 08 20 JSR L_2008",
+        "$C003: 4C 00 20 JMP L_2000",
+        "$C006: 6C 08 20 JMP (PPUCTRL_2008)",
+    ]
+
+
+def test_listing_links_hardware_relative_target_to_register_symbol():
+    assert disassemble_prg(b"\xD0\xFB", 0x401A).splitlines() == [
+        "JOY2_APU_FRAME EQU $4017 ; read controller 2, write APU frame counter",
+        "L_4017 EQU JOY2_APU_FRAME",
+        "",
+        "$401A: D0 FB    BNE L_4017",
+    ]
+
+
+def test_listing_does_not_symbolize_immediates_unknown_registers_or_inferred_indexed_addresses():
+    program = b"\xA9\x17\xA5\x17\xAD\x09\x40\xAD\x0D\x40\xAD\x18\x40\xBD\xFF\x1F"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "$C000: A9 17    LDA #$17",
+        "$C002: A5 17    LDA $17",
+        "$C004: AD 09 40 LDA $4009",
+        "$C007: AD 0D 40 LDA $400D",
+        "$C00A: AD 18 40 LDA $4018",
+        "$C00D: BD FF 1F LDA $1FFF,X",
+    ]
+
+
+def test_listing_combines_hardware_symbols_with_prg_mirror_aliases():
+    # Hardware and PRG mirrors coexist without changing their distinct CPU addresses.
+    program = b"\x20\x00\x80\xAD\x08\x20\xAD\x00\x80"
+    prg_rom = program + b"\xEA" * (16384 - len(program))
+    lines = disassemble_prg(prg_rom, 0xC000).splitlines()
+    assert lines[:6] == [
+        "PPUCTRL_2008 EQU $2008 ; mirror of PPUCTRL ($2000)",
+        "L_8000 EQU $8000 ; mirror of $C000",
+        "",
+        "$C000: 20 00 80 JSR L_8000",
+        "$C003: AD 08 20 LDA PPUCTRL_2008",
+        "$C006: AD 00 80 LDA L_8000",
+    ]
+    _assert_listing_covers_prg(lines, prg_rom, 0xC000)

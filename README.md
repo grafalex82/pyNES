@@ -86,7 +86,8 @@ The future [`disassemble.py`](misc/disassemble.py) provides `load_prg_rom(path)`
 Relative branches and direct `JMP`/`JSR` use labels; targets without a decoded line use `EQU`. Unsupported or
 incomplete bytes appear as `db`, and a trainer is accepted without mapping it. For 16 KiB PRG, references to the lower
 mirror use exact-address `EQU` aliases and each byte is listed once at $C000-$FFFF. Linear decoding can mistake data for
-instructions. Hardware symbols and the disassembler command are not implemented yet.
+instructions. Referenced PPU, APU, DMA, and controller addresses use symbolic names without changing encoded addresses.
+The disassembler command is not implemented yet; naming a register does not implement its device behavior.
 
 [`RAM`](src/ram.py) and [`ROM`](src/rom.py) provide device-relative byte access. [`Machine`](src/machine.py) connects
 zero-filled 2 KiB RAM and its CPU-address mirrors to fixed 16 KiB or 32 KiB mapper-0 PRG ROM. Construction requires

@@ -13,7 +13,7 @@
 
 - [x] 2.1 Add exact-address `EQU` aliases for 16 KiB mirrors; verify both control-flow and data operands preserve the
   lower address while each PRG byte appears only once.
-- [ ] 2.2 Symbolize the specified PPU, APU, DMA, and controller addresses; verify PPU mirrors, $4017, indexed operands,
+- [x] 2.2 Symbolize the specified PPU, APU, DMA, and controller addresses; verify PPU mirrors, $4017, indexed operands,
   immediate values, and hardware-address control targets with focused tests.
 - [ ] 2.3 Add the two-path standalone CLI and source-overwrite protection; verify paths with spaces, another working
   directory, unsupported layouts, output contents, and unchanged input using subprocess tests.

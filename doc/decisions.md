@@ -5,6 +5,25 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Hardware address symbols in disassembly (2026-11-20)
+
+Task 2.2 of `disassemble-nes-rom` uses `EQU` names for referenced PPU, APU, DMA, and controller addresses. PPU
+mirror symbols include their exact CPU address and identify the original register; direct control-flow target labels
+refer to the corresponding hardware symbol. Names identify encoded base addresses, not inferred indexed destinations
+or indirect jump targets. Immediate values and unassigned addresses remain numeric.
+
+The shared $4016 and $4017 names describe both directions: reads select controller ports 1 and 2, respectively;
+$4016 writes the controller strobe and $4017 writes the APU frame counter. A combined name remains accurate for
+indexed operands and read-modify-write instructions without guessing the effective access. The $4015 definition also
+distinguishes APU status reads from channel-enable writes. Register names only describe the listing; they do not
+implement peripheral behavior.
+
+The [cartridge-development register definitions](https://github.com/cc65/cc65/blob/master/asminc/nes.inc),
+[PPU overview](https://bugzmanov.github.io/nes_ebook/chapter_6_1.html), and
+[Mesen's APU frame counter](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/APU/ApuFrameCounter.h) were
+consulted for register addresses and $4017's write role. Synthetic tests verify each specified register, all PPU
+mirror addresses, shared ports, indexed bases, and hardware-address control targets.
+
 ### Exact-address PRG mirror aliases in listings (2026-11-20)
 
 Task 2.1 of `disassemble-nes-rom` represents a 16 KiB PRG image once at $C000-$FFFF. Direct branches and absolute

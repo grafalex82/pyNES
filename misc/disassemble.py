@@ -58,6 +58,17 @@ _ADDRESSING = {
     "rel": (2, "${:04X}"),
 }
 
+_PPU_REGISTERS = ("PPUCTRL", "PPUMASK", "PPUSTATUS", "OAMADDR", "OAMDATA", "PPUSCROLL", "PPUADDR", "PPUDATA")
+
+_IO_REGISTERS = {
+    0x4000: "PULSE1_CTRL", 0x4001: "PULSE1_SWEEP", 0x4002: "PULSE1_TIMER_LO", 0x4003: "PULSE1_TIMER_HI",
+    0x4004: "PULSE2_CTRL", 0x4005: "PULSE2_SWEEP", 0x4006: "PULSE2_TIMER_LO", 0x4007: "PULSE2_TIMER_HI",
+    0x4008: "TRIANGLE_CTRL", 0x400A: "TRIANGLE_TIMER_LO", 0x400B: "TRIANGLE_TIMER_HI",
+    0x400C: "NOISE_CTRL", 0x400E: "NOISE_PERIOD", 0x400F: "NOISE_LENGTH",
+    0x4010: "DMC_CTRL", 0x4011: "DMC_OUTPUT", 0x4012: "DMC_ADDRESS", 0x4013: "DMC_LENGTH",
+    0x4014: "OAMDMA", 0x4015: "APU_STATUS", 0x4016: "JOY1_STROBE", 0x4017: "JOY2_APU_FRAME",
+}
+
 
 def load_prg_rom(filename):
     """Return the PRG bytes and their selected listing base address."""
@@ -121,46 +132,73 @@ def _control_target(instruction_bytes, mnemonic, operand):
     return None
 
 
-def _mirror_operand(instruction_bytes, mnemonic, operand):
-    """Return a lower PRG address referenced by an operand, if any."""
-    # Data bytes and non-address operands do not refer to a PRG mirror.
+def _operand_address(instruction_bytes, mnemonic, operand):
+    """Return the encoded address or relative branch target, if present."""
+    # Data bytes and non-address operands do not identify a CPU address.
     if mnemonic == "db":
         return None
     mode = _OPCODES[instruction_bytes[0]][1]
     if mode == "rel":
-        address = int(operand[1:], 16)
-    elif mode in ("abs", "abs_x", "abs_y", "ind"):
-        address = int.from_bytes(instruction_bytes[1:], "little")
-    else:
-        return None
+        return int(operand[1:], 16)
 
     # Only the encoded base or branch target is known; indexed effective addresses are not inferred.
-    if 0x8000 <= address < 0xC000:
-        return address
+    if mode in ("abs", "abs_x", "abs_y", "ind"):
+        return int.from_bytes(instruction_bytes[1:], "little")
     return None
 
 
+def _hardware_symbol(address):
+    """Name known CPU-visible registers without changing their encoded addresses."""
+    # PPU mirrors need distinct names because their CPU addresses are distinct.
+    if 0x2000 <= address < 0x4000:
+        name = _PPU_REGISTERS[address & 7]
+        return name if address < 0x2008 else f"{name}_{address:04X}"
+
+    # The remaining known registers do not repeat across this address range.
+    return _IO_REGISTERS.get(address)
+
+
 def disassemble_prg(prg_rom, base_address):
-    """Return a two-pass listing with direct targets and 16 KiB mirror aliases."""
-    # The first scan finds targets, 16 KiB mirror references, and boundaries without following control flow.
+    """Return a two-pass listing with direct targets, PRG mirrors, and hardware symbols."""
+    # The first scan finds targets, referenced symbols, and boundaries without following control flow.
     targets = set()
     boundaries = set()
     mirrors = set()
+    registers = {}
     mirrored_prg = len(prg_rom) == 16384 and base_address == 0xC000
     for address, instruction_bytes, mnemonic, operand in decode_prg(prg_rom, base_address):
         boundaries.add(address)
         target = _control_target(instruction_bytes, mnemonic, operand)
         if target is not None:
             targets.add(target)
-        if mirrored_prg:
-            mirror = _mirror_operand(instruction_bytes, mnemonic, operand)
-            if mirror is not None:
-                mirrors.add(mirror)
+        operand_address = _operand_address(instruction_bytes, mnemonic, operand)
+        if operand_address is None:
+            continue
+        name = _hardware_symbol(operand_address)
+        if name is not None:
+            registers[operand_address] = name
+        if mirrored_prg and 0x8000 <= operand_address < 0xC000:
+            mirrors.add(operand_address)
 
-    # EQU preserves exact addresses; mirror comments identify the corresponding listed byte.
+    # Register definitions preserve PPU mirror addresses and clarify shared read/write ports.
     lines = []
+    for address, name in sorted(registers.items()):
+        line = f"{name} EQU ${address:04X}"
+        if 0x2008 <= address < 0x4000:
+            index = address & 7
+            line += f" ; mirror of {_PPU_REGISTERS[index]} (${0x2000 + index:04X})"
+        elif address == 0x4015:
+            line += " ; read APU status, write channel enables"
+        elif address == 0x4016:
+            line += " ; read controller 1, write controller strobe"
+        elif address == 0x4017:
+            line += " ; read controller 2, write APU frame counter"
+        lines.append(line)
+
+    # Target labels retain their exact address and identify a hardware symbol when one exists.
     for address in sorted((targets - boundaries) | mirrors):
-        line = f"L_{address:04X} EQU ${address:04X}"
+        value = registers.get(address, f"${address:04X}")
+        line = f"L_{address:04X} EQU {value}"
         if address in mirrors:
             line += f" ; mirror of ${address + 0x4000:04X}"
         lines.append(line)
@@ -174,10 +212,12 @@ def disassemble_prg(prg_rom, base_address):
         target = _control_target(instruction_bytes, mnemonic, operand)
         if target is not None:
             operand = f"L_{target:04X}"
-        elif mirrored_prg:
-            mirror = _mirror_operand(instruction_bytes, mnemonic, operand)
-            if mirror is not None:
-                operand = operand.replace(f"${mirror:04X}", f"L_{mirror:04X}")
+        else:
+            operand_address = _operand_address(instruction_bytes, mnemonic, operand)
+            if operand_address in registers:
+                operand = operand.replace(f"${operand_address:04X}", registers[operand_address])
+            elif operand_address in mirrors:
+                operand = operand.replace(f"${operand_address:04X}", f"L_{operand_address:04X}")
         byte_text = " ".join(f"{byte:02X}" for byte in instruction_bytes)
         line = f"${address:04X}: {byte_text:<8} {mnemonic}"
         if operand:
