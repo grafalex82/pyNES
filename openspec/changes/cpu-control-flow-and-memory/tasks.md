@@ -311,43 +311,43 @@ Resume another task only when it is selected for implementation.
 
 ## 53. ADC absolute ($6D)
 
-- [ ] 53.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 53.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, PC, and cycles with focused synthetic pytest cases.
-- [ ] 53.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 53.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 54. ADC absolute,X ($7D)
 
-- [ ] 54.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 54.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
   cases.
-- [ ] 54.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 54.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 55. ADC absolute,Y ($79)
 
-- [ ] 55.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 55.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
   cases.
-- [ ] 55.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 55.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 56. SBC absolute ($ED)
 
-- [ ] 56.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 56.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, PC, and cycles with focused synthetic pytest cases.
-- [ ] 56.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 56.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 57. SBC absolute,X ($FD)
 
-- [ ] 57.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 57.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
   cases.
-- [ ] 57.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 57.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 58. SBC absolute,Y ($F9)
 
-- [ ] 58.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 58.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
   cases.
-- [ ] 58.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 58.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 59. AND absolute ($2D)
 

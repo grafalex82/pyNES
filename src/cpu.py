@@ -496,6 +496,25 @@ class CPU:
         self._finish_zero_page_update(address, opcode, "ADC", destination, self._a)
 
 
+    def _adc_absolute(self, address, opcode):
+        destination = self._fetch_word()
+        operand = self._machine.read_byte(destination)
+        self._add_with_carry(operand)
+        self._finish_absolute_update(address, opcode, "ADC", destination, self._a)
+
+
+    def _adc_absolute_x(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._x)
+        self._add_with_carry(operand)
+        self._finish_indexed_update(address, opcode, "ADC", base, "X", self._a, crossed)
+
+
+    def _adc_absolute_y(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._y)
+        self._add_with_carry(operand)
+        self._finish_indexed_update(address, opcode, "ADC", base, "Y", self._a, crossed)
+
+
     def _add_with_carry(self, operand):
         # The NES adds in binary even when the stored decimal flag is set.
         total = self._a + operand + self._carry
@@ -517,6 +536,25 @@ class CPU:
         operand = self._machine.read_byte(destination)
         self._subtract_with_borrow(operand)
         self._finish_zero_page_update(address, opcode, "SBC", destination, self._a)
+
+
+    def _sbc_absolute(self, address, opcode):
+        destination = self._fetch_word()
+        operand = self._machine.read_byte(destination)
+        self._subtract_with_borrow(operand)
+        self._finish_absolute_update(address, opcode, "SBC", destination, self._a)
+
+
+    def _sbc_absolute_x(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._x)
+        self._subtract_with_borrow(operand)
+        self._finish_indexed_update(address, opcode, "SBC", base, "X", self._a, crossed)
+
+
+    def _sbc_absolute_y(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._y)
+        self._subtract_with_borrow(operand)
+        self._finish_indexed_update(address, opcode, "SBC", base, "Y", self._a, crossed)
 
 
     def _subtract_with_borrow(self, operand):
@@ -592,22 +630,22 @@ class CPU:
 
     def _lda_absolute_x(self, address, opcode):
         base, self._a, crossed = self._read_absolute_indexed(self._x)
-        self._finish_indexed_load(address, opcode, "LDA", base, "X", self._a, crossed)
+        self._finish_indexed_update(address, opcode, "LDA", base, "X", self._a, crossed)
 
 
     def _lda_absolute_y(self, address, opcode):
         base, self._a, crossed = self._read_absolute_indexed(self._y)
-        self._finish_indexed_load(address, opcode, "LDA", base, "Y", self._a, crossed)
+        self._finish_indexed_update(address, opcode, "LDA", base, "Y", self._a, crossed)
 
 
     def _ldx_absolute_y(self, address, opcode):
         base, self._x, crossed = self._read_absolute_indexed(self._y)
-        self._finish_indexed_load(address, opcode, "LDX", base, "Y", self._x, crossed)
+        self._finish_indexed_update(address, opcode, "LDX", base, "Y", self._x, crossed)
 
 
     def _ldy_absolute_x(self, address, opcode):
         base, self._y, crossed = self._read_absolute_indexed(self._x)
-        self._finish_indexed_load(address, opcode, "LDY", base, "X", self._y, crossed)
+        self._finish_indexed_update(address, opcode, "LDY", base, "X", self._y, crossed)
 
 
     def _read_absolute_indexed(self, index):
@@ -621,8 +659,8 @@ class CPU:
         return base, value, crossed
 
 
-    def _finish_indexed_load(self, address, opcode, mnemonic, base, index_name, value, crossed):
-        # N and Z reflect the byte loaded from the effective address.
+    def _finish_indexed_update(self, address, opcode, mnemonic, base, index_name, value, crossed):
+        # N and Z reflect the resulting register byte.
         self._negative = bool(value & 0x80)
         self._zero = value == 0
 
@@ -634,23 +672,23 @@ class CPU:
     def _lda_absolute(self, address, opcode):
         destination = self._fetch_word()
         self._a = self._machine.read_byte(destination)
-        self._finish_absolute_load(address, opcode, "LDA", destination, self._a)
+        self._finish_absolute_update(address, opcode, "LDA", destination, self._a)
 
 
     def _ldx_absolute(self, address, opcode):
         destination = self._fetch_word()
         self._x = self._machine.read_byte(destination)
-        self._finish_absolute_load(address, opcode, "LDX", destination, self._x)
+        self._finish_absolute_update(address, opcode, "LDX", destination, self._x)
 
 
     def _ldy_absolute(self, address, opcode):
         destination = self._fetch_word()
         self._y = self._machine.read_byte(destination)
-        self._finish_absolute_load(address, opcode, "LDY", destination, self._y)
+        self._finish_absolute_update(address, opcode, "LDY", destination, self._y)
 
 
-    def _finish_absolute_load(self, address, opcode, mnemonic, destination, value):
-        # Loads update N and Z from the value returned by the addressed device.
+    def _finish_absolute_update(self, address, opcode, mnemonic, destination, value):
+        # N and Z reflect the resulting register byte.
         self._negative = bool(value & 0x80)
         self._zero = value == 0
 
@@ -1148,7 +1186,7 @@ class CPU:
         _ror_accumulator,  # $6A
         None,  # $6B
         _jmp_indirect,  # $6C
-        None,  # $6D
+        _adc_absolute,  # $6D
         None,  # $6E
         None,  # $6F
 
@@ -1162,11 +1200,11 @@ class CPU:
         None,  # $76
         None,  # $77
         _sei,  # $78
-        None,  # $79
+        _adc_absolute_y,  # $79
         None,  # $7A
         None,  # $7B
         None,  # $7C
-        None,  # $7D
+        _adc_absolute_x,  # $7D
         None,  # $7E
         None,  # $7F
 
@@ -1292,7 +1330,7 @@ class CPU:
         _nop,  # $EA
         None,  # $EB
         _cpx_absolute,  # $EC
-        None,  # $ED
+        _sbc_absolute,  # $ED
         None,  # $EE
         None,  # $EF
 
@@ -1306,11 +1344,11 @@ class CPU:
         None,  # $F6
         None,  # $F7
         _sed,  # $F8
-        None,  # $F9
+        _sbc_absolute_y,  # $F9
         None,  # $FA
         None,  # $FB
         None,  # $FC
-        None,  # $FD
+        _sbc_absolute_x,  # $FD
         None,  # $FE
         None,  # $FF
     )

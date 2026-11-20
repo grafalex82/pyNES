@@ -38,8 +38,8 @@ but do not check the omitted read. See section 6.1 of the
 
 ### Omitted provisional reads for indexed reads (2026-11-19)
 
-Indexed absolute loads and comparisons omit the hardware's provisional read when an index crosses a page. This
-maintains the functional bus model but skips device side effects from the provisional address and bus-cycle timing.
+Indexed absolute loads, comparisons, and arithmetic omit the hardware's provisional read when an index crosses a page.
+This maintains the functional bus model but skips device side effects from the provisional address and bus-cycle timing.
 The simplification applies to all ROMs and involves no patch. Synthetic tests cover the results and page-crossing
 cycle counts, not the omitted access. See section 6.1 of the
 [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
