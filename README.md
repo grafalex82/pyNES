@@ -76,6 +76,11 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 
 ## Current state
 
+`misc\chr2png.py` provides `decode_tile(tile)` for converting one 16-byte CHR tile into an 8-by-8 grid of palette
+indices. `render_chr_sheets(chr_rom, palettes, scale)` converts 8 KiB of CHR data into two off-screen pygame surfaces,
+with supplied RGB palettes, one-pixel dotted separators, and optional 2x tile-pixel scaling. PNG output and the
+command-line interface are not implemented yet.
+
 [`NESFile`](src/nesfile.py) reads ordinary iNES and NES 2.0 metadata and extracts trainer, PRG, and CHR bytes.
 Unsupported format markers, NES 2.0 exponent-multiplier sizes, nonstandard console types, and declared miscellaneous
 ROM areas raise `NotImplementedError`. [`nesinfo.py`](misc/nesinfo.py) prints the format, mapper/submapper, section byte
@@ -156,7 +161,7 @@ Cartridge inputs are assumed structurally valid. The loader and utility do not v
 completeness, trailing bytes, or extensions, and do not repair headers or catch filesystem/parsing exceptions.
 Damaged-input behavior is unspecified; ordinary Python exceptions and tracebacks are acceptable.
 
-Install the test dependency and run pytest from the repository root:
+Install the dependencies and run pytest from the repository root:
 
 ```text
 python -m pip install -r requirements.txt

@@ -5,6 +5,24 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### CHR tile sheet composition (2026-11-20)
+
+Task 1.2 of `export-nes-chr-png` lays out each 4 KiB CHR half as a 16-by-16 grid on an off-screen pygame surface.
+The caller supplies RGB colors because CHR stores palette indices rather than game colors; each tile pixel is opaque,
+including index 0. Transparent gaps with gray dots separate tiles and do not represent hardware rendering. Optional
+2x scaling duplicates tile pixels only, leaving each separator one output pixel wide. The tile format is described
+in the [NES tile layout](https://bugzmanov.github.io/nes_ebook/chapter_6_3.html). Synthetic tests cover both sheets,
+tile order, scaling, and separator pixels without opening a display. PNG saving and palette selection remain later work.
+
+### CHR tile decoding (2026-11-20)
+
+Task 1.1 of `export-nes-chr-png` decodes one 16-byte CHR tile to an 8-by-8 grid of palette indices. Each row combines
+bits from bytes eight positions apart, with the most significant bits on the left. Returning indices rather than
+colors keeps tile encoding separate from the palette chosen for a later preview; PNG output is not implemented yet.
+The [NES tile layout](https://bugzmanov.github.io/nes_ebook/chapter_6_3.html) and
+[fogleman/nes PPU](https://github.com/fogleman/nes/blob/master/nes/ppu.go) were consulted; the decoder was written
+independently. A synthetic asymmetric tile verifies both bitplanes, all four indices, and row and pixel order.
+
 ### Incremental disassembly annotations (2026-11-20)
 
 At the user's request, analyze only selected portions of a listing. Four-space indentation distinguishes examined

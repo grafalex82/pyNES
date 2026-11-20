@@ -2,9 +2,9 @@
 
 ## 1. CHR sheet composition
 
-- [ ] 1.1 Add the two-bitplane decoder to `misc\chr2png.py` and verify all four pixel values and bit order using
+- [x] 1.1 Add the two-bitplane decoder to `misc\chr2png.py` and verify all four pixel values and bit order using
   an asymmetric synthetic tile.
-- [ ] 1.2 Add pygame to `requirements.txt` and render both sheets without a display; verify tile order, image sizes,
+- [x] 1.2 Add pygame to `requirements.txt` and render both sheets without a display; verify tile order, image sizes,
   exact pixel doubling, and horizontal and vertical one-pixel gutters at both scales.
 
 ## 2. Command-line export
