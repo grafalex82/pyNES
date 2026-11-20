@@ -5,6 +5,19 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Exact-address PRG mirror aliases in listings (2026-11-20)
+
+Task 2.1 of `disassemble-nes-rom` represents a 16 KiB PRG image once at $C000-$FFFF. Direct branches and absolute
+address operands referencing the $8000-$BFFF mirror use a shared exact-address `EQU` symbol; its comment identifies
+the corresponding upper-window address. Index suffixes and indirect parentheses remain intact, and no indexed
+effective address or indirect jump destination is inferred. Immediate values and 32 KiB PRG references are unchanged.
+
+The [cartridge mapping overview](https://bugzmanov.github.io/nes_ebook/chapter_5.html) and
+[Mesen's NROM mapper](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/Mappers/Nintendo/NROM.h) were consulted
+alongside the [memory guide](memory.md#fixed-nrom-program-mapping). The listing implementation is independent.
+Synthetic 16 KiB and 32 KiB cartridges verify operand spelling, address boundaries, and that each PRG byte appears once.
+Hardware symbols and the standalone command remain later work.
+
 ### Two-pass control-flow labels for disassembly (2026-11-20)
 
 Task 1.3 of `disassemble-nes-rom` scans decoded lines once to collect direct relative branch and absolute `JMP` and

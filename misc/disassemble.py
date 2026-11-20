@@ -121,29 +121,63 @@ def _control_target(instruction_bytes, mnemonic, operand):
     return None
 
 
+def _mirror_operand(instruction_bytes, mnemonic, operand):
+    """Return a lower PRG address referenced by an operand, if any."""
+    # Data bytes and non-address operands do not refer to a PRG mirror.
+    if mnemonic == "db":
+        return None
+    mode = _OPCODES[instruction_bytes[0]][1]
+    if mode == "rel":
+        address = int(operand[1:], 16)
+    elif mode in ("abs", "abs_x", "abs_y", "ind"):
+        address = int.from_bytes(instruction_bytes[1:], "little")
+    else:
+        return None
+
+    # Only the encoded base or branch target is known; indexed effective addresses are not inferred.
+    if 0x8000 <= address < 0xC000:
+        return address
+    return None
+
+
 def disassemble_prg(prg_rom, base_address):
-    """Return a two-pass listing of PRG bytes with labels for direct control-flow targets."""
-    # The first scan finds targets and line boundaries without following control flow.
+    """Return a two-pass listing with direct targets and 16 KiB mirror aliases."""
+    # The first scan finds targets, 16 KiB mirror references, and boundaries without following control flow.
     targets = set()
     boundaries = set()
+    mirrors = set()
+    mirrored_prg = len(prg_rom) == 16384 and base_address == 0xC000
     for address, instruction_bytes, mnemonic, operand in decode_prg(prg_rom, base_address):
         boundaries.add(address)
         target = _control_target(instruction_bytes, mnemonic, operand)
         if target is not None:
             targets.add(target)
+        if mirrored_prg:
+            mirror = _mirror_operand(instruction_bytes, mnemonic, operand)
+            if mirror is not None:
+                mirrors.add(mirror)
 
-    # Addresses without a decoded line retain their exact value through EQU.
-    lines = [f"L_{target:04X} EQU ${target:04X}" for target in sorted(targets - boundaries)]
+    # EQU preserves exact addresses; mirror comments identify the corresponding listed byte.
+    lines = []
+    for address in sorted((targets - boundaries) | mirrors):
+        line = f"L_{address:04X} EQU ${address:04X}"
+        if address in mirrors:
+            line += f" ; mirror of ${address + 0x4000:04X}"
+        lines.append(line)
     if lines:
         lines.append("")
 
-    # The second scan places labels at boundaries and replaces direct target operands.
+    # The second scan places labels and substitutes exact-address symbols without changing operand syntax.
     for address, instruction_bytes, mnemonic, operand in decode_prg(prg_rom, base_address):
         if address in targets:
             lines.append(f"L_{address:04X}:")
         target = _control_target(instruction_bytes, mnemonic, operand)
         if target is not None:
             operand = f"L_{target:04X}"
+        elif mirrored_prg:
+            mirror = _mirror_operand(instruction_bytes, mnemonic, operand)
+            if mirror is not None:
+                operand = operand.replace(f"${mirror:04X}", f"L_{mirror:04X}")
         byte_text = " ".join(f"{byte:02X}" for byte in instruction_bytes)
         line = f"${address:04X}: {byte_text:<8} {mnemonic}"
         if operand:

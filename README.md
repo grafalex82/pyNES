@@ -84,7 +84,8 @@ sizes, mirroring, and nonvolatile-memory flag through `NESFile`. These values de
 The future [`disassemble.py`](misc/disassemble.py) provides `load_prg_rom(path)` for mapper/submapper 0 with 16 KiB or
 32 KiB PRG, `decode_prg(bytes, base)` for a linear scan, and `disassemble_prg(bytes, base)` for a two-pass listing.
 Relative branches and direct `JMP`/`JSR` use labels; targets without a decoded line use `EQU`. Unsupported or
-incomplete bytes appear as `db`, and a trainer is accepted without mapping it. Linear decoding can mistake data for
+incomplete bytes appear as `db`, and a trainer is accepted without mapping it. For 16 KiB PRG, references to the lower
+mirror use exact-address `EQU` aliases and each byte is listed once at $C000-$FFFF. Linear decoding can mistake data for
 instructions. Hardware symbols and the disassembler command are not implemented yet.
 
 [`RAM`](src/ram.py) and [`ROM`](src/rom.py) provide device-relative byte access. [`Machine`](src/machine.py) connects

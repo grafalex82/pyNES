@@ -236,3 +236,81 @@ def test_listing_can_label_data_without_inventing_targets_for_incomplete_instruc
         "$C004: 4C       db $4C",
         "$C005: D0       db $D0",
     ]
+
+
+def _assert_listing_covers_prg(lines, prg_rom, base_address):
+    # Consecutive addresses and reconstructed bytes establish that no PRG byte is repeated or lost.
+    entries = [(int(line[1:5], 16), bytes.fromhex(line[7:15])) for line in lines if line.startswith("$")]
+    assert entries[0][0] == base_address
+    assert all(next_address == address + len(data) for (address, data), (next_address, _) in zip(entries, entries[1:]))
+    assert entries[-1][0] + len(entries[-1][1]) == 0x10000
+    assert b"".join(data for _, data in entries) == prg_rom
+
+
+def test_16k_listing_uses_exact_mirror_aliases_for_control_and_data(make_cartridge_file):
+    # Lower and upper windows can name the same byte while retaining different CPU addresses.
+    program = (
+        b"\x4C\x00\x80\x20\xFF\xBF\xAD\x00\x80\xAD\x01\x80\xBD\xFF\xBF\xB9\x00\x80"
+        b"\x6C\xFF\xBF\xA9\x80\xAD\xFF\x7F\xBD\xFF\x7F\xB9\x00\xC0\xAD\x00\xC0\x4C\x00\xC0"
+    )
+    prg_rom = program + b"\xEA" * (16384 - len(program) - 2) + b"\x4C\x80"
+    header = b"NES\x1a" + bytes([1, 1, 0, 0]) + bytes(8)
+    filename = make_cartridge_file(header, prg_rom)
+
+    # The same alias is reused by different instructions and still denotes the lower address.
+    loaded_prg, base_address = load_prg_rom(filename)
+    lines = disassemble_prg(loaded_prg, base_address).splitlines()
+    assert lines[:18] == [
+        "L_8000 EQU $8000 ; mirror of $C000",
+        "L_8001 EQU $8001 ; mirror of $C001",
+        "L_BFFF EQU $BFFF ; mirror of $FFFF",
+        "",
+        "L_C000:",
+        "$C000: 4C 00 80 JMP L_8000",
+        "$C003: 20 FF BF JSR L_BFFF",
+        "$C006: AD 00 80 LDA L_8000",
+        "$C009: AD 01 80 LDA L_8001",
+        "$C00C: BD FF BF LDA L_BFFF,X",
+        "$C00F: B9 00 80 LDA L_8000,Y",
+        "$C012: 6C FF BF JMP (L_BFFF)",
+        "$C015: A9 80    LDA #$80",
+        "$C017: AD FF 7F LDA $7FFF",
+        "$C01A: BD FF 7F LDA $7FFF,X",
+        "$C01D: B9 00 C0 LDA $C000,Y",
+        "$C020: AD 00 C0 LDA $C000",
+        "$C023: 4C 00 C0 JMP L_C000",
+    ]
+    assert lines[-2:] == ["$FFFE: 4C       db $4C", "$FFFF: 80       db $80"]
+    _assert_listing_covers_prg(lines, prg_rom, 0xC000)
+
+
+def test_16k_listing_labels_relative_branch_to_mirror():
+    prg_rom = b"\xD0\xFD" + b"\xEA" * (16384 - 2)
+    lines = disassemble_prg(prg_rom, 0xC000).splitlines()
+    assert lines[:3] == [
+        "L_BFFF EQU $BFFF ; mirror of $FFFF",
+        "",
+        "$C000: D0 FD    BNE L_BFFF",
+    ]
+
+
+def test_32k_listing_does_not_treat_lower_prg_as_a_mirror(make_cartridge_file):
+    # The two 16 KiB windows are distinct in a 32 KiB cartridge.
+    program = b"\x4C\x00\x80\xAD\x00\x80\x6C\xFF\xBF\x4C\xFF\xBF"
+    prg_rom = program + b"\xEA" * (32768 - len(program))
+    header = b"NES\x1a" + bytes([2, 1, 0, 0]) + bytes(8)
+    filename = make_cartridge_file(header, prg_rom)
+
+    # Direct targets use line labels, while data and indirect operands remain numeric.
+    loaded_prg, base_address = load_prg_rom(filename)
+    lines = disassemble_prg(loaded_prg, base_address).splitlines()
+    assert lines[:5] == [
+        "L_8000:",
+        "$8000: 4C 00 80 JMP L_8000",
+        "$8003: AD 00 80 LDA $8000",
+        "$8006: 6C FF BF JMP ($BFFF)",
+        "$8009: 4C FF BF JMP L_BFFF",
+    ]
+    assert "L_BFFF:" in lines
+    assert not any("mirror of" in line for line in lines)
+    _assert_listing_covers_prg(lines, prg_rom, 0x8000)
