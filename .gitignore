@@ -12,10 +12,6 @@ venv/
 logs/
 traces/
 
-# Local game files; keep identification instructions in the repository
-ROMs/*
-!ROMs/README.md
-
 # Editor and operating-system files
 .idea/
 .vscode/
