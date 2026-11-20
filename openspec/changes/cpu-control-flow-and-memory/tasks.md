@@ -522,21 +522,21 @@ Resume another task only when it is selected for implementation.
 
 ## 88. AND zero page,X ($35)
 
-- [ ] 88.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
+- [x] 88.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
   synthetic pytest cases.
-- [ ] 88.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 88.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 89. ORA zero page,X ($15)
 
-- [ ] 89.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
+- [x] 89.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
   synthetic pytest cases.
-- [ ] 89.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 89.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 90. EOR zero page,X ($55)
 
-- [ ] 90.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
+- [x] 90.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
   synthetic pytest cases.
-- [ ] 90.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 90.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 91. ASL zero page,X ($16)
 

@@ -1213,6 +1213,46 @@ def test_zero_page_logic_updates_accumulator_and_nz(make_cpu, opcode, initial, o
 
 @pytest.mark.parametrize("opcode, initial, operand, expected", [
     # AND
+    (0x35, 0xF0, 0x0F, 0x00),
+    (0x35, 0xFF, 0x80, 0x80),
+    (0x35, 0xAB, 0x3C, 0x28),
+    (0x35, 0xFF, 0xFF, 0xFF),
+    # ORA
+    (0x15, 0x00, 0x00, 0x00),
+    (0x15, 0x10, 0x80, 0x90),
+    (0x15, 0x21, 0x42, 0x63),
+    (0x15, 0xFF, 0x00, 0xFF),
+    # EOR
+    (0x55, 0xFF, 0xFF, 0x00),
+    (0x55, 0x0F, 0x8F, 0x80),
+    (0x55, 0xA5, 0x3C, 0x99),
+    (0x55, 0xFF, 0x80, 0x7F),
+])
+@pytest.mark.parametrize("base, index, source", [(0x20, 0x04, 0x24), (0xF0, 0x20, 0x10), (0xFC, 0x03, 0xFF)])
+def test_indexed_zero_page_logic_updates_accumulator_and_nz(
+    make_cpu, opcode, initial, operand, expected, base, index, source,
+):
+    # Set X and start N/Z opposite to the expected result.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.x = index
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, base)
+    machine.write_byte(source, operand)
+
+    # A and N/Z reflect the indexed zero-page byte.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 4
+
+
+@pytest.mark.parametrize("opcode, initial, operand, expected", [
+    # AND
     (0x2D, 0xF0, 0x0F, 0x00),
     (0x2D, 0xFF, 0x80, 0x80),
     (0x2D, 0xAB, 0x3C, 0x28),

@@ -653,6 +653,12 @@ class CPU:
         self._finish_zero_page_update(address, opcode, "AND", source, self._a)
 
 
+    def _and_zero_page_x(self, address, opcode):
+        source, operand = self._read_indexed_zero_page(self._x)
+        self._a &= operand
+        self._finish_indexed_zero_page_update(address, opcode, source, self._a, "AND", "X")
+
+
     def _and_absolute(self, address, opcode):
         source = self._fetch_word()
         self._a &= self._machine.read_byte(source)
@@ -683,6 +689,12 @@ class CPU:
         self._finish_zero_page_update(address, opcode, "ORA", source, self._a)
 
 
+    def _ora_zero_page_x(self, address, opcode):
+        source, operand = self._read_indexed_zero_page(self._x)
+        self._a |= operand
+        self._finish_indexed_zero_page_update(address, opcode, source, self._a, "ORA", "X")
+
+
     def _ora_absolute(self, address, opcode):
         source = self._fetch_word()
         self._a |= self._machine.read_byte(source)
@@ -711,6 +723,12 @@ class CPU:
         source = self._fetch_byte()
         self._a ^= self._machine.read_byte(source)
         self._finish_zero_page_update(address, opcode, "EOR", source, self._a)
+
+
+    def _eor_zero_page_x(self, address, opcode):
+        source, operand = self._read_indexed_zero_page(self._x)
+        self._a ^= operand
+        self._finish_indexed_zero_page_update(address, opcode, source, self._a, "EOR", "X")
 
 
     def _eor_absolute(self, address, opcode):
@@ -1295,7 +1313,7 @@ class CPU:
         None,  # $12
         None,  # $13
         None,  # $14
-        None,  # $15
+        _ora_zero_page_x,  # $15
         None,  # $16
         None,  # $17
         _clc,  # $18
@@ -1331,7 +1349,7 @@ class CPU:
         None,  # $32
         None,  # $33
         None,  # $34
-        None,  # $35
+        _and_zero_page_x,  # $35
         None,  # $36
         None,  # $37
         _sec,  # $38
@@ -1367,7 +1385,7 @@ class CPU:
         None,  # $52
         None,  # $53
         None,  # $54
-        None,  # $55
+        _eor_zero_page_x,  # $55
         None,  # $56
         None,  # $57
         _cli,  # $58
