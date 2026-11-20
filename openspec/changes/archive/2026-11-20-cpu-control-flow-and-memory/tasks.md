@@ -564,10 +564,10 @@ Resume another task only when it is selected for implementation.
 
 ## 95. Integration
 
-- [ ] 95.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
+- [x] 95.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
   resolve any failures.
-- [ ] 95.2 Review documentation for hardware departures and their rationale without listing instruction support.
-- [ ] 95.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
+- [x] 95.2 Review documentation for hardware departures and their rationale without listing instruction support.
+- [x] 95.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
   implementing it; record actual observations only.
 
 ## Workflow follow-up

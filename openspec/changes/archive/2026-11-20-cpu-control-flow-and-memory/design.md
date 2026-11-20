@@ -3,8 +3,7 @@
 ## Context
 
 CPU.step dispatches opcodes, reads instruction bytes through Machine, accumulates nominal instruction cycles, and
-logs completed instructions using captured bytes. The first 75 encodings in this change have been implemented; the
-remaining zero-page and zero-page,X operations and BIT absolute are planned. Each encoding remains an individual step.
+logs completed instructions using captured bytes. Each encoding in this change remains an individual step.
 
 ## Goals / Non-Goals
 

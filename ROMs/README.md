@@ -42,6 +42,15 @@ an unsupported CPU opcode before reaching the budget:
 All three files matched their recorded SHA-256 hashes before and after these checks. No image was modified, and the
 entry checks do not establish game playability.
 
+On 2026-11-20, bounded checks with a budget of 1,000,000 CPU cycles stopped at these unimplemented memory writes:
+
+| Local image | Completed cycles | First unimplemented write |
+| --- | ---: | --- |
+| BattleCity (Japan).nes | 158,498 | $4015 |
+| Super Mario Bros. (Europe).nes | 37,018 | $4011 |
+
+Both files matched their recorded SHA-256 hashes before and after execution. These checks do not establish playability.
+
 ### BattleCity (Japan).nes
 
 - Format: NES 2.0; PRG: 16384 bytes; CHR: 8192 bytes; mirroring: horizontal.
