@@ -63,6 +63,13 @@ Use deterministic labels based on the exact target address and define each label
 boundaries; use `EQU` for targets inside another instruction, outside the selected window, or in a mirrored window.
 The same byte may be the target of several distinct CPU addresses; these remain distinct symbols.
 
+For a complete mapper-0 PRG, read the final three little-endian words at $FFFA-$FFFF as the NMI, reset, and IRQ
+vectors. Name their exact targets `NMI`, `START`, and `IRQ`, respectively, even when multiple vectors share a target.
+Define each name at a decoded line boundary or with `EQU` otherwise; 16 KiB lower-mirror targets retain the encoded
+address. Keep existing direct-branch labels when they share an address with a vector. Vector targets in hardware space
+use the corresponding hardware symbol in their `EQU` definition. Continue the existing linear scan across the vector
+bytes without inventing code boundaries or omitting any PRG bytes.
+
 Use standard named CPU-visible PPU, APU, OAM DMA, and controller registers in operand expressions, with `EQU`
 definitions for the referenced names. PPU registers repeat every eight addresses through $3FFF; preserve the encoded
 mirror address in the expression or its definition. Keep read/write-sensitive shared addresses such as $4017
@@ -74,9 +81,11 @@ exact target label and register name remain visible.
 
 Use the [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html) for the documented
 instruction encodings and addressing modes. The existing [CPU memory specification](../../specs/cpu-memory/spec.md)
-records the project's NROM mapping; [Mesen's NROM mapper][mesen-nrom] was consulted for comparison, not as code to copy.
+records the project's NROM mapping; [Mesen's NROM mapper][mesen-nrom] and [py65's vector locations][py65-vectors] were
+consulted for comparison, not as code to copy.
 
 [mesen-nrom]: https://github.com/SourMesen/Mesen2/blob/master/Core/NES/Mappers/Nintendo/NROM.h
+[py65-vectors]: https://github.com/mnaberez/py65/blob/main/py65/devices/mpu6502.py
 
 ## Risks / Trade-offs
 

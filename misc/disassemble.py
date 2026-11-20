@@ -160,12 +160,13 @@ def _hardware_symbol(address):
 
 
 def disassemble_prg(prg_rom, base_address):
-    """Return a two-pass listing with direct targets, PRG mirrors, and hardware symbols."""
+    """Return a two-pass listing with vector names, direct targets, and address symbols."""
     # The first scan finds targets, referenced symbols, and boundaries without following control flow.
     targets = set()
     boundaries = set()
     mirrors = set()
     registers = {}
+    vectors = {}
     mirrored_prg = len(prg_rom) == 16384 and base_address == 0xC000
     for address, instruction_bytes, mnemonic, operand in decode_prg(prg_rom, base_address):
         boundaries.add(address)
@@ -180,6 +181,16 @@ def disassemble_prg(prg_rom, base_address):
             registers[operand_address] = name
         if mirrored_prg and 0x8000 <= operand_address < 0xC000:
             mirrors.add(operand_address)
+
+    # Complete mapper-0 images end with the little-endian NMI, reset, and IRQ vector words.
+    if (len(prg_rom), base_address) in ((16384, 0xC000), (32768, 0x8000)):
+        vector_bytes = prg_rom[-6:]
+        for index, name in enumerate(("NMI", "START", "IRQ")):
+            address = int.from_bytes(vector_bytes[index * 2:index * 2 + 2], "little")
+            vectors.setdefault(address, []).append(name)
+            register = _hardware_symbol(address)
+            if register is not None:
+                registers[address] = register
 
     # Register definitions preserve PPU mirror addresses and clarify shared read/write ports.
     lines = []
@@ -203,6 +214,17 @@ def disassemble_prg(prg_rom, base_address):
         if address in mirrors:
             line += f" ; mirror of ${address + 0x4000:04X}"
         lines.append(line)
+
+    # Vector names retain all roles, even when a target is mirrored or falls between decoded lines.
+    for address, names in sorted(vectors.items()):
+        if address in boundaries:
+            continue
+        value = registers.get(address, f"${address:04X}")
+        for name in names:
+            line = f"{name} EQU {value}"
+            if mirrored_prg and 0x8000 <= address < 0xC000:
+                line += f" ; mirror of ${address + 0x4000:04X}"
+            lines.append(line)
     if lines:
         lines.append("")
 
@@ -210,6 +232,8 @@ def disassemble_prg(prg_rom, base_address):
     for address, instruction_bytes, mnemonic, operand in decode_prg(prg_rom, base_address):
         if address in targets:
             lines.append(f"L_{address:04X}:")
+        for name in vectors.get(address, ()):
+            lines.append(f"{name}:")
         target = _control_target(instruction_bytes, mnemonic, operand)
         if target is not None:
             operand = f"L_{target:04X}"

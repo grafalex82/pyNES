@@ -5,6 +5,25 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Generated study listings (2026-11-20)
+
+The standalone disassembler produces a readable, byte-preserving linear listing rather than reassemblable source or
+a verified control-flow analysis. This keeps the tool independent of CPU execution and makes its guesses visible for
+later manual study. Data can resemble instructions, and indirect or computed targets cannot generally be inferred.
+The [listing notes](disassembly/README.md) describe invocation, symbols, address windows, and these limitations.
+
+### Named CPU vectors in disassembly (2026-11-20)
+
+At the user's request, complete mapper-0 listings read the little-endian vector words at $FFFA-$FFFF. Their targets
+receive `NMI`, `START`, and `IRQ` names, including all applicable names when vectors coincide. Existing direct
+branch labels remain separate. Targets without a decoded line use `EQU`; hardware symbols and 16 KiB mirror comments
+retain the encoded address. Vector bytes remain in the linear scan, which does not guarantee genuine code boundaries.
+
+The [6502 vector locations in py65](https://github.com/mnaberez/py65/blob/main/py65/devices/mpu6502.py) and the
+[NES reset-vector explanation](https://bugzmanov.github.io/nes_ebook/chapter_3_2.html) were consulted; this listing
+implementation is independent. Synthetic cases cover both PRG sizes, shared and non-boundary targets, hardware
+addresses, mirrors, and preservation of every PRG byte.
+
 ### Disassembly byte and mnemonic spacing (2026-11-20)
 
 At the user's request, listing lines place an additional space between the fixed-width byte field and the mnemonic.

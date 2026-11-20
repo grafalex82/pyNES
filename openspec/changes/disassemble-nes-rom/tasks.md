@@ -17,10 +17,12 @@
   immediate values, and hardware-address control targets with focused tests.
 - [x] 2.3 Add the two-path standalone CLI and source-overwrite protection; verify paths with spaces, another working
   directory, unsupported layouts, output contents, and unchanged input using subprocess tests.
-- [ ] 2.4 Document the command, output, address windows, unsupported bytes, and linear-decoding limitations in
-  `README.md` and `doc\disassembly\README.md`; record the design rationale in `doc\decisions.md`.
+- [x] 2.3a Name the NMI, reset, and IRQ vector targets; verify coincident targets, direct labels, mirrored and
+  non-boundary addresses, hardware symbols, and unchanged PRG coverage with synthetic cartridges.
+- [x] 2.4 Document the command, output, address windows, vector labels, unsupported bytes, and linear-decoding
+  limitations in `README.md` and `doc\disassembly\README.md`; record the design rationale in `doc\decisions.md`.
 
 ## 3. Integration
 
-- [ ] 3.1 Run the disassembler and cartridge-loading pytest cases together and verify the resulting listing accounts for
+- [x] 3.1 Run the disassembler and cartridge-loading pytest cases together and verify the resulting listing accounts for
   every PRG byte without relying on local game ROMs.

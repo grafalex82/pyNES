@@ -275,10 +275,11 @@ def test_16k_listing_uses_exact_mirror_aliases_for_control_and_data(make_cartrid
     # The same alias is reused by different instructions and still denotes the lower address.
     loaded_prg, base_address = load_prg_rom(filename)
     lines = disassemble_prg(loaded_prg, base_address).splitlines()
-    assert lines[:18] == [
+    assert lines[:19] == [
         "L_8000 EQU $8000 ; mirror of $C000",
         "L_8001 EQU $8001 ; mirror of $C001",
         "L_BFFF EQU $BFFF ; mirror of $FFFF",
+        "IRQ EQU $804C ; mirror of $C04C",
         "",
         "L_C000:",
         "$C000: 4C 00 80  JMP L_8000",
@@ -455,6 +456,62 @@ def test_listing_combines_hardware_symbols_with_prg_mirror_aliases():
         "$C003: AD 08 20  LDA PPUCTRL_2008",
         "$C006: AD 00 80  LDA L_8000",
     ]
+    _assert_listing_covers_prg(lines, prg_rom, 0xC000)
+
+
+@pytest.mark.parametrize("size, base", [(16384, 0xC000), (32768, 0x8000)], ids=["16k", "32k"])
+def test_listing_names_three_vector_targets(size, base):
+    # Separate little-endian vectors point to different decoded lines in either PRG layout.
+    prg_rom = bytearray(b"\xEA" * size)
+    prg_rom[:3] = bytes([0x4C, (base + 6) & 0xFF, (base + 6) >> 8])
+    prg_rom[-6:] = b"".join(address.to_bytes(2, "little") for address in (base + 6, base + 9, base + 12))
+
+    # The existing jump label and vector names coexist; all source bytes remain in the listing.
+    lines = disassemble_prg(prg_rom, base).splitlines()
+    assert f"${base:04X}: 4C 06 {base >> 8:02X}  JMP L_{base + 6:04X}" in lines
+    for name, address in (("NMI", base + 6), ("START", base + 9), ("IRQ", base + 12)):
+        index = lines.index(f"{name}:")
+        assert lines[index + 1] == f"${address:04X}: EA        NOP"
+        assert lines.count(f"{name}:") == 1
+    assert lines[lines.index("NMI:") - 1] == f"L_{base + 6:04X}:"
+    _assert_listing_covers_prg(lines, prg_rom, base)
+
+
+def test_listing_keeps_each_vector_name_when_targets_coincide():
+    # Multiple vector roles and a direct jump can identify the same instruction.
+    prg_rom = bytearray(b"\xEA" * 16384)
+    prg_rom[:3] = b"\x4C\x00\xC0"
+    prg_rom[-6:] = b"\x00\xC0" * 3
+    lines = disassemble_prg(prg_rom, 0xC000).splitlines()
+    assert lines[:5] == ["L_C000:", "NMI:", "START:", "IRQ:", "$C000: 4C 00 C0  JMP L_C000"]
+    _assert_listing_covers_prg(lines, prg_rom, 0xC000)
+
+
+def test_listing_defines_each_shared_vector_outside_the_prg_window():
+    prg_rom = bytearray(b"\xEA" * 16384)
+    prg_rom[-6:] = b"\x00\x60" * 3
+    lines = disassemble_prg(prg_rom, 0xC000).splitlines()
+    assert lines[:4] == ["NMI EQU $6000", "START EQU $6000", "IRQ EQU $6000", ""]
+    _assert_listing_covers_prg(lines, prg_rom, 0xC000)
+
+
+def test_listing_defines_vector_targets_without_inventing_boundaries():
+    # The targets exercise a mid-instruction address, lower PRG mirror, and PPU mirror.
+    prg_rom = bytearray(b"\xEA" * 16384)
+    prg_rom[:6] = b"\x4C\x01\xC0\x20\x00\x80"
+    prg_rom[-6:] = b"\x01\xC0\x00\x80\x08\x20"
+    lines = disassemble_prg(prg_rom, 0xC000).splitlines()
+    assert lines[:7] == [
+        "PPUCTRL_2008 EQU $2008 ; mirror of PPUCTRL ($2000)",
+        "L_8000 EQU $8000 ; mirror of $C000",
+        "L_C001 EQU $C001",
+        "IRQ EQU PPUCTRL_2008",
+        "START EQU $8000 ; mirror of $C000",
+        "NMI EQU $C001",
+        "",
+    ]
+    assert "$C000: 4C 01 C0  JMP L_C001" in lines
+    assert "$C003: 20 00 80  JSR L_8000" in lines
     _assert_listing_covers_prg(lines, prg_rom, 0xC000)
 
 

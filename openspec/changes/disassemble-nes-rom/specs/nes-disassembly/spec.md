@@ -113,6 +113,34 @@ at the corresponding line, or with `EQU` if there is no corresponding line in th
 - **WHEN** the listing contains an indirect `JMP`
 - **THEN** it shows the encoded pointer operand without inventing a direct target label for its runtime destination
 
+### Requirement: Name the CPU vector targets
+
+The listing SHALL read the little-endian NMI, reset, and IRQ vector words at $FFFA, $FFFC, and $FFFE from a complete
+mapper-0 PRG section and define their exact targets as `NMI`, `START`, and `IRQ`, respectively. Vector bytes SHALL
+remain in the linear listing exactly once. Existing labels for directly encoded control-flow targets SHALL remain
+available when they share an address with a vector.
+
+#### Scenario: Name all vector targets
+
+- **WHEN** a supported PRG contains three different vector addresses at decoded line boundaries
+- **THEN** those lines have the corresponding `NMI`, `START`, and `IRQ` labels
+
+#### Scenario: Multiple vectors share a target
+
+- **WHEN** two or more vectors encode the same address
+- **THEN** every applicable vector name is defined at that address
+
+#### Scenario: A vector target has no listing line
+
+- **WHEN** a vector targets the middle of a decoded instruction, an address outside the listed window, or a 16 KiB
+  lower PRG mirror
+- **THEN** its named `EQU` definition preserves the exact encoded address rather than inventing a line boundary
+
+#### Scenario: A vector targets a hardware register
+
+- **WHEN** a vector encodes a known hardware address
+- **THEN** its name is defined through the hardware symbol for that exact address
+
 ### Requirement: Name known memory-mapped hardware registers
 
 The listing SHALL define symbolic names using `EQU` for referenced NES PPU, APU, DMA, and controller register

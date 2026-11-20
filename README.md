@@ -83,12 +83,12 @@ sizes, mirroring, and nonvolatile-memory flag through `NESFile`. These values de
 
 [`disassemble.py`](misc/disassemble.py) provides `load_prg_rom(path)` for mapper/submapper 0 with 16 KiB or
 32 KiB PRG, `decode_prg(bytes, base)` for a linear scan, and `disassemble_prg(bytes, base)` for a two-pass listing.
-Relative branches and direct `JMP`/`JSR` use labels; targets without a decoded line use `EQU`. Unsupported or
-incomplete bytes appear as `db`, and a trainer is accepted without mapping it. For 16 KiB PRG, references to the lower
-mirror use exact-address `EQU` aliases and each byte is listed once at $C000-$FFFF. Linear decoding can mistake data for
-instructions. Referenced PPU, APU, DMA, and controller addresses use symbolic names without changing encoded addresses.
-The standalone command accepts cartridge and listing paths and refuses to overwrite the input. Naming a register does
-not implement its device behavior; detailed command and listing documentation remains a separate task.
+Relative branches and direct `JMP`/`JSR` use labels; NMI, reset, and IRQ vector targets are named `NMI`, `START`, and
+`IRQ`. Targets without a decoded line use `EQU`, and unsupported or incomplete bytes appear as `db`. A trainer is
+accepted without mapping it. For 16 KiB PRG, references to the lower mirror use exact-address `EQU` aliases and each
+byte is listed once at $C000-$FFFF; 32 KiB PRG is listed at $8000-$FFFF. Referenced PPU, APU, DMA, and controller
+addresses use symbolic names without changing encoded addresses. Naming a register does not implement its behavior.
+Linear decoding can mistake data for instructions; see [listing notes](doc/disassembly/README.md) for limitations.
 
 [`RAM`](src/ram.py) and [`ROM`](src/rom.py) provide device-relative byte access. [`Machine`](src/machine.py) connects
 zero-filled 2 KiB RAM and its CPU-address mirrors to fixed 16 KiB or 32 KiB mapper-0 PRG ROM. Construction requires
@@ -140,6 +140,17 @@ python misc/nesinfo.py --help
 Quote paths containing spaces. From another working directory, use the full path to `misc/nesinfo.py`; a relative ROM
 path is resolved from that working directory. The utility uses only the standard library and exits after inspection.
 Mirroring and nonvolatile-memory values describe header flags, not effective mapper behavior.
+
+Generate a study listing from a supported mapper-0 cartridge, without executing it:
+
+```text
+python misc\disassemble.py "ROMs\your game.nes" "listing.asm"
+python misc\disassemble.py --help
+```
+
+Both paths are relative to the working directory. An existing output is overwritten, but the input cartridge cannot
+be selected as the output. From another directory, use the full path to the script. The listing is not reassemblable
+source or a verified disassembly; see [listing notes](doc/disassembly/README.md) for the format and limitations.
 
 Cartridge inputs are assumed structurally valid. The loader and utility do not validate signatures, lengths, section
 completeness, trailing bytes, or extensions, and do not repair headers or catch filesystem/parsing exceptions.

@@ -9,6 +9,7 @@ A small offline listing utility provides that prerequisite while making the limi
 
 - Add a standalone script in `misc/` that takes a NES file and an output path and produces a text listing.
 - Decode official 6502 instructions in two linear passes, using `db` for other bytes and labels for direct targets.
+- Identify NMI, reset, and IRQ entry targets from the cartridge's three CPU vectors.
 - Use CPU addresses for mapper-0 PRG, symbolic peripheral registers, and `EQU` for aliases and non-line targets.
 - Support the ordinary 16 KiB and 32 KiB fixed PRG layouts without changing CPU execution or emulated hardware.
 - Document that code and data cannot reliably be distinguished by this linear scan.
