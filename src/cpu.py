@@ -567,6 +567,35 @@ class CPU:
         self._a = difference & 0xFF
 
 
+    def _bit_zero_page(self, address, opcode):
+        # BIT reads the selected byte without changing the accumulator.
+        source = self._fetch_byte()
+        value = self._machine.read_byte(source)
+        self._test_bits(value)
+
+        # Reuse the fetched address for the instruction trace.
+        self._cycles += 3
+        self.log_instruction(address, (opcode, source), "BIT", f"${source:02X}")
+
+
+    def _bit_absolute(self, address, opcode):
+        # Read the byte addressed by the little-endian operand.
+        source = self._fetch_word()
+        value = self._machine.read_byte(source)
+        self._test_bits(value)
+
+        # Reuse the fetched address for the instruction trace.
+        self._cycles += 4
+        self.log_instruction(address, (opcode, source & 0xFF, source >> 8), "BIT", f"${source:04X}")
+
+
+    def _test_bits(self, value):
+        # N and V come from memory, while Z depends on the intersection with A.
+        self._negative = bool(value & 0x80)
+        self._overflow = bool(value & 0x40)
+        self._zero = (self._a & value) == 0
+
+
     def _and_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a &= operand
@@ -1238,7 +1267,7 @@ class CPU:
         None,  # $21
         None,  # $22
         None,  # $23
-        None,  # $24
+        _bit_zero_page,  # $24
         _and_zero_page,  # $25
         _rol_zero_page,  # $26
         None,  # $27
@@ -1246,7 +1275,7 @@ class CPU:
         _and_immediate,  # $29
         _rol_accumulator,  # $2A
         None,  # $2B
-        None,  # $2C
+        _bit_absolute,  # $2C
         _and_absolute,  # $2D
         _rol_absolute,  # $2E
         None,  # $2F

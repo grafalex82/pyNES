@@ -474,15 +474,15 @@ Resume another task only when it is selected for implementation.
 
 ## 80. BIT zero page ($24)
 
-- [ ] 80.1 Implement the selected encoding; verify A, N/V/Z, and matching and nonmatching bits, zero-page endpoints, PC,
+- [x] 80.1 Implement the selected encoding; verify A, N/V/Z, and matching and nonmatching bits, zero-page endpoints, PC,
   and cycles with focused synthetic pytest cases.
-- [ ] 80.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 80.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 81. BIT absolute ($2C)
 
-- [ ] 81.1 Implement the selected encoding; verify A, N/V/Z, matching and nonmatching bits, the
+- [x] 81.1 Implement the selected encoding; verify A, N/V/Z, matching and nonmatching bits, the
   little-endian address, PC, and cycles with focused synthetic pytest cases.
-- [ ] 81.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 81.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 82. CMP zero page ($C5)
 

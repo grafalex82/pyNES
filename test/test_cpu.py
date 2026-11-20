@@ -1229,6 +1229,66 @@ def test_indexed_absolute_logic_updates_accumulator_and_nz(
     assert cpu.cycles == cycles
 
 
+@pytest.mark.parametrize("accumulator, operand, negative, overflow, zero", [
+    (0x40, 0x80, True, False, True),
+    (0x40, 0x40, False, True, False),
+    (0x00, 0xC0, True, True, True),
+    (0x0F, 0x01, False, False, False),
+    (0x0F, 0x00, False, False, True),
+    (0x80, 0x80, True, False, False),
+])
+@pytest.mark.parametrize("source", [0x00, 0xFF])
+def test_bit_zero_page(make_cpu, accumulator, operand, negative, overflow, zero, source):
+    # Set N/V/Z opposite to the expected result and place data away from the program.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = accumulator
+    cpu.negative = not negative
+    cpu.overflow = not overflow
+    cpu.zero = not zero
+    machine.write_byte(0x0567, 0x24)
+    machine.write_byte(0x0568, source)
+    machine.write_byte(source, operand)
+
+    # BIT preserves A and sets N/V from memory and Z from A AND memory.
+    cpu.step()
+    assert cpu.a == accumulator
+    assert cpu.negative is negative
+    assert cpu.overflow is overflow
+    assert cpu.zero is zero
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 3
+
+
+@pytest.mark.parametrize("accumulator, operand, negative, overflow, zero", [
+    (0x40, 0x80, True, False, True),
+    (0x40, 0x40, False, True, False),
+    (0x00, 0xC0, True, True, True),
+    (0x0F, 0x01, False, False, False),
+    (0x0F, 0x00, False, False, True),
+    (0x80, 0x80, True, False, False),
+])
+def test_bit_absolute(make_cpu, accumulator, operand, negative, overflow, zero):
+    # Use distinct address bytes and set N/V/Z opposite to the expected result.
+    cpu, machine = make_cpu(start_address=0x0200)
+    cpu.a = accumulator
+    cpu.negative = not negative
+    cpu.overflow = not overflow
+    cpu.zero = not zero
+    machine.write_byte(0x0200, 0x2C)
+    machine.write_byte(0x0201, 0x56)
+    machine.write_byte(0x0202, 0x04)
+    machine.write_byte(0x0456, operand)
+
+    # BIT preserves A and sets N/V from memory and Z from A AND memory.
+    cpu.step()
+    assert cpu.a == accumulator
+    assert cpu.negative is negative
+    assert cpu.overflow is overflow
+    assert cpu.zero is zero
+    assert cpu.pc == 0x0203
+    assert cpu.cycles == 4
+
+
 @pytest.mark.parametrize("opcode, register", [(0xC9, "a"), (0xE0, "x"), (0xC0, "y")])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),
