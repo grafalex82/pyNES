@@ -227,21 +227,21 @@ Resume another task only when it is selected for implementation.
 
 ## 39. AND zero page ($25)
 
-- [ ] 39.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
+- [x] 39.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
   pytest cases.
-- [ ] 39.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 39.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 40. ORA zero page ($05)
 
-- [ ] 40.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
+- [x] 40.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
   pytest cases.
-- [ ] 40.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 40.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 41. EOR zero page ($45)
 
-- [ ] 41.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
+- [x] 41.1 Implement the selected encoding; verify A, N/Z, zero-page endpoints, PC, and cycles with focused synthetic
   pytest cases.
-- [ ] 41.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 41.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 42. Integration
 

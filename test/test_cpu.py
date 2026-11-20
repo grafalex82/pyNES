@@ -710,6 +710,43 @@ def test_immediate_logic_updates_accumulator_and_nz(make_cpu, opcode, initial, o
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, initial, operand, expected", [
+    # AND
+    (0x25, 0xF0, 0x0F, 0x00),
+    (0x25, 0xFF, 0x80, 0x80),
+    (0x25, 0xAB, 0x3C, 0x28),
+    (0x25, 0xFF, 0xFF, 0xFF),
+    # ORA
+    (0x05, 0x00, 0x00, 0x00),
+    (0x05, 0x10, 0x80, 0x90),
+    (0x05, 0x21, 0x42, 0x63),
+    (0x05, 0xFF, 0x00, 0xFF),
+    # EOR
+    (0x45, 0xFF, 0xFF, 0x00),
+    (0x45, 0x0F, 0x8F, 0x80),
+    (0x45, 0xA5, 0x3C, 0x99),
+    (0x45, 0xFF, 0x80, 0x7F),
+])
+@pytest.mark.parametrize("source", [0x00, 0xFF])
+def test_zero_page_logic_updates_accumulator_and_nz(make_cpu, opcode, initial, operand, expected, source):
+    # Set the data and instruction at separate addresses, with flags opposite to their expected values.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, source)
+    machine.write_byte(source, operand)
+
+    # A and N/Z reflect the bitwise result read from zero page.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 3
+
+
 @pytest.mark.parametrize("opcode, register", [(0xC9, "a"), (0xE0, "x"), (0xC0, "y")])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),

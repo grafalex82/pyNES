@@ -457,16 +457,34 @@ class CPU:
         self._finish_immediate_update(address, opcode, "AND", operand, self._a)
 
 
+    def _and_zero_page(self, address, opcode):
+        source = self._fetch_byte()
+        self._a &= self._machine.read_byte(source)
+        self._finish_zero_page_update(address, opcode, "AND", source, self._a)
+
+
     def _ora_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a |= operand
         self._finish_immediate_update(address, opcode, "ORA", operand, self._a)
 
 
+    def _ora_zero_page(self, address, opcode):
+        source = self._fetch_byte()
+        self._a |= self._machine.read_byte(source)
+        self._finish_zero_page_update(address, opcode, "ORA", source, self._a)
+
+
     def _eor_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a ^= operand
         self._finish_immediate_update(address, opcode, "EOR", operand, self._a)
+
+
+    def _eor_zero_page(self, address, opcode):
+        source = self._fetch_byte()
+        self._a ^= self._machine.read_byte(source)
+        self._finish_zero_page_update(address, opcode, "EOR", source, self._a)
 
 
     def _finish_immediate_update(self, address, opcode, mnemonic, operand, value):
@@ -913,7 +931,7 @@ class CPU:
         None,  # $02
         None,  # $03
         None,  # $04
-        None,  # $05
+        _ora_zero_page,  # $05
         _asl_zero_page,  # $06
         None,  # $07
         None,  # $08
@@ -949,7 +967,7 @@ class CPU:
         None,  # $22
         None,  # $23
         None,  # $24
-        None,  # $25
+        _and_zero_page,  # $25
         _rol_zero_page,  # $26
         None,  # $27
         None,  # $28
@@ -985,7 +1003,7 @@ class CPU:
         None,  # $42
         None,  # $43
         None,  # $44
-        None,  # $45
+        _eor_zero_page,  # $45
         _lsr_zero_page,  # $46
         None,  # $47
         None,  # $48
