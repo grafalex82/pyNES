@@ -51,6 +51,23 @@ On 2026-11-20, bounded checks with a budget of 1,000,000 CPU cycles stopped at t
 
 Both files matched their recorded SHA-256 hashes before and after execution. These checks do not establish playability.
 
+After adding the dummy APU registers, bounded checks with the same 1,000,000-cycle budget stopped here:
+
+| Local image | Completed cycles | First unimplemented behavior | Instruction address |
+| --- | ---: | --- | --- |
+| BattleCity (Japan).nes | 158,504 | Write to $4017 | $EA58 |
+| Super Mario Bros. (Europe).nes | 56,705 | Opcode $EE | $804C |
+
+Both files matched their recorded SHA-256 hashes before and after execution. No ROM was modified; neither result
+establishes playability. The next missing behaviors are outside the dummy APU change.
+
+After adding the dummy frame-counter write, BattleCity passed the $4017 write at $EA58. A 10,000,000-cycle bounded
+run reached its budget without a `NotImplementedError`; its next instruction was $D8FA. The instructions at $D8F8
+and $D8FA were each visited about 1.64 million times. They compare and wait for RAM $000B to change; the listing
+identifies an increment in the NMI handler at $D43C. The current PPU does not generate NMI, so this wait cannot
+progress through that mechanism. The next unsupported operation remains unknown. The ROM hash was unchanged, and
+the bounded run does not establish playability.
+
 ### BattleCity (Japan).nes
 
 - Format: NES 2.0; PRG: 16384 bytes; CHR: 8192 bytes; mirroring: horizontal.

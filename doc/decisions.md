@@ -5,6 +5,38 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Dummy APU frame-counter write (2026-11-20)
+
+Machine routes writes at $4017 to the APU, which logs and ignores every byte. Reads at $4017 address controller 2
+and remain unsupported, as do direct APU reads at offset $17. Hardware uses bit 7 to select four- or five-step
+frame sequencing and bit 6 to inhibit frame IRQs and clear a pending frame IRQ. See the
+[cc65 register definitions](https://github.com/cc65/cc65/blob/master/asminc/nes.inc) and
+[Mesen frame counter](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/APU/ApuFrameCounter.h).
+
+Discarding the write permits execution to proceed without implementing frame sequencing, audio clocks, or IRQs.
+It cannot reproduce software relying on those effects; $4015 continues to report inactive channels and IRQs.
+The approximation applies to all connected cartridges, including BattleCity in [ROM notes](../ROMs/README.md).
+Synthetic tests cover every byte, routing, logging, unsupported reads, and CPU execution. No ROM is patched.
+
+### Dummy APU register access (2026-11-20)
+
+Each Machine owns a stateless APU accepting writes at $4010-$4013 and $4015 without audio effects; reads return $00.
+The selected response reports all channel and IRQ status bits clear, even after DMC is enabled, so a completion poll
+can proceed without audio timing. It can instead trap a program waiting for DMC to become active. The APU logs ignored
+writes at DEBUG and does not fetch samples, perform DMC DMA, deliver audio interrupts, or produce sound.
+
+On hardware $4010 sets DMC rate, looping, and IRQ enable; $4011 controls output level; $4012-$4013 describe the sample;
+and $4015 controls channels on writes and reports status on reads. $4010-$4013 are write-only, and $4015 bit 5 is
+open bus; fixed $00 is an approximation, not hardware readback. Sprite DMA at $4014 is unrelated and still raises
+`NotImplementedError`. See the [cc65 register definitions](https://github.com/cc65/cc65/blob/master/asminc/nes.inc)
+and [fogleman/nes audio model](https://github.com/fogleman/nes/blob/master/nes/apu.go), consulted for understanding.
+
+The simplification applies to all connected cartridges, including those identified in [ROM notes](../ROMs/README.md).
+Synthetic tests cover selected writes and repeated reads, inactive status, routing, and unsupported neighboring
+addresses. A synthetic CPU program exercises all selected writes and reads status and DMC control through Machine.
+The relevant CPU, logging, emulator, and memory suites pass 1518 cases. No ROM is patched and these tests do not
+establish game playability.
+
 ### CHR sheet scaling (2026-11-20)
 
 At the user's request, the exporter accepts integer scales from 1 through 4. Each tile pixel becomes a solid square

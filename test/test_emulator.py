@@ -58,6 +58,71 @@ def test_step_executes_exactly_one_instruction(make_machine):
     assert cpu.interrupt_disable is True
 
 
+def test_cpu_program_continues_after_frame_counter_write(make_machine):
+    # Store to the frame counter, then use RAM to show that execution continued.
+    machine = make_machine(start_address=0x0200)
+    machine.write_byte(0x0200, 0xA9)  # LDA #$C0
+    machine.write_byte(0x0201, 0xC0)
+    machine.write_byte(0x0202, 0x8D)  # STA $4017
+    machine.write_byte(0x0203, 0x17)
+    machine.write_byte(0x0204, 0x40)
+    machine.write_byte(0x0205, 0xA9)  # LDA #$42
+    machine.write_byte(0x0206, 0x42)
+    machine.write_byte(0x0207, 0x85)  # STA $20
+    machine.write_byte(0x0208, 0x20)
+    emulator = Emulator(machine)
+
+    # The ignored I/O write must not interrupt subsequent instructions.
+    emulator.run(11)
+    assert emulator.cpu.pc == 0x0209
+    assert emulator.cpu.cycles == 11
+    assert machine.read_byte(0x0020) == 0x42
+    assert machine.read_byte(0x4015) == 0x00
+
+
+def test_cpu_program_accesses_dummy_apu_registers(make_machine):
+    # Initialize each selected audio register, then copy status and DMC-control reads to RAM.
+    machine = make_machine(start_address=0x0200)
+    machine.write_byte(0x0200, 0xA9)  # LDA #$FF
+    machine.write_byte(0x0201, 0xFF)
+    machine.write_byte(0x0202, 0x8D)  # STA $4010
+    machine.write_byte(0x0203, 0x10)
+    machine.write_byte(0x0204, 0x40)
+    machine.write_byte(0x0205, 0x8D)  # STA $4011
+    machine.write_byte(0x0206, 0x11)
+    machine.write_byte(0x0207, 0x40)
+    machine.write_byte(0x0208, 0x8D)  # STA $4012
+    machine.write_byte(0x0209, 0x12)
+    machine.write_byte(0x020A, 0x40)
+    machine.write_byte(0x020B, 0x8D)  # STA $4013
+    machine.write_byte(0x020C, 0x13)
+    machine.write_byte(0x020D, 0x40)
+    machine.write_byte(0x020E, 0x8D)  # STA $4015
+    machine.write_byte(0x020F, 0x15)
+    machine.write_byte(0x0210, 0x40)
+    machine.write_byte(0x0211, 0xAD)  # LDA $4015
+    machine.write_byte(0x0212, 0x15)
+    machine.write_byte(0x0213, 0x40)
+    machine.write_byte(0x0214, 0x85)  # STA $20
+    machine.write_byte(0x0215, 0x20)
+    machine.write_byte(0x0216, 0xAD)  # LDA $4010
+    machine.write_byte(0x0217, 0x10)
+    machine.write_byte(0x0218, 0x40)
+    machine.write_byte(0x0219, 0x85)  # STA $21
+    machine.write_byte(0x021A, 0x21)
+    machine.write_byte(0x0020, 0xFF)
+    machine.write_byte(0x0021, 0xFF)
+    emulator = Emulator(machine)
+
+    # The zero reads overwrite both sentinels through ordinary CPU instructions.
+    emulator.run(36)
+    assert emulator.cpu.pc == 0x021B
+    assert emulator.cpu.cycles == 36
+    assert emulator.cpu.zero is True
+    assert machine.read_byte(0x0020) == 0x00
+    assert machine.read_byte(0x0021) == 0x00
+
+
 def test_separate_emulators_have_independent_cpu_state(make_machine):
     first_machine = make_machine()
     second_machine = make_machine()

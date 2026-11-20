@@ -1,5 +1,6 @@
 """Route CPU byte access to internal RAM and fixed mapper-0 PRG ROM."""
 
+from apu import APU
 from ppu import PPU
 from ram import RAM
 from rom import ROM
@@ -24,7 +25,12 @@ class Machine:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
         $0800-$1FFF  Three mirrors of the same internal RAM.
         $2000-$3FFF  PPU registers and mirrors; minimal status reads and retained writes.
-        $4000-$4017  APU (audio) and I/O registers; not connected yet.
+        $4000-$400F  APU registers; not connected yet.
+        $4010-$4013  DMC registers; dummy writes and zero reads.
+        $4014        Sprite DMA; not connected yet.
+        $4015        APU status/control; dummy writes and zero reads.
+        $4016        Controller 1; not connected yet.
+        $4017        Controller 2 read unsupported; APU frame-counter write ignored.
         $4018-$401F  Normally disabled APU and I/O functionality; not connected yet.
         $4020-$5FFF  Cartridge expansion area; not connected yet.
         $6000-$7FFF  Cartridge RAM when present; not connected yet.
@@ -44,8 +50,10 @@ class Machine:
 
     Reads and writes in $2000-$3FFF are routed to PPU register offsets. PPU status
     reads alternate between $00 and $80; other PPU reads raise NotImplementedError
-    identifying the register offset. Reads and writes in the unconnected $4000-$7FFF
-    range raise NotImplementedError identifying the CPU address.
+    identifying the register offset. Reads and writes at $4010-$4013 and $4015
+    route to a dummy APU; writes have no effects and reads return $00. Writes at
+    $4017 are also ignored by the APU, while reads remain unsupported. Other reads
+    and writes in $4000-$7FFF raise NotImplementedError identifying the CPU address.
 
     Addresses are assumed to be valid 16-bit CPU addresses ($0000-$FFFF).
     RAM rejects integer byte values outside 0..255 with ValueError.
@@ -74,6 +82,7 @@ class Machine:
         self._ram = RAM(2048)
         self._rom = ROM(prg_rom)
         self.ppu = PPU()
+        self.apu = APU()
         self._prg_mask = len(prg_rom) - 1
 
 
@@ -85,6 +94,10 @@ class Machine:
         # The low three address bits select one of eight mirrored PPU registers.
         if address < 0x4000:
             return self.ppu.read_byte(address & 0x07)
+
+        # Route only the selected APU registers, leaving sprite DMA unconnected.
+        if 0x4010 <= address <= 0x4013 or address == 0x4015:
+            return self.apu.read_byte(address - 0x4000)
 
         # The PRG mask repeats a 16 KiB image and preserves every offset of a 32 KiB image.
         if address >= 0x8000:
@@ -103,6 +116,11 @@ class Machine:
         # The low three address bits select one of eight mirrored PPU registers.
         if address < 0x4000:
             self.ppu.write_byte(address & 0x07, value)
+            return
+
+        # APU writes include the frame counter, while reads at $4017 address controller 2.
+        if 0x4010 <= address <= 0x4013 or address in (0x4015, 0x4017):
+            self.apu.write_byte(address - 0x4000, value)
             return
 
         # Delegate ROM writes so the device's diagnostic PermissionError propagates unchanged.

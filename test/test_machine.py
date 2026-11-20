@@ -1,5 +1,7 @@
 """Verify CPU memory routing with loaded synthetic cartridges and no CPU."""
 
+import logging
+
 import pytest
 
 from machine import Machine
@@ -115,7 +117,7 @@ def test_propagates_the_original_rom_exception(make_cartridge, monkeypatch):
 
 
 @pytest.mark.parametrize("operation", ["read", "write"])
-@pytest.mark.parametrize("address", [0x4000, 0x4014, 0x4015, 0x4016, 0x4017, 0x4018, 0x401F, 0x4020, 0x5FFF,
+@pytest.mark.parametrize("address", [0x4000, 0x400F, 0x4014, 0x4016, 0x4018, 0x401F, 0x4020, 0x5FFF,
                                      0x6000, 0x7FFF])
 def test_rejects_unconnected_access_without_changing_memory(make_cartridge, operation, address):
     # Existing bytes expose accidental routing to RAM or ROM instead of an unconnected device.
@@ -135,6 +137,88 @@ def test_rejects_unconnected_access_without_changing_memory(make_cartridge, oper
     expected_ram = b"\x12" + bytes(2046) + b"\xAB"
     assert bytes(machine.read_byte(index) for index in range(0x2000)) == expected_ram * 4
     assert bytes(machine.read_byte(index) for index in range(0x8000, 0x10000)) == prg * 2
+
+
+@pytest.mark.parametrize("address", [0x4010, 0x4011, 0x4012, 0x4013, 0x4015])
+@pytest.mark.parametrize("value", [0x00, 0x10, 0xFF])
+def test_apu_register_reads_are_zero_before_and_after_writes(make_cartridge, address, value):
+    machine = Machine(make_cartridge(bytes(16384)))
+    assert machine.read_byte(address) == 0x00
+    machine.write_byte(address, value)
+    assert machine.read_byte(address) == 0x00
+    assert machine.read_byte(address) == 0x00
+    assert machine.read_byte(0x4015) == 0x00
+
+
+def test_apu_writes_do_not_fetch_samples_or_write_ppu(make_cartridge, monkeypatch):
+    machine = Machine(make_cartridge(bytes(16384)))
+
+    def unexpected_access(*args):
+        pytest.fail("Dummy APU must not fetch samples or perform PPU DMA")
+
+    # Enabling DMC and its control flags must not initiate bus reads or PPU writes.
+    monkeypatch.setattr(machine, "read_byte", unexpected_access)
+    monkeypatch.setattr(machine.ppu, "write_byte", unexpected_access)
+    machine.write_byte(0x4010, 0xFF)
+    machine.write_byte(0x4012, 0xFF)
+    machine.write_byte(0x4013, 0xFF)
+    machine.write_byte(0x4015, 0x10)
+
+
+@pytest.mark.parametrize("address", [0x4010, 0x4011, 0x4012, 0x4013, 0x4015])
+def test_apu_accesses_route_to_device_offsets(make_cartridge, monkeypatch, address):
+    machine = Machine(make_cartridge(bytes(16384)))
+    writes = []
+    monkeypatch.setattr(machine.apu, "read_byte", lambda offset: offset)
+    monkeypatch.setattr(machine.apu, "write_byte", lambda offset, value: writes.append((offset, value)))
+    assert machine.read_byte(address) == address - 0x4000
+    machine.write_byte(address, 0xA5)
+    assert writes == [(address - 0x4000, 0xA5)]
+
+
+def test_frame_counter_writes_route_to_apu_offset(make_cartridge, monkeypatch):
+    machine = Machine(make_cartridge(bytes(16384)))
+    writes = []
+    monkeypatch.setattr(machine.apu, "write_byte", lambda offset, value: writes.append((offset, value)))
+    machine.write_byte(0x4017, 0xC0)
+    assert writes == [(0x17, 0xC0)]
+
+
+def test_frame_counter_writes_are_ignored_and_logged(make_cartridge, caplog):
+    machine = Machine(make_cartridge(bytes(16384)))
+
+    # Every byte is accepted, including both frame-counter control bits.
+    with caplog.at_level(logging.DEBUG, logger="apu"):
+        for value in range(256):
+            machine.write_byte(0x4017, value)
+            assert machine.read_byte(0x4015) == 0x00
+
+    # The log records the actual device offset and each discarded value.
+    assert [record.getMessage() for record in caplog.records] == [
+        f"Ignored APU write at register offset 0x17: 0x{value:02X}" for value in range(256)
+    ]
+
+
+def test_frame_counter_address_reads_remain_unsupported(make_cartridge):
+    machine = Machine(make_cartridge(bytes(16384)))
+    machine.write_byte(0x4017, 0xC0)
+
+    # CPU reads address controller 2; direct APU reads must not turn it into a readable register.
+    with pytest.raises(NotImplementedError, match=r"CPU read.*0x4017"):
+        machine.read_byte(0x4017)
+    with pytest.raises(NotImplementedError, match=r"APU read.*0x17"):
+        machine.apu.read_byte(0x17)
+
+
+@pytest.mark.parametrize("offset", [0x0F, 0x14, 0x16])
+@pytest.mark.parametrize("operation", ["read", "write"])
+def test_apu_rejects_unsupported_device_offsets(make_cartridge, offset, operation):
+    machine = Machine(make_cartridge(bytes(16384)))
+    with pytest.raises(NotImplementedError, match=rf"APU {operation}.*0x{offset:02X}"):
+        if operation == "read":
+            machine.apu.read_byte(offset)
+        else:
+            machine.apu.write_byte(offset, 0xA5)
 
 
 def test_ppu_writes_route_all_mirrors_and_preserve_other_offsets(make_cartridge):

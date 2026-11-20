@@ -82,6 +82,9 @@ The root `main.py` accepts a ROM path and runs repeated 1000-cycle blocks with D
 execution. See [console startup](execution.md#console-startup) for the command and a synthetic unsupported-opcode stop.
 PPU register writes are retained for inspection without hardware effects. Status reads alternate $00 and $80 without
 video timing; other PPU reads and breakpoints remain future work.
+The dummy APU accepts writes to $4010-$4013 and $4015 without effects and returns $00 when those addresses are read.
+It also ignores frame-counter writes at $4017; controller 2 reads at that address remain unimplemented. It models
+neither open bus, sample fetching, frame sequencing, audio output, nor audio interrupts; sprite DMA is unimplemented.
 
 ## Documentation roles
 

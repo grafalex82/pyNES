@@ -106,6 +106,11 @@ Each Machine also owns a minimal [`PPU`](src/ppu.py). Writes to $2000-$3FFF reta
 register offset for inspection, without register effects. Status reads alternate $00 and $80 as an approximation;
 other PPU reads remain unimplemented.
 
+Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4010-$4013 and $4015 have no audio effects;
+reads return $00, including inactive channel and interrupt status. Writes to the APU frame counter at $4017 are also
+ignored; reads at $4017 (controller 2) remain unsupported. This approximates rather than models open bus, DMC playback,
+frame timing, or frame IRQs. Sprite DMA at $4014 and other unconnected registers remain unsupported.
+
 [`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and seven boolean status fields as read/write properties.
 Reading `p` assembles NV1BDIZC; assigning it replaces all seven fields and ignores bit 5, which always reads as 1.
 `break_flag` represents B in bit 4 as a software convention for inspection, rather than a physical CPU latch.
