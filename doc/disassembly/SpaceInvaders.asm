@@ -1,3 +1,9 @@
+; ROM: Space Invaders (J) [!].nes; revision unconfirmed.
+; SHA-256: 64cda6bfa0cd154dfbe8ad169a98eb3fa818548c19b8840fab5621645bf5a31f
+; iNES mapper 0, submapper 0; 16 KiB PRG and 8 KiB CHR, no trainer.
+; The single PRG bank is mapped at CPU $8000-$BFFF and mirrored at $C000-$FFFF.
+; This listing shows the upper mirror; vector destinations retain their actual CPU addresses.
+
 PPUCTRL EQU $2000
 PPUMASK EQU $2001
 PPUSTATUS EQU $2002
@@ -23,6 +29,31 @@ OAMDMA EQU $4014
 APU_STATUS EQU $4015 ; read APU status, write channel enables
 JOY1_STROBE EQU $4016 ; read controller 1, write controller strobe
 JOY2_APU_FRAME EQU $4017 ; read controller 2, write APU frame counter
+APU_FRAME EQU $4017 ; write APU frame counter
+
+; AudFlags ($00CC-$00CF): Per-channel sound flags. InitSound sets $00; $9F31/$DF31 writes bits $30.
+; Used by $9F3C/$DF3C and $9F74/$DF74; other values and uses are not yet understood.
+AudFlags EQU $00CC
+
+; AudTimer ($00D0-$00D3): Per-channel countdown. InitSound sets $00; $A010/$E010 loads it and $9E97/$DE97 decrements it.
+; Other values and uses are not yet understood.
+AudTimer EQU $00D0
+
+; AudMode ($00D4-$00D7): Per-channel timing mode: zero polls APU status; nonzero uses AudTimer.
+; $9F31/$DF31 writes bits 0-3; other values and users are not yet understood.
+AudMode EQU $00D4
+
+; AudPos ($00D8-$00DB): Per-channel sound sequence position. InitSound sets $FF; $00 starts a sequence,
+; $FE ends it, and $FF is inactive in $9EA3/$DEA3. Other values and users are not yet fully understood.
+AudPos EQU $00D8
+
+; AudCount ($00E4-$00E7): Per-channel counter used by $A07D/$E07D. InitSound sets $FF; its full meaning is unknown.
+AudCount EQU $00E4
+
+; AudRegOfs ($00EC): Temporary APU register offset, set to X*4 by $9EA3/$DEA3 for channels 0-3.
+; Values are $00, $04, $08, $0C for these channels; used by $9F64/$DF64 and other sound routines.
+AudRegOfs EQU $00EC
+
 L_0000 EQU $0000
 L_0002 EQU $0002
 L_0004 EQU $0004
@@ -47,252 +78,249 @@ L_0028 EQU $0028
 L_002A EQU $002A
 L_2020 EQU PPUCTRL_2020
 L_4AA8 EQU $4AA8
-L_8001 EQU $8001 ; mirror of $C001
-L_8045 EQU $8045 ; mirror of $C045
-L_8083 EQU $8083 ; mirror of $C083
-L_8091 EQU $8091 ; mirror of $C091
-L_809C EQU $809C ; mirror of $C09C
-L_80A0 EQU $80A0 ; mirror of $C0A0
-L_80CB EQU $80CB ; mirror of $C0CB
-L_816B EQU $816B ; mirror of $C16B
-L_8179 EQU $8179 ; mirror of $C179
-L_8199 EQU $8199 ; mirror of $C199
-L_81E7 EQU $81E7 ; mirror of $C1E7
-L_8201 EQU $8201 ; mirror of $C201
-L_8209 EQU $8209 ; mirror of $C209
-L_8229 EQU $8229 ; mirror of $C229
-L_82A8 EQU $82A8 ; mirror of $C2A8
-L_82C2 EQU $82C2 ; mirror of $C2C2
-L_82D1 EQU $82D1 ; mirror of $C2D1
-L_835F EQU $835F ; mirror of $C35F
-L_8395 EQU $8395 ; mirror of $C395
-L_83AE EQU $83AE ; mirror of $C3AE
-L_842E EQU $842E ; mirror of $C42E
-L_8434 EQU $8434 ; mirror of $C434
-L_8437 EQU $8437 ; mirror of $C437
-L_843D EQU $843D ; mirror of $C43D
-L_8477 EQU $8477 ; mirror of $C477
-L_8485 EQU $8485 ; mirror of $C485
-L_8491 EQU $8491 ; mirror of $C491
-L_84A5 EQU $84A5 ; mirror of $C4A5
-L_84F7 EQU $84F7 ; mirror of $C4F7
-L_850F EQU $850F ; mirror of $C50F
-L_852B EQU $852B ; mirror of $C52B
-L_854B EQU $854B ; mirror of $C54B
-L_854C EQU $854C ; mirror of $C54C
-L_856B EQU $856B ; mirror of $C56B
-L_8571 EQU $8571 ; mirror of $C571
-L_862C EQU $862C ; mirror of $C62C
-L_8688 EQU $8688 ; mirror of $C688
-L_8690 EQU $8690 ; mirror of $C690
-L_869D EQU $869D ; mirror of $C69D
-L_86E1 EQU $86E1 ; mirror of $C6E1
-L_86F0 EQU $86F0 ; mirror of $C6F0
-L_8723 EQU $8723 ; mirror of $C723
-L_8736 EQU $8736 ; mirror of $C736
-L_8745 EQU $8745 ; mirror of $C745
-L_874B EQU $874B ; mirror of $C74B
-L_87C9 EQU $87C9 ; mirror of $C7C9
-L_8821 EQU $8821 ; mirror of $C821
-L_8859 EQU $8859 ; mirror of $C859
-L_8880 EQU $8880 ; mirror of $C880
-L_888D EQU $888D ; mirror of $C88D
-L_8906 EQU $8906 ; mirror of $C906
-L_8914 EQU $8914 ; mirror of $C914
-L_893D EQU $893D ; mirror of $C93D
-L_8980 EQU $8980 ; mirror of $C980
-L_8982 EQU $8982 ; mirror of $C982
-L_899E EQU $899E ; mirror of $C99E
-L_89BA EQU $89BA ; mirror of $C9BA
-L_89D6 EQU $89D6 ; mirror of $C9D6
-L_8A10 EQU $8A10 ; mirror of $CA10
-L_8A3A EQU $8A3A ; mirror of $CA3A
-L_8A6A EQU $8A6A ; mirror of $CA6A
-L_8A7E EQU $8A7E ; mirror of $CA7E
-L_8AF3 EQU $8AF3 ; mirror of $CAF3
-L_8B00 EQU $8B00 ; mirror of $CB00
-L_8B07 EQU $8B07 ; mirror of $CB07
-L_8B1F EQU $8B1F ; mirror of $CB1F
-L_8B7D EQU $8B7D ; mirror of $CB7D
-L_8B89 EQU $8B89 ; mirror of $CB89
-L_8B92 EQU $8B92 ; mirror of $CB92
-L_8B93 EQU $8B93 ; mirror of $CB93
-L_8BC1 EQU $8BC1 ; mirror of $CBC1
-L_8C00 EQU $8C00 ; mirror of $CC00
-L_8C2F EQU $8C2F ; mirror of $CC2F
-L_8CB5 EQU $8CB5 ; mirror of $CCB5
-L_8CDB EQU $8CDB ; mirror of $CCDB
-L_8CE9 EQU $8CE9 ; mirror of $CCE9
-L_8D79 EQU $8D79 ; mirror of $CD79
-L_8DC2 EQU $8DC2 ; mirror of $CDC2
-L_8E14 EQU $8E14 ; mirror of $CE14
-L_8E34 EQU $8E34 ; mirror of $CE34
-L_8E6E EQU $8E6E ; mirror of $CE6E
-L_8E7B EQU $8E7B ; mirror of $CE7B
-L_8F1A EQU $8F1A ; mirror of $CF1A
-L_8F1B EQU $8F1B ; mirror of $CF1B
-L_8F22 EQU $8F22 ; mirror of $CF22
-L_8F2A EQU $8F2A ; mirror of $CF2A
-L_8F2B EQU $8F2B ; mirror of $CF2B
-L_8F52 EQU $8F52 ; mirror of $CF52
-L_8F53 EQU $8F53 ; mirror of $CF53
-L_8F7A EQU $8F7A ; mirror of $CF7A
-L_8F89 EQU $8F89 ; mirror of $CF89
-L_8FBE EQU $8FBE ; mirror of $CFBE
-L_8FF7 EQU $8FF7 ; mirror of $CFF7
-L_9000 EQU $9000 ; mirror of $D000
-L_9001 EQU $9001 ; mirror of $D001
-L_900C EQU $900C ; mirror of $D00C
-L_9046 EQU $9046 ; mirror of $D046
-L_9110 EQU $9110 ; mirror of $D110
-L_9149 EQU $9149 ; mirror of $D149
-L_91AE EQU $91AE ; mirror of $D1AE
-L_91E8 EQU $91E8 ; mirror of $D1E8
-L_922F EQU $922F ; mirror of $D22F
-L_929B EQU $929B ; mirror of $D29B
-L_929C EQU $929C ; mirror of $D29C
-L_92A3 EQU $92A3 ; mirror of $D2A3
-L_92A4 EQU $92A4 ; mirror of $D2A4
-L_92AB EQU $92AB ; mirror of $D2AB
-L_92AC EQU $92AC ; mirror of $D2AC
-L_92B3 EQU $92B3 ; mirror of $D2B3
-L_9303 EQU $9303 ; mirror of $D303
-L_937A EQU $937A ; mirror of $D37A
-L_93CC EQU $93CC ; mirror of $D3CC
-L_93FC EQU $93FC ; mirror of $D3FC
-L_9407 EQU $9407 ; mirror of $D407
-L_9412 EQU $9412 ; mirror of $D412
-L_941C EQU $941C ; mirror of $D41C
-L_9480 EQU $9480 ; mirror of $D480
-L_948F EQU $948F ; mirror of $D48F
-L_9501 EQU $9501 ; mirror of $D501
-L_952B EQU $952B ; mirror of $D52B
-L_954B EQU $954B ; mirror of $D54B
-L_9591 EQU $9591 ; mirror of $D591
-L_95B2 EQU $95B2 ; mirror of $D5B2
-L_960C EQU $960C ; mirror of $D60C
-L_9618 EQU $9618 ; mirror of $D618
-L_9624 EQU $9624 ; mirror of $D624
-L_9630 EQU $9630 ; mirror of $D630
-L_963C EQU $963C ; mirror of $D63C
-L_969C EQU $969C ; mirror of $D69C
-L_96CD EQU $96CD ; mirror of $D6CD
-L_9727 EQU $9727 ; mirror of $D727
-L_977B EQU $977B ; mirror of $D77B
-L_97B5 EQU $97B5 ; mirror of $D7B5
-L_97C8 EQU $97C8 ; mirror of $D7C8
-L_97D9 EQU $97D9 ; mirror of $D7D9
-L_9842 EQU $9842 ; mirror of $D842
-L_9894 EQU $9894 ; mirror of $D894
-L_98B7 EQU $98B7 ; mirror of $D8B7
-L_98C3 EQU $98C3 ; mirror of $D8C3
-L_98D6 EQU $98D6 ; mirror of $D8D6
-L_992C EQU $992C ; mirror of $D92C
-L_9985 EQU $9985 ; mirror of $D985
-L_998D EQU $998D ; mirror of $D98D
-L_9991 EQU $9991 ; mirror of $D991
-L_99DA EQU $99DA ; mirror of $D9DA
-L_9A08 EQU $9A08 ; mirror of $DA08
-L_9AAC EQU $9AAC ; mirror of $DAAC
-L_9AED EQU $9AED ; mirror of $DAED
-L_9B6E EQU $9B6E ; mirror of $DB6E
-L_9B7E EQU $9B7E ; mirror of $DB7E
-L_9B8E EQU $9B8E ; mirror of $DB8E
-L_9B8F EQU $9B8F ; mirror of $DB8F
-L_9B90 EQU $9B90 ; mirror of $DB90
-L_9BA2 EQU $9BA2 ; mirror of $DBA2
-L_9C4E EQU $9C4E ; mirror of $DC4E
-L_9CA7 EQU $9CA7 ; mirror of $DCA7
-L_9CB5 EQU $9CB5 ; mirror of $DCB5
-L_9CE6 EQU $9CE6 ; mirror of $DCE6
-L_9D1D EQU $9D1D ; mirror of $DD1D
-L_9D1E EQU $9D1E ; mirror of $DD1E
-L_9D25 EQU $9D25 ; mirror of $DD25
-L_9D26 EQU $9D26 ; mirror of $DD26
-L_9D2D EQU $9D2D ; mirror of $DD2D
-L_9D68 EQU $9D68 ; mirror of $DD68
-L_9DA3 EQU $9DA3 ; mirror of $DDA3
-L_9DA8 EQU $9DA8 ; mirror of $DDA8
-L_9DC3 EQU $9DC3 ; mirror of $DDC3
-L_9DCD EQU $9DCD ; mirror of $DDCD
-L_9E0A EQU $9E0A ; mirror of $DE0A
-L_9E64 EQU $9E64 ; mirror of $DE64
-L_9E82 EQU $9E82 ; mirror of $DE82
-L_9EA3 EQU $9EA3 ; mirror of $DEA3
-L_9EC0 EQU $9EC0 ; mirror of $DEC0
-L_9ED4 EQU $9ED4 ; mirror of $DED4
-L_9F17 EQU $9F17 ; mirror of $DF17
-L_9F31 EQU $9F31 ; mirror of $DF31
-L_9F3C EQU $9F3C ; mirror of $DF3C
-L_9F64 EQU $9F64 ; mirror of $DF64
-L_9F6E EQU $9F6E ; mirror of $DF6E
-L_9F74 EQU $9F74 ; mirror of $DF74
-L_9FA8 EQU $9FA8 ; mirror of $DFA8
-L_9FD9 EQU $9FD9 ; mirror of $DFD9
-L_9FDA EQU $9FDA ; mirror of $DFDA
-L_9FF1 EQU $9FF1 ; mirror of $DFF1
-L_A01B EQU $A01B ; mirror of $E01B
-L_A025 EQU $A025 ; mirror of $E025
-L_A02F EQU $A02F ; mirror of $E02F
-L_A033 EQU $A033 ; mirror of $E033
-L_A037 EQU $A037 ; mirror of $E037
-L_A041 EQU $A041 ; mirror of $E041
-L_A049 EQU $A049 ; mirror of $E049
-L_A061 EQU $A061 ; mirror of $E061
-L_A06C EQU $A06C ; mirror of $E06C
-L_A06E EQU $A06E ; mirror of $E06E
-L_A093 EQU $A093 ; mirror of $E093
-L_A0AB EQU $A0AB ; mirror of $E0AB
-L_A0C5 EQU $A0C5 ; mirror of $E0C5
-L_A0D7 EQU $A0D7 ; mirror of $E0D7
-L_A0E2 EQU $A0E2 ; mirror of $E0E2
-L_A0E7 EQU $A0E7 ; mirror of $E0E7
-L_A0F4 EQU $A0F4 ; mirror of $E0F4
-L_A101 EQU $A101 ; mirror of $E101
-L_A112 EQU $A112 ; mirror of $E112
-L_A12C EQU $A12C ; mirror of $E12C
-L_A12D EQU $A12D ; mirror of $E12D
-L_A134 EQU $A134 ; mirror of $E134
-L_A141 EQU $A141 ; mirror of $E141
-L_A157 EQU $A157 ; mirror of $E157
-L_A167 EQU $A167 ; mirror of $E167
-L_A173 EQU $A173 ; mirror of $E173
-L_A264 EQU $A264 ; mirror of $E264
-L_A265 EQU $A265 ; mirror of $E265
-L_A266 EQU $A266 ; mirror of $E266
-L_A269 EQU $A269 ; mirror of $E269
-L_A2A9 EQU $A2A9 ; mirror of $E2A9
-L_A524 EQU $A524 ; mirror of $E524
-L_A615 EQU $A615 ; mirror of $E615
-L_A68C EQU $A68C ; mirror of $E68C
-L_A6AB EQU $A6AB ; mirror of $E6AB
-L_A703 EQU $A703 ; mirror of $E703
-L_A756 EQU $A756 ; mirror of $E756
-L_A765 EQU $A765 ; mirror of $E765
-L_A7CE EQU $A7CE ; mirror of $E7CE
-L_A7FE EQU $A7FE ; mirror of $E7FE
-L_A80E EQU $A80E ; mirror of $E80E
-L_A81E EQU $A81E ; mirror of $E81E
-L_A82E EQU $A82E ; mirror of $E82E
-L_A88E EQU $A88E ; mirror of $E88E
-L_A8B6 EQU $A8B6 ; mirror of $E8B6
-L_A8E8 EQU $A8E8 ; mirror of $E8E8
-L_A8FE EQU $A8FE ; mirror of $E8FE
-L_A90A EQU $A90A ; mirror of $E90A
-L_A91A EQU $A91A ; mirror of $E91A
-L_A93C EQU $A93C ; mirror of $E93C
-L_AA23 EQU $AA23 ; mirror of $EA23
-L_AB9F EQU $AB9F ; mirror of $EB9F
-L_ABC5 EQU $ABC5 ; mirror of $EBC5
-L_AC2E EQU $AC2E ; mirror of $EC2E
-L_AC8A EQU $AC8A ; mirror of $EC8A
-L_ACB1 EQU $ACB1 ; mirror of $ECB1
-L_AE03 EQU $AE03 ; mirror of $EE03
-L_AE18 EQU $AE18 ; mirror of $EE18
-L_AE22 EQU $AE22 ; mirror of $EE22
-L_AE47 EQU $AE47 ; mirror of $EE47
-L_AEA3 EQU $AEA3 ; mirror of $EEA3
-L_AEB0 EQU $AEB0 ; mirror of $EEB0
+L_8001 EQU $8001 ; $8001/$C001
+L_8045 EQU $8045 ; $8045/$C045
+L_8083 EQU $8083 ; $8083/$C083
+L_8091 EQU $8091 ; $8091/$C091
+L_809C EQU $809C ; $809C/$C09C
+L_80A0 EQU $80A0 ; $80A0/$C0A0
+L_80CB EQU $80CB ; $80CB/$C0CB
+L_816B EQU $816B ; $816B/$C16B
+L_8179 EQU $8179 ; $8179/$C179
+L_8199 EQU $8199 ; $8199/$C199
+L_81E7 EQU $81E7 ; $81E7/$C1E7
+L_8201 EQU $8201 ; $8201/$C201
+L_8209 EQU $8209 ; $8209/$C209
+L_8229 EQU $8229 ; $8229/$C229
+L_82A8 EQU $82A8 ; $82A8/$C2A8
+L_82C2 EQU $82C2 ; $82C2/$C2C2
+L_82D1 EQU $82D1 ; $82D1/$C2D1
+L_835F EQU $835F ; $835F/$C35F
+L_8395 EQU $8395 ; $8395/$C395
+L_83AE EQU $83AE ; $83AE/$C3AE
+L_842E EQU $842E ; $842E/$C42E
+L_8434 EQU $8434 ; $8434/$C434
+L_8437 EQU $8437 ; $8437/$C437
+L_843D EQU $843D ; $843D/$C43D
+L_8477 EQU $8477 ; $8477/$C477
+L_8485 EQU $8485 ; $8485/$C485
+L_8491 EQU $8491 ; $8491/$C491
+L_84A5 EQU $84A5 ; $84A5/$C4A5
+L_84F7 EQU $84F7 ; $84F7/$C4F7
+L_850F EQU $850F ; $850F/$C50F
+L_852B EQU $852B ; $852B/$C52B
+L_854B EQU $854B ; $854B/$C54B
+L_854C EQU $854C ; $854C/$C54C
+L_856B EQU $856B ; $856B/$C56B
+L_8571 EQU $8571 ; $8571/$C571
+L_862C EQU $862C ; $862C/$C62C
+L_8688 EQU $8688 ; $8688/$C688
+L_8690 EQU $8690 ; $8690/$C690
+L_869D EQU $869D ; $869D/$C69D
+L_86E1 EQU $86E1 ; $86E1/$C6E1
+L_86F0 EQU $86F0 ; $86F0/$C6F0
+L_8723 EQU $8723 ; $8723/$C723
+L_8736 EQU $8736 ; $8736/$C736
+L_8745 EQU $8745 ; $8745/$C745
+L_874B EQU $874B ; $874B/$C74B
+L_87C9 EQU $87C9 ; $87C9/$C7C9
+L_8821 EQU $8821 ; $8821/$C821
+L_8859 EQU $8859 ; $8859/$C859
+L_8880 EQU $8880 ; $8880/$C880
+L_888D EQU $888D ; $888D/$C88D
+L_8906 EQU $8906 ; $8906/$C906
+L_8914 EQU $8914 ; $8914/$C914
+L_893D EQU $893D ; $893D/$C93D
+L_8980 EQU $8980 ; $8980/$C980
+L_8982 EQU $8982 ; $8982/$C982
+L_899E EQU $899E ; $899E/$C99E
+L_89BA EQU $89BA ; $89BA/$C9BA
+L_89D6 EQU $89D6 ; $89D6/$C9D6
+L_8A10 EQU $8A10 ; $8A10/$CA10
+L_8A3A EQU $8A3A ; $8A3A/$CA3A
+L_8A6A EQU $8A6A ; $8A6A/$CA6A
+L_8A7E EQU $8A7E ; $8A7E/$CA7E
+L_8AF3 EQU $8AF3 ; $8AF3/$CAF3
+L_8B00 EQU $8B00 ; $8B00/$CB00
+L_8B07 EQU $8B07 ; $8B07/$CB07
+L_8B1F EQU $8B1F ; $8B1F/$CB1F
+L_8B7D EQU $8B7D ; $8B7D/$CB7D
+L_8B89 EQU $8B89 ; $8B89/$CB89
+L_8B92 EQU $8B92 ; $8B92/$CB92
+L_8B93 EQU $8B93 ; $8B93/$CB93
+L_8BC1 EQU $8BC1 ; $8BC1/$CBC1
+L_8C00 EQU $8C00 ; $8C00/$CC00
+L_8C2F EQU $8C2F ; $8C2F/$CC2F
+L_8CB5 EQU $8CB5 ; $8CB5/$CCB5
+L_8CDB EQU $8CDB ; $8CDB/$CCDB
+L_8CE9 EQU $8CE9 ; $8CE9/$CCE9
+L_8D79 EQU $8D79 ; $8D79/$CD79
+L_8DC2 EQU $8DC2 ; $8DC2/$CDC2
+L_8E14 EQU $8E14 ; $8E14/$CE14
+L_8E34 EQU $8E34 ; $8E34/$CE34
+L_8E6E EQU $8E6E ; $8E6E/$CE6E
+L_8E7B EQU $8E7B ; $8E7B/$CE7B
+L_8F1A EQU $8F1A ; $8F1A/$CF1A
+L_8F1B EQU $8F1B ; $8F1B/$CF1B
+L_8F22 EQU $8F22 ; $8F22/$CF22
+L_8F2A EQU $8F2A ; $8F2A/$CF2A
+L_8F2B EQU $8F2B ; $8F2B/$CF2B
+L_8F52 EQU $8F52 ; $8F52/$CF52
+L_8F53 EQU $8F53 ; $8F53/$CF53
+L_8F7A EQU $8F7A ; $8F7A/$CF7A
+L_8F89 EQU $8F89 ; $8F89/$CF89
+L_8FBE EQU $8FBE ; $8FBE/$CFBE
+L_8FF7 EQU $8FF7 ; $8FF7/$CFF7
+L_9000 EQU $9000 ; $9000/$D000
+L_9001 EQU $9001 ; $9001/$D001
+L_900C EQU $900C ; $900C/$D00C
+L_9046 EQU $9046 ; $9046/$D046
+L_9110 EQU $9110 ; $9110/$D110
+L_9149 EQU $9149 ; $9149/$D149
+L_91AE EQU $91AE ; $91AE/$D1AE
+L_91E8 EQU $91E8 ; $91E8/$D1E8
+L_922F EQU $922F ; $922F/$D22F
+L_929B EQU $929B ; $929B/$D29B
+L_929C EQU $929C ; $929C/$D29C
+L_92A3 EQU $92A3 ; $92A3/$D2A3
+L_92A4 EQU $92A4 ; $92A4/$D2A4
+L_92AB EQU $92AB ; $92AB/$D2AB
+L_92AC EQU $92AC ; $92AC/$D2AC
+L_92B3 EQU $92B3 ; $92B3/$D2B3
+L_9303 EQU $9303 ; $9303/$D303
+L_937A EQU $937A ; $937A/$D37A
+L_93CC EQU $93CC ; $93CC/$D3CC
+L_93FC EQU $93FC ; $93FC/$D3FC
+L_9407 EQU $9407 ; $9407/$D407
+L_9412 EQU $9412 ; $9412/$D412
+L_941C EQU $941C ; $941C/$D41C
+L_9480 EQU $9480 ; $9480/$D480
+L_948F EQU $948F ; $948F/$D48F
+L_9501 EQU $9501 ; $9501/$D501
+L_952B EQU $952B ; $952B/$D52B
+L_954B EQU $954B ; $954B/$D54B
+L_9591 EQU $9591 ; $9591/$D591
+L_95B2 EQU $95B2 ; $95B2/$D5B2
+L_960C EQU $960C ; $960C/$D60C
+L_9618 EQU $9618 ; $9618/$D618
+L_9624 EQU $9624 ; $9624/$D624
+L_9630 EQU $9630 ; $9630/$D630
+L_963C EQU $963C ; $963C/$D63C
+L_969C EQU $969C ; $969C/$D69C
+L_96CD EQU $96CD ; $96CD/$D6CD
+L_9727 EQU $9727 ; $9727/$D727
+L_977B EQU $977B ; $977B/$D77B
+L_97B5 EQU $97B5 ; $97B5/$D7B5
+L_97C8 EQU $97C8 ; $97C8/$D7C8
+L_97D9 EQU $97D9 ; $97D9/$D7D9
+L_9842 EQU $9842 ; $9842/$D842
+L_9894 EQU $9894 ; $9894/$D894
+L_98B7 EQU $98B7 ; $98B7/$D8B7
+L_98C3 EQU $98C3 ; $98C3/$D8C3
+L_98D6 EQU $98D6 ; $98D6/$D8D6
+L_992C EQU $992C ; $992C/$D92C
+L_9985 EQU $9985 ; $9985/$D985
+L_998D EQU $998D ; $998D/$D98D
+L_9991 EQU $9991 ; $9991/$D991
+L_99DA EQU $99DA ; $99DA/$D9DA
+L_9A08 EQU $9A08 ; $9A08/$DA08
+L_9AAC EQU $9AAC ; $9AAC/$DAAC
+L_9AED EQU $9AED ; $9AED/$DAED
+L_9B6E EQU $9B6E ; $9B6E/$DB6E
+L_9B7E EQU $9B7E ; $9B7E/$DB7E
+L_9B8E EQU $9B8E ; $9B8E/$DB8E
+L_9B8F EQU $9B8F ; $9B8F/$DB8F
+L_9B90 EQU $9B90 ; $9B90/$DB90
+L_9BA2 EQU $9BA2 ; $9BA2/$DBA2
+L_9C4E EQU $9C4E ; $9C4E/$DC4E
+L_9CA7 EQU $9CA7 ; $9CA7/$DCA7
+L_9CB5 EQU $9CB5 ; $9CB5/$DCB5
+L_9CE6 EQU $9CE6 ; $9CE6/$DCE6
+L_9D1D EQU $9D1D ; $9D1D/$DD1D
+L_9D1E EQU $9D1E ; $9D1E/$DD1E
+L_9D25 EQU $9D25 ; $9D25/$DD25
+L_9D26 EQU $9D26 ; $9D26/$DD26
+L_9D2D EQU $9D2D ; $9D2D/$DD2D
+L_9D68 EQU $9D68 ; $9D68/$DD68
+L_9DA3 EQU $9DA3 ; $9DA3/$DDA3
+L_9DA8 EQU $9DA8 ; $9DA8/$DDA8
+L_9DC3 EQU $9DC3 ; $9DC3/$DDC3
+L_9DCD EQU $9DCD ; $9DCD/$DDCD
+L_9E0A EQU $9E0A ; $9E0A/$DE0A
+L_9EA3 EQU $9EA3 ; $9EA3/$DEA3
+L_9ED4 EQU $9ED4 ; $9ED4/$DED4
+L_9F17 EQU $9F17 ; $9F17/$DF17
+L_9F31 EQU $9F31 ; $9F31/$DF31
+L_9F3C EQU $9F3C ; $9F3C/$DF3C
+L_9F64 EQU $9F64 ; $9F64/$DF64
+L_9F6E EQU $9F6E ; $9F6E/$DF6E
+L_9F74 EQU $9F74 ; $9F74/$DF74
+L_9FA8 EQU $9FA8 ; $9FA8/$DFA8
+L_9FD9 EQU $9FD9 ; $9FD9/$DFD9
+L_9FDA EQU $9FDA ; $9FDA/$DFDA
+L_9FF1 EQU $9FF1 ; $9FF1/$DFF1
+L_A01B EQU $A01B ; $A01B/$E01B
+L_A025 EQU $A025 ; $A025/$E025
+L_A02F EQU $A02F ; $A02F/$E02F
+L_A033 EQU $A033 ; $A033/$E033
+L_A037 EQU $A037 ; $A037/$E037
+L_A041 EQU $A041 ; $A041/$E041
+L_A049 EQU $A049 ; $A049/$E049
+L_A061 EQU $A061 ; $A061/$E061
+L_A06C EQU $A06C ; $A06C/$E06C
+L_A06E EQU $A06E ; $A06E/$E06E
+L_A093 EQU $A093 ; $A093/$E093
+L_A0AB EQU $A0AB ; $A0AB/$E0AB
+L_A0C5 EQU $A0C5 ; $A0C5/$E0C5
+L_A0D7 EQU $A0D7 ; $A0D7/$E0D7
+L_A0E2 EQU $A0E2 ; $A0E2/$E0E2
+L_A0E7 EQU $A0E7 ; $A0E7/$E0E7
+L_A0F4 EQU $A0F4 ; $A0F4/$E0F4
+L_A101 EQU $A101 ; $A101/$E101
+L_A112 EQU $A112 ; $A112/$E112
+L_A12C EQU $A12C ; $A12C/$E12C
+L_A12D EQU $A12D ; $A12D/$E12D
+L_A134 EQU $A134 ; $A134/$E134
+L_A141 EQU $A141 ; $A141/$E141
+L_A157 EQU $A157 ; $A157/$E157
+L_A167 EQU $A167 ; $A167/$E167
+L_A173 EQU $A173 ; $A173/$E173
+L_A264 EQU $A264 ; $A264/$E264
+L_A265 EQU $A265 ; $A265/$E265
+L_A266 EQU $A266 ; $A266/$E266
+L_A269 EQU $A269 ; $A269/$E269
+L_A2A9 EQU $A2A9 ; $A2A9/$E2A9
+L_A524 EQU $A524 ; $A524/$E524
+L_A615 EQU $A615 ; $A615/$E615
+L_A68C EQU $A68C ; $A68C/$E68C
+L_A6AB EQU $A6AB ; $A6AB/$E6AB
+L_A703 EQU $A703 ; $A703/$E703
+L_A756 EQU $A756 ; $A756/$E756
+L_A765 EQU $A765 ; $A765/$E765
+L_A7CE EQU $A7CE ; $A7CE/$E7CE
+L_A7FE EQU $A7FE ; $A7FE/$E7FE
+L_A80E EQU $A80E ; $A80E/$E80E
+L_A81E EQU $A81E ; $A81E/$E81E
+L_A82E EQU $A82E ; $A82E/$E82E
+L_A88E EQU $A88E ; $A88E/$E88E
+L_A8B6 EQU $A8B6 ; $A8B6/$E8B6
+L_A8E8 EQU $A8E8 ; $A8E8/$E8E8
+L_A8FE EQU $A8FE ; $A8FE/$E8FE
+L_A90A EQU $A90A ; $A90A/$E90A
+L_A91A EQU $A91A ; $A91A/$E91A
+L_A93C EQU $A93C ; $A93C/$E93C
+L_AA23 EQU $AA23 ; $AA23/$EA23
+L_AB9F EQU $AB9F ; $AB9F/$EB9F
+L_ABC5 EQU $ABC5 ; $ABC5/$EBC5
+L_AC2E EQU $AC2E ; $AC2E/$EC2E
+L_AC8A EQU $AC8A ; $AC8A/$EC8A
+L_ACB1 EQU $ACB1 ; $ACB1/$ECB1
+L_AE03 EQU $AE03 ; $AE03/$EE03
+L_AE18 EQU $AE18 ; $AE18/$EE18
+L_AE22 EQU $AE22 ; $AE22/$EE22
+L_AE47 EQU $AE47 ; $AE47/$EE47
+L_AEA3 EQU $AEA3 ; $AEA3/$EEA3
+L_AEB0 EQU $AEB0 ; $AEB0/$EEB0
 L_C191 EQU $C191
 L_C195 EQU $C195
 L_C2E2 EQU $C2E2
@@ -332,43 +360,59 @@ L_FE9F EQU $FE9F
 L_FEE1 EQU $FEE1
 L_FF23 EQU $FF23
 L_FFA5 EQU $FFA5
-START EQU $8000 ; mirror of $C000
-NMI EQU $83B1 ; mirror of $C3B1
-IRQ EQU $843C ; mirror of $C43C
 
-$C000: A9 00     LDA #$00
-$C002: 8D 00 20  STA PPUCTRL
-$C005: 78        SEI
-$C006: D8        CLD
-L_C007:
-$C007: AD 02 20  LDA PPUSTATUS
-$C00A: 10 FB     BPL L_C007
-$C00C: A9 00     LDA #$00
-$C00E: 8D 00 20  STA PPUCTRL
-$C011: EA        NOP
-L_C012:
-$C012: AD 02 20  LDA PPUSTATUS
-$C015: 10 FB     BPL L_C012
-$C017: A2 FF     LDX #$FF
-$C019: 9A        TXS
-$C01A: E8        INX
-$C01B: 8E 01 20  STX PPUMASK
-$C01E: 86 F6     STX $F6
-$C020: 86 F8     STX $F8
-$C022: 8E 10 40  STX DMC_CTRL
-$C025: 86 54     STX $54
-$C027: 86 F2     STX $F2
-$C029: 86 55     STX $55
-$C02B: 86 5B     STX $5B
-$C02D: 86 FD     STX $FD
-$C02F: A9 01     LDA #$01
-$C031: 85 27     STA $27
-$C033: A9 F4     LDA #$F4
-$C035: 85 26     STA $26
-$C037: A9 40     LDA #$40
-$C039: 8D 17 40  STA JOY2_APU_FRAME
+NMI EQU $83B1 ; $83B1/$C3B1
+IRQ EQU $843C ; $843C/$C43C
+
+; Reset entry ($8000/$C000): No parameters; initialization continues after this excerpt.
+START:
+    ; Request NMI disable and mask CPU IRQs. PPU writes may be ignored during power-up warmup.
+    $C000: A9 00     LDA #$00
+    $C002: 8D 00 20  STA PPUCTRL       ; PPUCTRL ($2000): bit 7 clear disables NMI if accepted
+    $C005: 78        SEI
+    $C006: D8        CLD               ; Clear D; NES arithmetic is binary regardless of D
+
+    ; Wait until PPUSTATUS bit 7 is set. Each read clears vblank and the address/scroll write latch.
+WaitVblank1:
+    $C007: AD 02 20  LDA PPUSTATUS     ; PPUSTATUS ($2002): load vblank into N
+    $C00A: 10 FB     BPL WaitVblank1   ; WaitVblank1 ($8007/$C007): repeat while N=0
+
+    ; Request NMI disable again, then wait for the vblank flag to be set again.
+    $C00C: A9 00     LDA #$00
+    $C00E: 8D 00 20  STA PPUCTRL       ; PPUCTRL ($2000)
+    $C011: EA        NOP
+WaitVblank2:
+    $C012: AD 02 20  LDA PPUSTATUS     ; PPUSTATUS ($2002): read and clear vblank
+    $C015: 10 FB     BPL WaitVblank2   ; WaitVblank2 ($8012/$C012): repeat while N=0
+
+    ; Set the stack pointer to $FF, then wrap X from $FF to $00 for the following stores.
+    $C017: A2 FF     LDX #$FF
+    $C019: 9A        TXS
+    $C01A: E8        INX
+
+    ; Request rendering off and initialize RAM bytes; their game-specific roles are not yet known.
+    $C01B: 8E 01 20  STX PPUMASK       ; PPUMASK ($2001): $00 disables background and sprites if accepted
+    $C01E: 86 F6     STX $F6
+    $C020: 86 F8     STX $F8
+    $C022: 8E 10 40  STX DMC_CTRL      ; DMC_CTRL ($4010): $00 disables DMC IRQ and looping
+    $C025: 86 54     STX $54
+    $C027: 86 F2     STX $F2
+    $C029: 86 55     STX $55
+    $C02B: 86 5B     STX $5B
+    $C02D: 86 FD     STX $FD
+
+    ; Initialize two adjacent RAM bytes; whether they form one value and their purpose are unknown.
+    $C02F: A9 01     LDA #$01
+    $C031: 85 27     STA $27
+    $C033: A9 F4     LDA #$F4
+    $C035: 85 26     STA $26
+
+    ; Select the APU's four-step frame sequence and inhibit its frame IRQ.
+    $C037: A9 40     LDA #$40
+    $C039: 8D 17 40  STA APU_FRAME     ; APU_FRAME ($4017): write frame counter, not controller 2
+
 $C03C: 20 6B 81  JSR L_816B
-$C03F: 20 64 9E  JSR L_9E64
+$C03F: 20 64 9E  JSR InitSound         ; InitSound ($9E64/$DE64)
 $C042: 20 80 88  JSR L_8880
 $C045: 20 B3 92  JSR L_92B3
 $C048: A9 10     LDA #$10
@@ -826,7 +870,7 @@ $C3CB: D0 02     BNE L_C3CF
 $C3CD: E6 FE     INC $FE
 L_C3CF:
 $C3CF: 20 2C 86  JSR L_862C
-$C3D2: 20 82 9E  JSR L_9E82
+$C3D2: 20 82 9E  JSR UpdateSound       ; UpdateSound ($9E82/$DE82)
 $C3D5: A9 00     LDA #$00
 $C3D7: 85 C5     STA $C5
 $C3D9: 24 56     BIT $56
@@ -4698,62 +4742,91 @@ L_DE5F:
 $DE5F: A9 2B     LDA #$2B
 $DE61: 85 8F     STA $8F
 $DE63: 60        RTS
-$DE64: A0 03     LDY #$03
-$DE66: A9 00     LDA #$00
-$DE68: 8D 15 40  STA APU_STATUS
-L_DE6B:
-$DE6B: A9 00     LDA #$00
-$DE6D: 99 C8 00  STA $00C8,Y
-$DE70: 99 CC 00  STA $00CC,Y
-$DE73: 99 D0 00  STA $00D0,Y
-$DE76: A9 FF     LDA #$FF
-$DE78: 99 D8 00  STA $00D8,Y
-$DE7B: 99 E4 00  STA $00E4,Y
-$DE7E: 88        DEY
-$DE7F: 10 EA     BPL L_DE6B
-$DE81: 60        RTS
-$DE82: A2 00     LDX #$00
-$DE84: 20 A3 9E  JSR L_9EA3
-$DE87: A2 01     LDX #$01
-$DE89: 20 A3 9E  JSR L_9EA3
-$DE8C: A2 02     LDX #$02
-$DE8E: 20 A3 9E  JSR L_9EA3
-$DE91: A2 03     LDX #$03
-$DE93: 20 A3 9E  JSR L_9EA3
-$DE96: 60        RTS
-L_DE97:
-$DE97: A5 20     LDA $20
-$DE99: 29 07     AND #$07
-$DE9B: D0 36     BNE L_DED3
-$DE9D: D6 D0     DEC $D0,X
-$DE9F: D0 32     BNE L_DED3
-$DEA1: F0 1D     BEQ L_DEC0
-$DEA3: 8A        TXA
-$DEA4: 0A        ASL A
-$DEA5: 0A        ASL A
-$DEA6: 85 EC     STA $EC
-$DEA8: B5 D8     LDA $D8,X
-$DEAA: F0 39     BEQ L_DEE5
-$DEAC: C9 FE     CMP #$FE
-$DEAE: F0 24     BEQ L_DED4
-$DEB0: C9 FF     CMP #$FF
-$DEB2: F0 1F     BEQ L_DED3
-$DEB4: B5 D4     LDA $D4,X
-$DEB6: D0 DF     BNE L_DE97
-$DEB8: AD 15 40  LDA APU_STATUS
-$DEBB: 3D 2F A0  AND L_A02F,X
-$DEBE: D0 13     BNE L_DED3
-L_DEC0:
-$DEC0: 20 17 9F  JSR L_9F17
-$DEC3: A0 00     LDY #$00
-$DEC5: B1 14     LDA ($14),Y
-$DEC7: 20 49 A0  JSR L_A049
-$DECA: C9 FF     CMP #$FF
-$DECC: F0 06     BEQ L_DED4
-$DECE: 20 74 9F  JSR L_9F74
-$DED1: F6 D8     INC $D8,X
-L_DED3:
-$DED3: 60        RTS
+
+
+; InitSound ($9E64/$DE64): No inputs; disable APU channels and initialize four sound slots.
+; Results: A=$FF, Y=$FF; X is preserved.
+InitSound:
+    ; Clear channel-enable bits 0-4 and the DMC interrupt flag.
+    $DE64: A0 03     LDY #$03
+    $DE66: A9 00     LDA #$00
+    $DE68: 8D 15 40  STA APU_STATUS    ; APU_STATUS ($4015)
+
+    ; Reset three arrays to $00 and two to $FF, iterating over slots 3 through 0.
+    ; The role of $00C8-$00CB is unknown.
+InitAudSlots:
+    $DE6B: A9 00     LDA #$00
+    $DE6D: 99 C8 00  STA $00C8,Y
+    $DE70: 99 CC 00  STA AudFlags,Y    ; AudFlags ($00CC)
+    $DE73: 99 D0 00  STA AudTimer,Y    ; AudTimer ($00D0)
+    $DE76: A9 FF     LDA #$FF
+    $DE78: 99 D8 00  STA AudPos,Y      ; AudPos ($00D8)
+    $DE7B: 99 E4 00  STA AudCount,Y    ; AudCount ($00E4)
+    $DE7E: 88        DEY
+    $DE7F: 10 EA     BPL InitAudSlots  ; InitAudSlots ($9E6B/$DE6B)
+    $DE81: 60        RTS
+
+
+; UpdateSound ($9E82/$DE82): No inputs; call the sound-channel worker for all four channels.
+; Results: no explicit return value; register, RAM and APU effects depend on the worker.
+UpdateSound:
+    ; Slots 0-3 select pulse 1, pulse 2, triangle and noise, respectively.
+    $DE82: A2 00     LDX #$00
+    $DE84: 20 A3 9E  JSR L_9EA3        ; L_9EA3 ($9EA3/$DEA3)
+    $DE87: A2 01     LDX #$01
+    $DE89: 20 A3 9E  JSR L_9EA3        ; L_9EA3 ($9EA3/$DEA3)
+    $DE8C: A2 02     LDX #$02
+    $DE8E: 20 A3 9E  JSR L_9EA3        ; L_9EA3 ($9EA3/$DEA3)
+    $DE91: A2 03     LDX #$03
+    $DE93: 20 A3 9E  JSR L_9EA3        ; L_9EA3 ($9EA3/$DEA3)
+    $DE96: 60        RTS
+
+
+; Sound-channel worker ($9EA3/$DEA3), partially analyzed through $9ED3/$DED3.
+; Input: X selects a channel from 0 to 3; paths beyond this excerpt are not yet analyzed.
+    ; Countdown mode reaches this block from $9EB6/$DEB6. $0020 is incremented by the NMI handler.
+    ; When its low three bits are zero, decrement AudTimer; $00 wraps to $FF.
+TickAudTimer:
+    $DE97: A5 20     LDA $20
+    $DE99: 29 07     AND #$07
+    $DE9B: D0 36     BNE AudDone       ; AudDone ($9ED3/$DED3)
+    $DE9D: D6 D0     DEC AudTimer,X    ; AudTimer ($00D0)
+    $DE9F: D0 32     BNE AudDone       ; AudDone ($9ED3/$DED3)
+    $DEA1: F0 1D     BEQ ReadAudCmd    ; ReadAudCmd ($9EC0/$DEC0); Z is set here
+
+    ; Worker entry: calculate the channel's APU register offset and inspect its sequence position.
+    ; $00 branches to initialization, $FE to termination, and $FF returns without processing.
+    $DEA3: 8A        TXA
+    $DEA4: 0A        ASL A
+    $DEA5: 0A        ASL A
+    $DEA6: 85 EC     STA AudRegOfs     ; AudRegOfs ($00EC)
+    $DEA8: B5 D8     LDA AudPos,X      ; AudPos ($00D8)
+    $DEAA: F0 39     BEQ L_DEE5        ; L_DEE5 ($9EE5/$DEE5)
+    $DEAC: C9 FE     CMP #$FE
+    $DEAE: F0 24     BEQ L_DED4        ; L_DED4 ($9ED4/$DED4)
+    $DEB0: C9 FF     CMP #$FF
+    $DEB2: F0 1F     BEQ AudDone       ; AudDone ($9ED3/$DED3)
+
+    ; A nonzero mode uses the countdown; otherwise wait until this channel's APU length counter is inactive.
+    ; Reading $4015 also clears the frame IRQ flag. The channel mask table contains $01, $02, $04, $08.
+    $DEB4: B5 D4     LDA AudMode,X     ; AudMode ($00D4)
+    $DEB6: D0 DF     BNE TickAudTimer  ; TickAudTimer ($9E97/$DE97)
+    $DEB8: AD 15 40  LDA APU_STATUS    ; APU_STATUS ($4015)
+    $DEBB: 3D 2F A0  AND L_A02F,X      ; L_A02F ($A02F/$E02F)
+    $DEBE: D0 13     BNE AudDone       ; AudDone ($9ED3/$DED3)
+
+    ; Calculate a sequence pointer, process its next byte, and pass non-$FF results to the sound routine.
+ReadAudCmd:
+    $DEC0: 20 17 9F  JSR L_9F17        ; L_9F17 ($9F17/$DF17)
+    $DEC3: A0 00     LDY #$00
+    $DEC5: B1 14     LDA ($14),Y
+    $DEC7: 20 49 A0  JSR L_A049        ; L_A049 ($A049/$E049)
+    $DECA: C9 FF     CMP #$FF
+    $DECC: F0 06     BEQ L_DED4        ; L_DED4 ($9ED4/$DED4)
+    $DECE: 20 74 9F  JSR L_9F74        ; L_9F74 ($9F74/$DF74)
+    $DED1: F6 D8     INC AudPos,X      ; AudPos ($00D8)
+AudDone:
+    $DED3: 60        RTS
 L_DED4:
 $DED4: A9 FF     LDA #$FF
 $DED6: 95 D8     STA $D8,X
@@ -4762,7 +4835,7 @@ $DEDB: A9 00     LDA #$00
 $DEDD: 85 FC     STA $FC
 $DEDF: 60        RTS
 $DEE0: D6 D8     DEC $D8,X
-$DEE2: 4C C0 9E  JMP L_9EC0
+$DEE2: 4C C0 9E  JMP ReadAudCmd        ; ReadAudCmd ($9EC0/$DEC0)
 L_DEE5:
 $DEE5: 20 1B A0  JSR L_A01B
 $DEE8: B5 DC     LDA $DC,X
@@ -4785,7 +4858,7 @@ $DF0C: A9 FF     LDA #$FF
 $DF0E: 95 E4     STA $E4,X
 $DF10: A9 02     LDA #$02
 $DF12: 95 D8     STA $D8,X
-$DF14: 4C C0 9E  JMP L_9EC0
+$DF14: 4C C0 9E  JMP ReadAudCmd        ; ReadAudCmd ($9EC0/$DEC0)
 $DF17: A9 00     LDA #$00
 $DF19: 85 15     STA $15
 $DF1B: B5 D8     LDA $D8,X
@@ -11540,11 +11613,18 @@ L_FFF6:
 $FFF6: 30 30     BMI L_0028
 L_FFF8:
 $FFF8: 30 30     BMI L_002A
-L_FFFA:
-$FFFA: B1 83     LDA ($83),Y
-L_FFFC:
-$FFFC: 00        BRK
-$FFFD: 80        db $80
-L_FFFE:
-$FFFE: 3C        db $3C
-$FFFF: 84        db $84
+
+; CPU vectors are little-endian 16-bit addresses, not instructions.
+; In this ROM, CPU $FFFA-$FFFF corresponds to file offsets $400A-$400F.
+; See https://bugzmanov.github.io/nes_ebook/chapter_3_2.html and
+; https://github.com/mnaberez/py65/blob/main/py65/devices/mpu6502.py.
+
+VECTORS:
+    ; NMI: non-maskable interrupt entry, for example when the PPU requests vblank NMI.
+    $FFFA: B1 83     dw NMI                ; $83B1/$C3B1
+
+    ; Reset: execution starts at this address after the CPU reads the reset vector.
+    $FFFC: 00 80     dw START              ; $8000/$C000
+
+    ; IRQ and BRK share this vector. Its target byte is $40 (RTI), which returns from the interrupt.
+    $FFFE: 3C 84     dw IRQ                ; $843C/$C43C

@@ -63,6 +63,10 @@ Use English for names and explanations.
   reviewed and unreviewed instructions are easy to distinguish. Indent comments describing code blocks by four spaces.
   Place labels, function comments, other full-line comments, variable declarations, and data directives at column 1.
 - Start inline comments in column 40.
+- For a mirrored 16 KiB PRG bank, write equivalent CPU addresses in comments as `$8000/$C000`, while preserving the
+  actual encoded address in each operand.
+- Explain the overall purpose of each block and non-obvious details, such as peripheral flags. Avoid comments that
+  merely restate individual instructions; retain address comments required for named operands.
 - Preserve each instruction's address, original bytes, mnemonic, and operand information, including its addressing
   mode. A meaningful name may replace a generated label or numeric operand without changing the encoded address.
 - Give variables and labels meaningful names of at most 16 characters. When an instruction uses a named variable or
