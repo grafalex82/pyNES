@@ -1,5 +1,533 @@
 ## ADDED Requirements
 
+### Requirement: Execute CMP using absolute addressing
+
+Opcode $CD SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL compare A with the fetched byte without storing the difference; C SHALL indicate A >= byte, Z
+equality, and N bit 7 of the eight-bit difference. It SHALL advance PC by three and add four nominal cycles. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+### Requirement: Execute CMP using absolute,X addressing
+
+Opcode $DD SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL compare A with the fetched byte without storing the difference; C SHALL indicate A >= byte, Z equality, and N bit
+7 of the eight-bit difference. It SHALL advance PC by three and add four nominal cycles plus one on page crossing. The
+functional model omits the provisional read on a page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute CMP using absolute,Y addressing
+
+Opcode $D9 SHALL add Y to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL compare A with the fetched byte without storing the difference; C SHALL indicate A >= byte, Z equality, and N bit
+7 of the eight-bit difference. It SHALL advance PC by three and add four nominal cycles plus one on page crossing. The
+functional model omits the provisional read on a page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and Y=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and Y=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and Y=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute CPX using absolute addressing
+
+Opcode $EC SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL compare X with the fetched byte without storing the difference; C SHALL indicate X >= byte, Z
+equality, and N bit 7 of the eight-bit difference. It SHALL advance PC by three and add four nominal cycles. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** X=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+### Requirement: Execute CPY using absolute addressing
+
+Opcode $CC SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL compare Y with the fetched byte without storing the difference; C SHALL indicate Y >= byte, Z
+equality, and N bit 7 of the eight-bit difference. It SHALL advance PC by three and add four nominal cycles. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** Y=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+### Requirement: Execute ADC using absolute addressing
+
+Opcode $6D SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL add the fetched byte and incoming C to A using binary arithmetic regardless of D, updating A and
+C/V/N/Z. It SHALL advance PC by three and add four nominal cycles. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$7F, C=0, and addressed memory contains $01
+- **THEN** A=$80, C=0, V=1, N=1, and Z=0
+
+### Requirement: Execute ADC using absolute,X addressing
+
+Opcode $7D SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL add the fetched byte and incoming C to A using binary arithmetic regardless of D, updating A and C/V/N/Z. It SHALL
+advance PC by three and add four nominal cycles plus one on page crossing. The functional model omits the provisional
+read on a page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$7F, C=0, and addressed memory contains $01
+- **THEN** A=$80, C=0, V=1, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute ADC using absolute,Y addressing
+
+Opcode $79 SHALL add Y to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL add the fetched byte and incoming C to A using binary arithmetic regardless of D, updating A and C/V/N/Z. It SHALL
+advance PC by three and add four nominal cycles plus one on page crossing. The functional model omits the provisional
+read on a page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$7F, C=0, and addressed memory contains $01
+- **THEN** A=$80, C=0, V=1, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and Y=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and Y=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and Y=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute SBC using absolute addressing
+
+Opcode $ED SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL subtract the fetched byte and inverse of incoming C from A using binary arithmetic regardless of D,
+updating A and C/V/N/Z. It SHALL advance PC by three and add four nominal cycles. All other status flags SHALL remain
+unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$00, C=1, and addressed memory contains $01
+- **THEN** A=$FF, C=0, V=0, N=1, and Z=0
+
+### Requirement: Execute SBC using absolute,X addressing
+
+Opcode $FD SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL subtract the fetched byte and inverse of incoming C from A using binary arithmetic regardless of D, updating A and
+C/V/N/Z. It SHALL advance PC by three and add four nominal cycles plus one on page crossing. The functional model omits
+the provisional read on a page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$00, C=1, and addressed memory contains $01
+- **THEN** A=$FF, C=0, V=0, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute SBC using absolute,Y addressing
+
+Opcode $F9 SHALL add Y to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL subtract the fetched byte and inverse of incoming C from A using binary arithmetic regardless of D, updating A and
+C/V/N/Z. It SHALL advance PC by three and add four nominal cycles plus one on page crossing. The functional model omits
+the provisional read on a page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$00, C=1, and addressed memory contains $01
+- **THEN** A=$FF, C=0, V=0, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and Y=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and Y=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and Y=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute AND using absolute addressing
+
+Opcode $2D SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL combine A with the fetched byte using bitwise AND, updating A and N/Z. It SHALL advance PC by three
+and add four nominal cycles. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$F0 and addressed memory contains $0F
+- **THEN** A=$00, N=0, and Z=1
+
+### Requirement: Execute AND using absolute,X addressing
+
+Opcode $3D SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL combine A with the fetched byte using bitwise AND, updating A and N/Z. It SHALL advance PC by three and add four
+nominal cycles plus one on page crossing. The functional model omits the provisional read on a page crossing. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$F0 and addressed memory contains $0F
+- **THEN** A=$00, N=0, and Z=1
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute AND using absolute,Y addressing
+
+Opcode $39 SHALL add Y to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL combine A with the fetched byte using bitwise AND, updating A and N/Z. It SHALL advance PC by three and add four
+nominal cycles plus one on page crossing. The functional model omits the provisional read on a page crossing. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$F0 and addressed memory contains $0F
+- **THEN** A=$00, N=0, and Z=1
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and Y=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and Y=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and Y=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute ORA using absolute addressing
+
+Opcode $0D SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL combine A with the fetched byte using bitwise OR, updating A and N/Z. It SHALL advance PC by three and
+add four nominal cycles. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$80 and addressed memory contains $01
+- **THEN** A=$81, N=1, and Z=0
+
+### Requirement: Execute ORA using absolute,X addressing
+
+Opcode $1D SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL combine A with the fetched byte using bitwise OR, updating A and N/Z. It SHALL advance PC by three and add four
+nominal cycles plus one on page crossing. The functional model omits the provisional read on a page crossing. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$80 and addressed memory contains $01
+- **THEN** A=$81, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute ORA using absolute,Y addressing
+
+Opcode $19 SHALL add Y to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL combine A with the fetched byte using bitwise OR, updating A and N/Z. It SHALL advance PC by three and add four
+nominal cycles plus one on page crossing. The functional model omits the provisional read on a page crossing. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$80 and addressed memory contains $01
+- **THEN** A=$81, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and Y=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and Y=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and Y=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute EOR using absolute addressing
+
+Opcode $4D SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL combine A with the fetched byte using bitwise exclusive OR, updating A and N/Z. It SHALL advance PC by
+three and add four nominal cycles. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$FF and addressed memory contains $0F
+- **THEN** A=$F0, N=1, and Z=0
+
+### Requirement: Execute EOR using absolute,X addressing
+
+Opcode $5D SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL combine A with the fetched byte using bitwise exclusive OR, updating A and N/Z. It SHALL advance PC by three and
+add four nominal cycles plus one on page crossing. The functional model omits the provisional read on a page crossing.
+All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$FF and addressed memory contains $0F
+- **THEN** A=$F0, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute EOR using absolute,Y addressing
+
+Opcode $59 SHALL add Y to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL combine A with the fetched byte using bitwise exclusive OR, updating A and N/Z. It SHALL advance PC by three and
+add four nominal cycles plus one on page crossing. The functional model omits the provisional read on a page crossing.
+All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$FF and addressed memory contains $0F
+- **THEN** A=$F0, N=1, and Z=0
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and Y=$01
+- **THEN** the effective address is $1300 and the instruction takes 5 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and Y=$01
+- **THEN** the effective address is $0000 and the instruction takes 5 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and Y=$01
+- **THEN** the effective address is $1201 and the instruction takes four nominal cycles
+
+### Requirement: Execute ASL using absolute addressing
+
+Opcode $0E SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL shift the fetched byte left, moving bit 7 to C and setting bit 0 to zero, and update C/N/Z. It SHALL
+write the original byte and then the modified byte through Machine, advance PC by three, and add 6 nominal cycles. All
+other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $81
+- **THEN** the written result is $02, C=1, N=0, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+### Requirement: Execute ASL using absolute,X addressing
+
+Opcode $1E SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL shift the fetched byte left, moving bit 7 to C and setting bit 0 to zero, and update C/N/Z. It SHALL write the
+original byte and then the modified byte through Machine, advance PC by three, and add 7 nominal cycles. The functional
+model omits the provisional indexed read regardless of page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $81
+- **THEN** the written result is $02, C=1, N=0, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 7 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 7 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes seven nominal cycles
+
+### Requirement: Execute LSR using absolute addressing
+
+Opcode $4E SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL shift the fetched byte right, moving bit 0 to C and setting bit 7 to zero, and update C/N/Z. It SHALL
+write the original byte and then the modified byte through Machine, advance PC by three, and add 6 nominal cycles. All
+other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $01
+- **THEN** the written result is $00, C=1, N=0, and Z=1
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+### Requirement: Execute LSR using absolute,X addressing
+
+Opcode $5E SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL shift the fetched byte right, moving bit 0 to C and setting bit 7 to zero, and update C/N/Z. It SHALL write the
+original byte and then the modified byte through Machine, advance PC by three, and add 7 nominal cycles. The functional
+model omits the provisional indexed read regardless of page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $01
+- **THEN** the written result is $00, C=1, N=0, and Z=1
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 7 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 7 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes seven nominal cycles
+
+### Requirement: Execute ROL using absolute addressing
+
+Opcode $2E SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL rotate the fetched byte left through incoming C, moving bit 7 to C, and update C/N/Z. It SHALL write
+the original byte and then the modified byte through Machine, advance PC by three, and add 6 nominal cycles. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $80 and C=1
+- **THEN** the written result is $01, C=1, N=0, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+### Requirement: Execute ROL using absolute,X addressing
+
+Opcode $3E SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL rotate the fetched byte left through incoming C, moving bit 7 to C, and update C/N/Z. It SHALL write the original
+byte and then the modified byte through Machine, advance PC by three, and add 7 nominal cycles. The functional model
+omits the provisional indexed read regardless of page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $80 and C=1
+- **THEN** the written result is $01, C=1, N=0, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 7 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 7 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes seven nominal cycles
+
+### Requirement: Execute ROR using absolute addressing
+
+Opcode $6E SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through
+Machine. It SHALL rotate the fetched byte right through incoming C, moving bit 0 to C, and update C/N/Z. It SHALL write
+the original byte and then the modified byte through Machine, advance PC by three, and add 6 nominal cycles. All other
+status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $01 and C=1
+- **THEN** the written result is $80, C=1, N=1, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+### Requirement: Execute ROR using absolute,X addressing
+
+Opcode $7E SHALL add X to the little-endian 16-bit operand modulo 65536 and read the addressed byte through Machine. It
+SHALL rotate the fetched byte right through incoming C, moving bit 0 to C, and update C/N/Z. It SHALL write the original
+byte and then the modified byte through Machine, advance PC by three, and add 7 nominal cycles. The functional model
+omits the provisional indexed read regardless of page crossing. All other status flags SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $01 and C=1
+- **THEN** the written result is $80, C=1, N=1, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Index across an address boundary
+- **WHEN** the base address is $12FF and X=$01
+- **THEN** the effective address is $1300 and the instruction takes 7 nominal cycles
+
+#### Scenario: Wrap the effective address
+- **WHEN** the base address is $FFFF and X=$01
+- **THEN** the effective address is $0000 and the instruction takes 7 nominal cycles
+
+#### Scenario: Index without crossing a page
+- **WHEN** the base address is $1200 and X=$01
+- **THEN** the effective address is $1201 and the instruction takes seven nominal cycles
+
 ### Requirement: Execute STA using zero-page,X addressing
 
 Opcode $95 SHALL add X to its one-byte operand modulo 256 and write A through Machine to that zero-page address. It

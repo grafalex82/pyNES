@@ -3,8 +3,8 @@
 ## Context
 
 CPU.step dispatches opcodes, reads instruction bytes through Machine, accumulates nominal instruction cycles, and
-logs completed instructions using captured bytes. The first 41 encodings in this change have been implemented; the
-zero-page indexed loads and stores are planned. Each encoding remains an individual learning step.
+logs completed instructions using captured bytes. The first 47 encodings in this change have been implemented; the
+additional absolute and absolute-indexed operations are planned. Each encoding remains an individual learning step.
 
 ## Goals / Non-Goals
 
@@ -34,6 +34,12 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
   instructions perform binary arithmetic regardless of D, as the NES CPU does not implement decimal arithmetic.
 - Zero-page arithmetic and logical operations read the operand through Machine and apply the same result and flag rules
   as their immediate forms. The address byte is zero-extended; each operation takes three nominal cycles.
+- Absolute arithmetic, logical, and comparison operations read through Machine. Absolute indexed reads add X or Y
+  modulo 65536, take one extra cycle on page crossing, and omit the provisional read on crossings. This can suppress
+  device read side effects, matching the existing functional bus model; it applies to all ROMs without patches.
+- Absolute shifts and rotations read, write the original byte, and then write the modified byte through Machine.
+  Their absolute,X forms always omit the provisional indexed read, even without a page crossing. This can suppress
+  device read side effects; bus timing and DMA effects are also omitted for all ROMs without patches.
 - Zero-page shifts and rotations read the byte, write the original byte, then write the modified byte through Machine.
   These five-cycle operations update C/N/Z using the same rules as their accumulator forms. The original-byte write
   matches the hardware bus sequence; no zero-page read-modify-write access is deliberately omitted.

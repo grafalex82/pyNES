@@ -279,12 +279,181 @@ Resume another task only when it is selected for implementation.
   with focused synthetic pytest cases.
 - [x] 47.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
-## 48. Integration
+## 48. CMP absolute ($CD)
 
-- [ ] 48.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
+- [ ] 48.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
+  focused synthetic pytest cases.
+- [ ] 48.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 49. CMP absolute,X ($DD)
+
+- [ ] 49.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, page crossing and
+  effective address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 49.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 50. CMP absolute,Y ($D9)
+
+- [ ] 50.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, page crossing and
+  effective address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 50.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 51. CPX absolute ($EC)
+
+- [ ] 51.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
+  focused synthetic pytest cases.
+- [ ] 51.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 52. CPY absolute ($CC)
+
+- [ ] 52.1 Implement the selected encoding; verify equal, lower, and greater comparisons, C/N/Z, PC, and cycles with
+  focused synthetic pytest cases.
+- [ ] 52.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 53. ADC absolute ($6D)
+
+- [ ] 53.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, PC, and cycles with focused synthetic pytest cases.
+- [ ] 53.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 54. ADC absolute,X ($7D)
+
+- [ ] 54.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
+  cases.
+- [ ] 54.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 55. ADC absolute,Y ($79)
+
+- [ ] 55.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
+  cases.
+- [ ] 55.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 56. SBC absolute ($ED)
+
+- [ ] 56.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, PC, and cycles with focused synthetic pytest cases.
+- [ ] 56.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 57. SBC absolute,X ($FD)
+
+- [ ] 57.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
+  cases.
+- [ ] 57.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 58. SBC absolute,Y ($F9)
+
+- [ ] 58.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest
+  cases.
+- [ ] 58.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 59. AND absolute ($2D)
+
+- [ ] 59.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 59.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 60. AND absolute,X ($3D)
+
+- [ ] 60.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 60.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 61. AND absolute,Y ($39)
+
+- [ ] 61.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 61.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 62. ORA absolute ($0D)
+
+- [ ] 62.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 62.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 63. ORA absolute,X ($1D)
+
+- [ ] 63.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 63.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 64. ORA absolute,Y ($19)
+
+- [ ] 64.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 64.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 65. EOR absolute ($4D)
+
+- [ ] 65.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 65.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 66. EOR absolute,X ($5D)
+
+- [ ] 66.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 66.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 67. EOR absolute,Y ($59)
+
+- [ ] 67.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 67.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 68. ASL absolute ($0E)
+
+- [ ] 68.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 68.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 69. ASL absolute,X ($1E)
+
+- [ ] 69.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, page
+  crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 69.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 70. LSR absolute ($4E)
+
+- [ ] 70.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, PC, and
+  cycles with focused synthetic pytest cases.
+- [ ] 70.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 71. LSR absolute,X ($5E)
+
+- [ ] 71.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, page
+  crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 71.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 72. ROL absolute ($2E)
+
+- [ ] 72.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  and C/N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 72.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 73. ROL absolute,X ($3E)
+
+- [ ] 73.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  and C/N/Z, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 73.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 74. ROR absolute ($6E)
+
+- [ ] 74.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  and C/N/Z, PC, and cycles with focused synthetic pytest cases.
+- [ ] 74.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 75. ROR absolute,X ($7E)
+
+- [ ] 75.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  and C/N/Z, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 75.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 76. Integration
+
+- [ ] 76.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
   resolve any failures.
-- [ ] 48.2 Review documentation for hardware departures and their rationale without listing instruction support.
-- [ ] 48.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
+- [ ] 76.2 Review documentation for hardware departures and their rationale without listing instruction support.
+- [ ] 76.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
   implementing it; record actual observations only.
 
 ## Workflow follow-up
