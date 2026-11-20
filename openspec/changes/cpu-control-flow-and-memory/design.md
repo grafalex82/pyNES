@@ -3,8 +3,8 @@
 ## Context
 
 CPU.step dispatches opcodes, reads instruction bytes through Machine, accumulates nominal instruction cycles, and
-logs completed instructions using captured bytes. The first 47 encodings in this change have been implemented; the
-additional absolute and absolute-indexed operations are planned. Each encoding remains an individual learning step.
+logs completed instructions using captured bytes. The first 75 encodings in this change have been implemented; the
+remaining zero-page and zero-page,X operations and BIT absolute are planned. Each encoding remains an individual step.
 
 ## Goals / Non-Goals
 
@@ -40,9 +40,18 @@ introduce a general instruction framework or implement unrelated CPU, peripheral
 - Absolute shifts and rotations read, write the original byte, and then write the modified byte through Machine.
   Their absolute,X forms always omit the provisional indexed read, even without a page crossing. This can suppress
   device read side effects; bus timing and DMA effects are also omitted for all ROMs without patches.
-- Zero-page shifts and rotations read the byte, write the original byte, then write the modified byte through Machine.
-  These five-cycle operations update C/N/Z using the same rules as their accumulator forms. The original-byte write
-  matches the hardware bus sequence; no zero-page read-modify-write access is deliberately omitted.
+- Unindexed zero-page shifts and rotations read the byte, write the original byte, then write the modified byte through
+  Machine. These five-cycle operations update C/N/Z using the same rules as their accumulator forms. The original-byte
+  write matches the hardware bus sequence; no unindexed zero-page read-modify-write access is deliberately omitted.
+- Zero-page comparisons read through Machine and set C/N/Z without modifying the compared register. BIT sets Z from
+  A AND memory, and N/V from memory bits 7/6. INC and DEC update the addressed byte modulo 256 and set N/Z; their
+  original and modified byte writes both go through Machine. Plain accesses take three cycles, or five for INC/DEC.
+- BIT absolute reads through Machine and sets N/V/Z by the same rules as BIT zero page; it takes four cycles.
+- The additional zero-page,X forms add X to the operand modulo 256, without an extra page-crossing cycle. Reads take
+  four cycles and read-modify-write operations take six, writing both original and modified bytes through Machine.
+  They omit the hardware's discarded read at the unindexed zero-page address to retain the functional bus model.
+  RAM reads have no side effects here; bus-cycle and DMA effects are not modeled. This applies to all ROMs; none is
+  patched. Record any new hardware departure during implementation.
 - Indexed-indirect loads add X to the zero-page operand modulo 256 and read a wrapping little-endian zero-page pointer.
   Indirect-indexed loads read that pointer first, then add Y modulo 65536; they take one more cycle on page crossing.
   Both read the selected byte through Machine and set N/Z from it.

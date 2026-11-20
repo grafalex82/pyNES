@@ -448,12 +448,126 @@ Resume another task only when it is selected for implementation.
   and C/N/Z, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
 - [x] 75.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
-## 76. Integration
+## 76. INC zero page ($E6)
 
-- [ ] 76.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
+- [ ] 76.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+  zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
+- [ ] 76.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 77. INC zero page,X ($F6)
+
+- [ ] 77.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+  indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 77.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 78. DEC zero page ($C6)
+
+- [ ] 78.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+  zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
+- [ ] 78.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 79. DEC zero page,X ($D6)
+
+- [ ] 79.1 Implement the selected encoding; verify the memory result and wrap, original and final writes, and N/Z,
+  indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 79.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 80. BIT zero page ($24)
+
+- [ ] 80.1 Implement the selected encoding; verify A, N/V/Z, and matching and nonmatching bits, zero-page endpoints, PC,
+  and cycles with focused synthetic pytest cases.
+- [ ] 80.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 81. BIT absolute ($2C)
+
+- [ ] 81.1 Implement the selected encoding; verify A, N/V/Z, matching and nonmatching bits, the
+  little-endian address, PC, and cycles with focused synthetic pytest cases.
+- [ ] 81.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 82. CMP zero page ($C5)
+
+- [ ] 82.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
+  PC, and cycles with focused synthetic pytest cases.
+- [ ] 82.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 83. CMP zero page,X ($D5)
+
+- [ ] 83.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, indexed zero-page
+  wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 83.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 84. CPX zero page ($E4)
+
+- [ ] 84.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
+  PC, and cycles with focused synthetic pytest cases.
+- [ ] 84.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 85. CPY zero page ($C4)
+
+- [ ] 85.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
+  PC, and cycles with focused synthetic pytest cases.
+- [ ] 85.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 86. ADC zero page,X ($75)
+
+- [ ] 86.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 86.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 87. SBC zero page,X ($F5)
+
+- [ ] 87.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+  with D clear and set, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 87.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 88. AND zero page,X ($35)
+
+- [ ] 88.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
+  synthetic pytest cases.
+- [ ] 88.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 89. ORA zero page,X ($15)
+
+- [ ] 89.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
+  synthetic pytest cases.
+- [ ] 89.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 90. EOR zero page,X ($55)
+
+- [ ] 90.1 Implement the selected encoding; verify A and N/Z, indexed zero-page wrapping, PC, and cycles with focused
+  synthetic pytest cases.
+- [ ] 90.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 91. ASL zero page,X ($16)
+
+- [ ] 91.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, indexed
+  zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 91.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 92. LSR zero page,X ($56)
+
+- [ ] 92.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, indexed
+  zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 92.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 93. ROL zero page,X ($36)
+
+- [ ] 93.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  and C/N/Z, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 93.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 94. ROR zero page,X ($76)
+
+- [ ] 94.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+  and C/N/Z, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
+- [ ] 94.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+
+## 95. Integration
+
+- [ ] 95.1 Run the focused and full pytest suites and openspec validate cpu-control-flow-and-memory --strict;
   resolve any failures.
-- [ ] 76.2 Review documentation for hardware departures and their rationale without listing instruction support.
-- [ ] 76.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
+- [ ] 95.2 Review documentation for hardware departures and their rationale without listing instruction support.
+- [ ] 95.3 If a relevant local ROM can be attempted, run a bounded check and report the next obstacle without
   implementing it; record actual observations only.
 
 ## Workflow follow-up

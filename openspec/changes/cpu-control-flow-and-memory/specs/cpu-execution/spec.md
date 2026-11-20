@@ -1,5 +1,379 @@
 ## ADDED Requirements
 
+### Requirement: Execute INC using zero-page addressing
+
+Opcode $E6 SHALL zero-extend its one-byte operand to obtain a zero-page address and read its byte through Machine. It
+SHALL increment the byte modulo 256 and set N/Z from the result. It SHALL write the original byte and then the modified
+byte through Machine at that address. It SHALL advance PC by two and add 5 nominal cycles. All status flags other than
+N/Z SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $FF
+- **THEN** the result is $00, N=0, and Z=1
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Address both ends of zero page
+- **WHEN** the operand is $00 or $FF
+- **THEN** the effective address is respectively $0000 or $00FF
+
+### Requirement: Execute DEC using zero-page addressing
+
+Opcode $C6 SHALL zero-extend its one-byte operand to obtain a zero-page address and read its byte through Machine. It
+SHALL decrement the byte modulo 256 and set N/Z from the result. It SHALL write the original byte and then the modified
+byte through Machine at that address. It SHALL advance PC by two and add 5 nominal cycles. All status flags other than
+N/Z SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $00
+- **THEN** the result is $FF, N=1, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Address both ends of zero page
+- **WHEN** the operand is $00 or $FF
+- **THEN** the effective address is respectively $0000 or $00FF
+
+### Requirement: Execute BIT using zero-page addressing
+
+Opcode $24 SHALL zero-extend its one-byte operand to obtain a zero-page address and read its byte through Machine. It
+SHALL set Z if A AND the byte is zero and set N and V from bits 7 and 6 of the byte, without changing A. It SHALL
+advance PC by two and add 3 nominal cycles. All status flags other than N/V/Z SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$40 and addressed memory contains $80
+- **THEN** A remains $40, Z=1, N=1, and V=0
+
+#### Scenario: Address both ends of zero page
+- **WHEN** the operand is $00 or $FF
+- **THEN** the effective address is respectively $0000 or $00FF
+
+#### Scenario: Test a matching bit independently of N/V
+- **WHEN** A=$40 and addressed memory contains $40
+- **THEN** A remains $40, Z=0, N=0, and V=1
+
+### Requirement: Execute BIT using absolute addressing
+
+Opcode $2C SHALL use its little-endian 16-bit operand as the effective address and read the byte through Machine.
+It SHALL set Z if A AND the byte is zero and set N and V from bits 7 and 6 of the byte, without changing A. It SHALL
+advance PC by three and add four nominal cycles. All status flags other than N/V/Z SHALL remain unchanged.
+
+#### Scenario: Test nonmatching bits
+- **WHEN** A=$40 and addressed memory contains $80
+- **THEN** A remains $40, Z=1, N=1, and V=0
+
+#### Scenario: Test a matching bit independently of N/V
+- **WHEN** A=$40 and addressed memory contains $40
+- **THEN** A remains $40, Z=0, N=0, and V=1
+
+#### Scenario: Decode the address
+- **WHEN** the operand bytes are $56 followed by $04
+- **THEN** the byte is read from $0456 through Machine
+
+### Requirement: Execute CMP using zero-page addressing
+
+Opcode $C5 SHALL zero-extend its one-byte operand to obtain a zero-page address and read its byte through Machine. It
+SHALL compare A with the byte without storing the difference; set C if A is greater than or equal to the byte, Z on
+equality, and N from bit 7 of the eight-bit difference. It SHALL advance PC by two and add 3 nominal cycles. All status
+flags other than C/N/Z SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Address both ends of zero page
+- **WHEN** the operand is $00 or $FF
+- **THEN** the effective address is respectively $0000 or $00FF
+
+### Requirement: Execute CPX using zero-page addressing
+
+Opcode $E4 SHALL zero-extend its one-byte operand to obtain a zero-page address and read its byte through Machine. It
+SHALL compare X with the byte without storing the difference; set C if X is greater than or equal to the byte, Z on
+equality, and N from bit 7 of the eight-bit difference. It SHALL advance PC by two and add 3 nominal cycles. All status
+flags other than C/N/Z SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** X=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Address both ends of zero page
+- **WHEN** the operand is $00 or $FF
+- **THEN** the effective address is respectively $0000 or $00FF
+
+### Requirement: Execute CPY using zero-page addressing
+
+Opcode $C4 SHALL zero-extend its one-byte operand to obtain a zero-page address and read its byte through Machine. It
+SHALL compare Y with the byte without storing the difference; set C if Y is greater than or equal to the byte, Z on
+equality, and N from bit 7 of the eight-bit difference. It SHALL advance PC by two and add 3 nominal cycles. All status
+flags other than C/N/Z SHALL remain unchanged.
+
+#### Scenario: Apply the operation
+- **WHEN** Y=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Address both ends of zero page
+- **WHEN** the operand is $00 or $FF
+- **THEN** the effective address is respectively $0000 or $00FF
+
+### Requirement: Execute INC using zero-page,X addressing
+
+Opcode $F6 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL increment the byte modulo 256 and set N/Z from the result. It SHALL write the original byte and then
+the modified byte through Machine at that address. It SHALL advance PC by two and add 6 nominal cycles. All status flags
+other than N/Z SHALL remain unchanged. The functional model omits the discarded read at the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $FF
+- **THEN** the result is $00, N=0, and Z=1
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 6 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 6 nominal cycles
+
+### Requirement: Execute DEC using zero-page,X addressing
+
+Opcode $D6 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL decrement the byte modulo 256 and set N/Z from the result. It SHALL write the original byte and then
+the modified byte through Machine at that address. It SHALL advance PC by two and add 6 nominal cycles. All status flags
+other than N/Z SHALL remain unchanged. The functional model omits the discarded read at the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $00
+- **THEN** the result is $FF, N=1, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 6 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 6 nominal cycles
+
+### Requirement: Execute CMP using zero-page,X addressing
+
+Opcode $D5 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL compare A with the byte without storing the difference; set C if A is greater than or equal to the
+byte, Z on equality, and N from bit 7 of the eight-bit difference. It SHALL advance PC by two and add 4 nominal cycles.
+All status flags other than C/N/Z SHALL remain unchanged. The functional model omits the discarded read at the unindexed
+zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$40 and addressed memory contains $40
+- **THEN** C=1, Z=1, and N=0
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 4 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 4 nominal cycles
+
+### Requirement: Execute ADC using zero-page,X addressing
+
+Opcode $75 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL add the byte and incoming C to A using binary arithmetic regardless of D, updating A and C/V/N/Z. It
+SHALL advance PC by two and add 4 nominal cycles. All status flags other than C/V/N/Z SHALL remain unchanged. The
+functional model omits the discarded read at the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$7F, C=0, and addressed memory contains $01
+- **THEN** A=$80, C=0, V=1, N=1, and Z=0
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 4 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 4 nominal cycles
+
+### Requirement: Execute SBC using zero-page,X addressing
+
+Opcode $F5 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL subtract the byte and inverse of incoming C from A using binary arithmetic regardless of D, updating A
+and C/V/N/Z. It SHALL advance PC by two and add 4 nominal cycles. All status flags other than C/V/N/Z SHALL remain
+unchanged. The functional model omits the discarded read at the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$00, C=1, and addressed memory contains $01
+- **THEN** A=$FF, C=0, V=0, N=1, and Z=0
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 4 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 4 nominal cycles
+
+### Requirement: Execute AND using zero-page,X addressing
+
+Opcode $35 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL combine A with the byte using bitwise AND, updating A and N/Z. It SHALL advance PC by two and add 4
+nominal cycles. All status flags other than N/Z SHALL remain unchanged. The functional model omits the discarded read at
+the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$F0 and addressed memory contains $0F
+- **THEN** A=$00, N=0, and Z=1
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 4 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 4 nominal cycles
+
+### Requirement: Execute ORA using zero-page,X addressing
+
+Opcode $15 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL combine A with the byte using bitwise OR, updating A and N/Z. It SHALL advance PC by two and add 4
+nominal cycles. All status flags other than N/Z SHALL remain unchanged. The functional model omits the discarded read at
+the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$80 and addressed memory contains $01
+- **THEN** A=$81, N=1, and Z=0
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 4 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 4 nominal cycles
+
+### Requirement: Execute EOR using zero-page,X addressing
+
+Opcode $55 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL combine A with the byte using bitwise exclusive OR, updating A and N/Z. It SHALL advance PC by two and
+add 4 nominal cycles. All status flags other than N/Z SHALL remain unchanged. The functional model omits the discarded
+read at the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** A=$FF and addressed memory contains $0F
+- **THEN** A=$F0, N=1, and Z=0
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 4 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 4 nominal cycles
+
+### Requirement: Execute ASL using zero-page,X addressing
+
+Opcode $16 SHALL add X to its operand modulo 256 and read the zero-page byte through Machine. It SHALL shift the byte
+left, set C from bit 7, insert zero into bit 0, and set N/Z from the result. It SHALL write the original byte then the
+result through Machine. It SHALL advance PC by two, add six cycles, and preserve other flags. The functional model omits
+the discarded read at the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $81
+- **THEN** the result is $02, C=1, N=0, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 6 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 6 nominal cycles
+
+### Requirement: Execute LSR using zero-page,X addressing
+
+Opcode $56 SHALL add X to its operand modulo 256 and read the zero-page byte through Machine. It SHALL shift the byte
+right, set C from bit 0, insert zero into bit 7, and set N/Z from the result. It SHALL write the original byte then the
+result through Machine. It SHALL advance PC by two, add six cycles, and preserve other flags. The functional model omits
+the discarded read at the unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $01
+- **THEN** the result is $00, C=1, N=0, and Z=1
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 6 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 6 nominal cycles
+
+### Requirement: Execute ROL using zero-page,X addressing
+
+Opcode $36 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL rotate the byte left through incoming C, moving bit 7 to C, and update C/N/Z. It SHALL write the
+original byte and then the modified byte through Machine at that address. It SHALL advance PC by two and add 6 nominal
+cycles. All status flags other than C/N/Z SHALL remain unchanged. The functional model omits the discarded read at the
+unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $80 and C=1
+- **THEN** the result is $01, C=1, N=0, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 6 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 6 nominal cycles
+
+### Requirement: Execute ROR using zero-page,X addressing
+
+Opcode $76 SHALL add X to its one-byte operand modulo 256 to obtain a zero-page address and read its byte through
+Machine. It SHALL rotate the byte right through incoming C, moving bit 0 to C, and update C/N/Z. It SHALL write the
+original byte and then the modified byte through Machine at that address. It SHALL advance PC by two and add 6 nominal
+cycles. All status flags other than C/N/Z SHALL remain unchanged. The functional model omits the discarded read at the
+unindexed zero-page address.
+
+#### Scenario: Apply the operation
+- **WHEN** addressed memory contains $01 and C=1
+- **THEN** the result is $80, C=1, N=1, and Z=0
+
+#### Scenario: Preserve the memory write sequence
+- **WHEN** the addressed byte is read and modified
+- **THEN** Machine receives the original byte followed by the modified byte at the effective address
+
+#### Scenario: Wrap within zero page
+- **WHEN** the operand is $F0 and X=$20
+- **THEN** the effective address is $0010 and the instruction takes 6 nominal cycles
+
+#### Scenario: Index within zero page
+- **WHEN** the operand is $20 and X=$04
+- **THEN** the effective address is $0024 and the instruction takes 6 nominal cycles
+
 ### Requirement: Execute CMP using absolute addressing
 
 Opcode $CD SHALL use its little-endian 16-bit operand as the effective address and read the addressed byte through

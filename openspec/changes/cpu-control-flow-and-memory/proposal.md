@@ -16,6 +16,9 @@ At the user's request, their plans are collected into one reviewable OpenSpec ch
 - Add zero-page ADC, SBC, ASL, LSR, ROL, ROR, AND, ORA, and EOR.
 - Add zero-page,X STA, STY, LDA, and LDY; add zero-page,Y STX and LDX.
 - Add absolute and available absolute-indexed forms of CMP, CPX, CPY, ADC, SBC, AND, ORA, EOR, ASL, LSR, ROL, and ROR.
+- Add the remaining official zero-page forms of INC, DEC, BIT, CMP, CPX, and CPY.
+- Add the remaining official zero-page,X forms of INC, DEC, CMP, ADC, SBC, AND, ORA, EOR, ASL, LSR, ROL, and ROR.
+- Add BIT absolute.
 - Keep other unsupported opcodes explicit and preserve existing execution and trace conventions.
 - Implement and verify one encoding at a time; report the next observed obstacle and stop at that boundary.
 
@@ -27,8 +30,8 @@ None.
 
 ### Modified Capabilities
 
-- cpu-execution: execute the 75 selected control-flow, memory, shift, rotate, comparison, logical, and arithmetic
-  encodings.
+- cpu-execution: execute the 94 selected control-flow, memory, shift, rotate, comparison, logical, bit-test, increment,
+  decrement, and arithmetic encodings.
 
 ## Impact
 
