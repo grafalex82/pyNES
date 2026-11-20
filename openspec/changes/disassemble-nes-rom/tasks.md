@@ -15,7 +15,7 @@
   lower address while each PRG byte appears only once.
 - [x] 2.2 Symbolize the specified PPU, APU, DMA, and controller addresses; verify PPU mirrors, $4017, indexed operands,
   immediate values, and hardware-address control targets with focused tests.
-- [ ] 2.3 Add the two-path standalone CLI and source-overwrite protection; verify paths with spaces, another working
+- [x] 2.3 Add the two-path standalone CLI and source-overwrite protection; verify paths with spaces, another working
   directory, unsupported layouts, output contents, and unchanged input using subprocess tests.
 - [ ] 2.4 Document the command, output, address windows, unsupported bytes, and linear-decoding limitations in
   `README.md` and `doc\disassembly\README.md`; record the design rationale in `doc\decisions.md`.

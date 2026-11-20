@@ -1,5 +1,9 @@
 """Verify offline PRG loading using synthetic mapper-0 cartridges."""
 
+from pathlib import Path
+import subprocess
+import sys
+
 import pytest
 
 from misc.disassemble import decode_prg, disassemble_prg, load_prg_rom
@@ -160,15 +164,25 @@ def test_decodes_loaded_prg_without_trainer_or_chr(make_cartridge_file):
     assert b"".join(instruction_bytes for _, instruction_bytes, _, _ in decoded) == prg_rom
 
 
+def test_listing_separates_bytes_from_aligned_mnemonics():
+    program = b"\xEA\xA9\x01\xAD\x34\x12\x02"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "$C000: EA        NOP",
+        "$C001: A9 01     LDA #$01",
+        "$C003: AD 34 12  LDA $1234",
+        "$C006: 02        db $02",
+    ]
+
+
 def test_listing_reuses_forward_target_and_defines_backward_target():
     program = b"\xD0\x04\xF0\x02\x30\xFA\xEA"
     assert disassemble_prg(program, 0xC000).splitlines() == [
         "L_C000:",
-        "$C000: D0 04    BNE L_C006",
-        "$C002: F0 02    BEQ L_C006",
-        "$C004: 30 FA    BMI L_C000",
+        "$C000: D0 04     BNE L_C006",
+        "$C002: F0 02     BEQ L_C006",
+        "$C004: 30 FA     BMI L_C000",
         "L_C006:",
-        "$C006: EA       NOP",
+        "$C006: EA        NOP",
     ]
 
 
@@ -181,27 +195,27 @@ def test_listing_labels_each_relative_branch(opcode, mnemonic):
     program = bytes([0xEA, opcode, 0xFD])
     assert disassemble_prg(program, 0xC000).splitlines() == [
         "L_C000:",
-        "$C000: EA       NOP",
-        f"$C001: {opcode:02X} FD    {mnemonic} L_C000",
+        "$C000: EA        NOP",
+        f"$C001: {opcode:02X} FD     {mnemonic} L_C000",
     ]
 
 
 def test_listing_labels_direct_jumps_but_keeps_indirect_pointer():
     program = b"\x20\x09\xC0\x4C\x09\xC0\x6C\x09\xC0\xEA"
     assert disassemble_prg(program, 0xC000).splitlines() == [
-        "$C000: 20 09 C0 JSR L_C009",
-        "$C003: 4C 09 C0 JMP L_C009",
-        "$C006: 6C 09 C0 JMP ($C009)",
+        "$C000: 20 09 C0  JSR L_C009",
+        "$C003: 4C 09 C0  JMP L_C009",
+        "$C006: 6C 09 C0  JMP ($C009)",
         "L_C009:",
-        "$C009: EA       NOP",
+        "$C009: EA        NOP",
     ]
 
 
 def test_listing_does_not_infer_indirect_jump_or_data_targets():
     program = b"\x6C\x00\xC0\xAD\x00\xC0"
     assert disassemble_prg(program, 0xC000).splitlines() == [
-        "$C000: 6C 00 C0 JMP ($C000)",
-        "$C003: AD 00 C0 LDA $C000",
+        "$C000: 6C 00 C0  JMP ($C000)",
+        "$C003: AD 00 C0  LDA $C000",
     ]
 
 
@@ -213,10 +227,10 @@ def test_listing_uses_equ_for_targets_outside_or_inside_an_instruction():
         "L_C004 EQU $C004",
         "L_C00B EQU $C00B",
         "",
-        "$C000: 4C 04 C0 JMP L_C004",
-        "$C003: A9 42    LDA #$42",
-        "$C005: 20 00 20 JSR L_2000",
-        "$C008: 4C 0B C0 JMP L_C00B",
+        "$C000: 4C 04 C0  JMP L_C004",
+        "$C003: A9 42     LDA #$42",
+        "$C005: 20 00 20  JSR L_2000",
+        "$C008: 4C 0B C0  JMP L_C00B",
     ]
 
 
@@ -224,18 +238,18 @@ def test_listing_uses_equ_for_relative_target_outside_prg():
     assert disassemble_prg(b"\xD0\xFB", 0xC000).splitlines() == [
         "L_BFFD EQU $BFFD",
         "",
-        "$C000: D0 FB    BNE L_BFFD",
+        "$C000: D0 FB     BNE L_BFFD",
     ]
 
 
 def test_listing_can_label_data_without_inventing_targets_for_incomplete_instructions():
     program = b"\x4C\x03\xC0\x02\x4C\xD0"
     assert disassemble_prg(program, 0xC000).splitlines() == [
-        "$C000: 4C 03 C0 JMP L_C003",
+        "$C000: 4C 03 C0  JMP L_C003",
         "L_C003:",
-        "$C003: 02       db $02",
-        "$C004: 4C       db $4C",
-        "$C005: D0       db $D0",
+        "$C003: 02        db $02",
+        "$C004: 4C        db $4C",
+        "$C005: D0        db $D0",
     ]
 
 
@@ -267,21 +281,21 @@ def test_16k_listing_uses_exact_mirror_aliases_for_control_and_data(make_cartrid
         "L_BFFF EQU $BFFF ; mirror of $FFFF",
         "",
         "L_C000:",
-        "$C000: 4C 00 80 JMP L_8000",
-        "$C003: 20 FF BF JSR L_BFFF",
-        "$C006: AD 00 80 LDA L_8000",
-        "$C009: AD 01 80 LDA L_8001",
-        "$C00C: BD FF BF LDA L_BFFF,X",
-        "$C00F: B9 00 80 LDA L_8000,Y",
-        "$C012: 6C FF BF JMP (L_BFFF)",
-        "$C015: A9 80    LDA #$80",
-        "$C017: AD FF 7F LDA $7FFF",
-        "$C01A: BD FF 7F LDA $7FFF,X",
-        "$C01D: B9 00 C0 LDA $C000,Y",
-        "$C020: AD 00 C0 LDA $C000",
-        "$C023: 4C 00 C0 JMP L_C000",
+        "$C000: 4C 00 80  JMP L_8000",
+        "$C003: 20 FF BF  JSR L_BFFF",
+        "$C006: AD 00 80  LDA L_8000",
+        "$C009: AD 01 80  LDA L_8001",
+        "$C00C: BD FF BF  LDA L_BFFF,X",
+        "$C00F: B9 00 80  LDA L_8000,Y",
+        "$C012: 6C FF BF  JMP (L_BFFF)",
+        "$C015: A9 80     LDA #$80",
+        "$C017: AD FF 7F  LDA $7FFF",
+        "$C01A: BD FF 7F  LDA $7FFF,X",
+        "$C01D: B9 00 C0  LDA $C000,Y",
+        "$C020: AD 00 C0  LDA $C000",
+        "$C023: 4C 00 C0  JMP L_C000",
     ]
-    assert lines[-2:] == ["$FFFE: 4C       db $4C", "$FFFF: 80       db $80"]
+    assert lines[-2:] == ["$FFFE: 4C        db $4C", "$FFFF: 80        db $80"]
     _assert_listing_covers_prg(lines, prg_rom, 0xC000)
 
 
@@ -291,7 +305,7 @@ def test_16k_listing_labels_relative_branch_to_mirror():
     assert lines[:3] == [
         "L_BFFF EQU $BFFF ; mirror of $FFFF",
         "",
-        "$C000: D0 FD    BNE L_BFFF",
+        "$C000: D0 FD     BNE L_BFFF",
     ]
 
 
@@ -307,10 +321,10 @@ def test_32k_listing_does_not_treat_lower_prg_as_a_mirror(make_cartridge_file):
     lines = disassemble_prg(loaded_prg, base_address).splitlines()
     assert lines[:5] == [
         "L_8000:",
-        "$8000: 4C 00 80 JMP L_8000",
-        "$8003: AD 00 80 LDA $8000",
-        "$8006: 6C FF BF JMP ($BFFF)",
-        "$8009: 4C FF BF JMP L_BFFF",
+        "$8000: 4C 00 80  JMP L_8000",
+        "$8003: AD 00 80  LDA $8000",
+        "$8006: 6C FF BF  JMP ($BFFF)",
+        "$8009: 4C FF BF  JMP L_BFFF",
     ]
     assert "L_BFFF:" in lines
     assert not any("mirror of" in line for line in lines)
@@ -337,7 +351,7 @@ def test_listing_names_each_hardware_register(address, symbol):
     assert len(lines) == 3
     assert lines[0].startswith(f"{symbol} EQU ${address:04X}")
     assert lines[1] == ""
-    assert lines[2] == f"$C000: AD {address & 0xFF:02X} {address >> 8:02X} LDA {symbol}"
+    assert lines[2] == f"$C000: AD {address & 0xFF:02X} {address >> 8:02X}  LDA {symbol}"
 
 
 @pytest.mark.parametrize(
@@ -352,7 +366,7 @@ def test_listing_preserves_each_ppu_mirror_address(base, symbol):
         lines = disassemble_prg(program, 0xC000).splitlines()
         alias = f"{symbol}_{address:04X}"
         assert lines[0] == f"{alias} EQU ${address:04X} ; mirror of {symbol} (${base:04X})"
-        assert lines[2] == f"$C000: AD {address & 0xFF:02X} {address >> 8:02X} LDA {alias}"
+        assert lines[2] == f"$C000: AD {address & 0xFF:02X} {address >> 8:02X}  LDA {alias}"
 
 
 def test_listing_preserves_ppu_mirrors_and_indexed_bases():
@@ -362,10 +376,10 @@ def test_listing_preserves_ppu_mirrors_and_indexed_bases():
         "PPUCTRL_2008 EQU $2008 ; mirror of PPUCTRL ($2000)",
         "PPUDATA_3FFF EQU $3FFF ; mirror of PPUDATA ($2007)",
         "",
-        "$C000: BD 00 20 LDA PPUCTRL,X",
-        "$C003: B9 08 20 LDA PPUCTRL_2008,Y",
-        "$C006: AD 08 20 LDA PPUCTRL_2008",
-        "$C009: AD FF 3F LDA PPUDATA_3FFF",
+        "$C000: BD 00 20  LDA PPUCTRL,X",
+        "$C003: B9 08 20  LDA PPUCTRL_2008,Y",
+        "$C006: AD 08 20  LDA PPUCTRL_2008",
+        "$C009: AD FF 3F  LDA PPUDATA_3FFF",
     ]
 
 
@@ -380,16 +394,16 @@ def test_listing_identifies_shared_controller_and_apu_addresses():
         "JOY2_APU_FRAME EQU $4017 ; read controller 2, write APU frame counter",
         "L_4017 EQU JOY2_APU_FRAME",
         "",
-        "$C000: AD 17 40 LDA JOY2_APU_FRAME",
-        "$C003: 8D 17 40 STA JOY2_APU_FRAME",
-        "$C006: EE 17 40 INC JOY2_APU_FRAME",
-        "$C009: BD 17 40 LDA JOY2_APU_FRAME,X",
-        "$C00C: 6C 17 40 JMP (JOY2_APU_FRAME)",
-        "$C00F: 4C 17 40 JMP L_4017",
-        "$C012: AD 16 40 LDA JOY1_STROBE",
-        "$C015: 8D 16 40 STA JOY1_STROBE",
-        "$C018: AD 15 40 LDA APU_STATUS",
-        "$C01B: 8D 15 40 STA APU_STATUS",
+        "$C000: AD 17 40  LDA JOY2_APU_FRAME",
+        "$C003: 8D 17 40  STA JOY2_APU_FRAME",
+        "$C006: EE 17 40  INC JOY2_APU_FRAME",
+        "$C009: BD 17 40  LDA JOY2_APU_FRAME,X",
+        "$C00C: 6C 17 40  JMP (JOY2_APU_FRAME)",
+        "$C00F: 4C 17 40  JMP L_4017",
+        "$C012: AD 16 40  LDA JOY1_STROBE",
+        "$C015: 8D 16 40  STA JOY1_STROBE",
+        "$C018: AD 15 40  LDA APU_STATUS",
+        "$C01B: 8D 15 40  STA APU_STATUS",
     ]
 
 
@@ -401,9 +415,9 @@ def test_listing_links_hardware_control_targets_to_register_symbols():
         "L_2000 EQU PPUCTRL",
         "L_2008 EQU PPUCTRL_2008",
         "",
-        "$C000: 20 08 20 JSR L_2008",
-        "$C003: 4C 00 20 JMP L_2000",
-        "$C006: 6C 08 20 JMP (PPUCTRL_2008)",
+        "$C000: 20 08 20  JSR L_2008",
+        "$C003: 4C 00 20  JMP L_2000",
+        "$C006: 6C 08 20  JMP (PPUCTRL_2008)",
     ]
 
 
@@ -412,19 +426,19 @@ def test_listing_links_hardware_relative_target_to_register_symbol():
         "JOY2_APU_FRAME EQU $4017 ; read controller 2, write APU frame counter",
         "L_4017 EQU JOY2_APU_FRAME",
         "",
-        "$401A: D0 FB    BNE L_4017",
+        "$401A: D0 FB     BNE L_4017",
     ]
 
 
 def test_listing_does_not_symbolize_immediates_unknown_registers_or_inferred_indexed_addresses():
     program = b"\xA9\x17\xA5\x17\xAD\x09\x40\xAD\x0D\x40\xAD\x18\x40\xBD\xFF\x1F"
     assert disassemble_prg(program, 0xC000).splitlines() == [
-        "$C000: A9 17    LDA #$17",
-        "$C002: A5 17    LDA $17",
-        "$C004: AD 09 40 LDA $4009",
-        "$C007: AD 0D 40 LDA $400D",
-        "$C00A: AD 18 40 LDA $4018",
-        "$C00D: BD FF 1F LDA $1FFF,X",
+        "$C000: A9 17     LDA #$17",
+        "$C002: A5 17     LDA $17",
+        "$C004: AD 09 40  LDA $4009",
+        "$C007: AD 0D 40  LDA $400D",
+        "$C00A: AD 18 40  LDA $4018",
+        "$C00D: BD FF 1F  LDA $1FFF,X",
     ]
 
 
@@ -437,8 +451,128 @@ def test_listing_combines_hardware_symbols_with_prg_mirror_aliases():
         "PPUCTRL_2008 EQU $2008 ; mirror of PPUCTRL ($2000)",
         "L_8000 EQU $8000 ; mirror of $C000",
         "",
-        "$C000: 20 00 80 JSR L_8000",
-        "$C003: AD 08 20 LDA PPUCTRL_2008",
-        "$C006: AD 00 80 LDA L_8000",
+        "$C000: 20 00 80  JSR L_8000",
+        "$C003: AD 08 20  LDA PPUCTRL_2008",
+        "$C006: AD 00 80  LDA L_8000",
     ]
     _assert_listing_covers_prg(lines, prg_rom, 0xC000)
+
+
+@pytest.mark.parametrize(
+    "prg_banks, format_marker, has_trainer, base",
+    [(1, 0x08, True, 0xC000), (2, 0x00, False, 0x8000)],
+    ids=["nes20-16k-trainer", "ines-32k"],
+)
+def test_cli_writes_listing_from_another_directory(
+    make_cartridge_file, tmp_path, prg_banks, format_marker, has_trainer, base
+):
+    # Distinct surrounding sections expose accidentally including trainer or CHR bytes.
+    header = b"NES\x1a" + bytes([prg_banks, 1, 0x04 if has_trainer else 0, format_marker]) + bytes(8)
+    program = b"\xA9\x17\x8D\x08\x20\xD0\xFE\x02"
+    prg_rom = program + b"\xEA" * (prg_banks * 16384 - len(program))
+    trainer = b"\x35" * 512 if has_trainer else b""
+    source = make_cartridge_file(header, prg_rom, trainer=trainer).rename(tmp_path / "cartridge with spaces.nes")
+    original = source.read_bytes()
+
+    # Both positional paths use the caller's directory; the script must find its own imports.
+    working_directory = tmp_path / "working directory"
+    working_directory.mkdir()
+    output = working_directory / "listing with spaces.txt"
+    output.write_text("previous listing", encoding="utf-8")
+    script = Path(__file__).resolve().parents[1] / "misc" / "disassemble.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(Path("..") / source.name), output.name],
+        cwd=working_directory, capture_output=True, text=True, timeout=10,
+    )
+
+    # The output contains a complete PRG listing and the cartridge remains unchanged.
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert source.read_bytes() == original
+    listing_bytes = output.read_bytes()
+    assert b"\r" not in listing_bytes
+    assert listing_bytes.endswith(b"\n")
+    lines = listing_bytes.decode("utf-8").splitlines()
+    assert lines[:7] == [
+        "PPUCTRL_2008 EQU $2008 ; mirror of PPUCTRL ($2000)",
+        "",
+        f"${base:04X}: A9 17     LDA #$17",
+        f"${base + 2:04X}: 8D 08 20  STA PPUCTRL_2008",
+        f"L_{base + 5:04X}:",
+        f"${base + 5:04X}: D0 FE     BNE L_{base + 5:04X}",
+        f"${base + 7:04X}: 02        db $02",
+    ]
+    _assert_listing_covers_prg(lines, prg_rom, base)
+
+
+@pytest.mark.parametrize(
+    "prg_banks, flags6, flags7, byte8, message",
+    [
+        (1, 0x10, 0x00, 0x00, "Cartridge mapper 1"),
+        (1, 0x00, 0x08, 0x20, "Mapper 0 submapper 2"),
+        (0, 0x00, 0x00, 0x00, "Mapper 0 PRG ROM size 0 bytes"),
+        (3, 0x00, 0x00, 0x00, "Mapper 0 PRG ROM size 49152 bytes"),
+    ],
+)
+def test_cli_rejects_unsupported_layout_without_changing_files(
+    make_cartridge_file, tmp_path, prg_banks, flags6, flags7, byte8, message
+):
+    # An existing output must not be truncated when loading rejects the cartridge.
+    header = b"NES\x1a" + bytes([prg_banks, 1, flags6, flags7, byte8]) + bytes(7)
+    source = make_cartridge_file(header, bytes(prg_banks * 16384))
+    original = source.read_bytes()
+    output = tmp_path / "listing.txt"
+    output.write_bytes(b"previous listing")
+    script = Path(__file__).resolve().parents[1] / "misc" / "disassemble.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(source), str(output)], capture_output=True, text=True, timeout=10,
+    )
+
+    # Unsupported behavior propagates with its diagnostic while both files stay intact.
+    assert result.returncode != 0
+    assert f"NotImplementedError: {message}" in result.stderr
+    assert source.read_bytes() == original
+    assert output.read_bytes() == b"previous listing"
+
+
+@pytest.mark.parametrize("alias", ["same", "relative", "hardlink", "symlink"])
+def test_cli_refuses_output_paths_identifying_the_source(make_cartridge_file, tmp_path, alias):
+    # Different path names may designate the same underlying file.
+    header = b"NES\x1a" + bytes([1, 1, 0, 0]) + bytes(8)
+    source = make_cartridge_file(header, b"\xEA" * 16384)
+    original = source.read_bytes()
+    if alias == "same":
+        output = source
+    elif alias == "relative":
+        (tmp_path / "nested").mkdir()
+        output = Path("nested") / ".." / source.name
+    else:
+        output = tmp_path / f"{alias}.nes"
+        try:
+            if alias == "hardlink":
+                output.hardlink_to(source)
+            else:
+                output.symlink_to(source)
+        except OSError as error:
+            pytest.skip(f"Cannot create {alias} on this filesystem: {error}")
+
+    # Refusal occurs before writing through any alias and leaves the original bytes intact.
+    script = Path(__file__).resolve().parents[1] / "misc" / "disassemble.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(source), str(output)],
+        cwd=tmp_path, capture_output=True, text=True, timeout=10,
+    )
+    assert result.returncode != 0
+    assert "output path must not identify the input cartridge" in result.stderr
+    assert source.read_bytes() == original
+
+
+@pytest.mark.parametrize("arguments", [[], ["cartridge.nes"]])
+def test_cli_requires_both_paths(tmp_path, arguments):
+    script = Path(__file__).resolve().parents[1] / "misc" / "disassemble.py"
+    result = subprocess.run(
+        [sys.executable, str(script), *arguments], cwd=tmp_path, capture_output=True, text=True, timeout=10,
+    )
+    assert result.returncode != 0
+    assert "required" in result.stderr

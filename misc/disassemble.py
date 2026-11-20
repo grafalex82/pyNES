@@ -1,5 +1,6 @@
-"""Prepare mapper-0 program ROM bytes for an offline disassembly."""
+"""Write an offline disassembly listing for a mapper-0 cartridge."""
 
+import argparse
 from pathlib import Path
 import sys
 
@@ -219,8 +220,31 @@ def disassemble_prg(prg_rom, base_address):
             elif operand_address in mirrors:
                 operand = operand.replace(f"${operand_address:04X}", f"L_{operand_address:04X}")
         byte_text = " ".join(f"{byte:02X}" for byte in instruction_bytes)
-        line = f"${address:04X}: {byte_text:<8} {mnemonic}"
+        line = f"${address:04X}: {byte_text:<8}  {mnemonic}"
         if operand:
             line += f" {operand}"
         lines.append(line)
     return "".join(f"{line}\n" for line in lines)
+
+
+def main():
+    # Both paths are relative to the caller's working directory, not the script.
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("rom", help="path to a valid mapper-0 iNES or NES 2.0 cartridge file")
+    parser.add_argument("output", help="path to the output listing")
+    args = parser.parse_args()
+
+    # Different paths, including hard links, can identify the same cartridge.
+    source = Path(args.rom)
+    output = Path(args.output)
+    if source.resolve() == output.resolve() or (output.exists() and source.samefile(output)):
+        parser.error("output path must not identify the input cartridge")
+
+    # Finish loading and decoding before opening the destination for writing.
+    prg_rom, base_address = load_prg_rom(source)
+    listing = disassemble_prg(prg_rom, base_address)
+    output.write_text(listing, encoding="utf-8", newline="\n")
+
+
+if __name__ == "__main__":
+    main()

@@ -5,6 +5,20 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Disassembly byte and mnemonic spacing (2026-11-20)
+
+At the user's request, listing lines place an additional space between the fixed-width byte field and the mnemonic.
+This separates the fields while keeping mnemonics aligned for one-, two-, and three-byte instructions and `db` lines.
+
+### Standalone disassembly command (2026-11-20)
+
+Task 2.3 of `disassemble-nes-rom` adds two positional paths for a cartridge and its output listing. Both are resolved
+relative to the caller's working directory; component imports remain relative to the script. The command generates
+the listing before opening the destination, so unsupported cartridge layouts do not truncate an existing output.
+It rejects paths identifying the source cartridge, including resolved aliases and hard links, before writing.
+Listings use UTF-8 and LF line endings. Synthetic subprocess tests cover supported layouts, paths with spaces, rejected
+layouts, file preservation, and source aliases; the command does not execute or patch a cartridge.
+
 ### Hardware address symbols in disassembly (2026-11-20)
 
 Task 2.2 of `disassemble-nes-rom` uses `EQU` names for referenced PPU, APU, DMA, and controller addresses. PPU
