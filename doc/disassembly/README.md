@@ -59,8 +59,10 @@ against the original file.
 These files are annotated listings for people to read, not conventional assembly source or input to an assembler.
 Use English for names and explanations.
 
-- Leave unexamined disassembler output starting in column 1. Indent analyzed instructions, data, labels, and their
-  comments by four spaces, so reviewed and unreviewed parts are easy to distinguish.
+- Leave unexamined instruction lines starting in column 1. Indent analyzed instruction lines by four spaces, so
+  reviewed and unreviewed instructions are easy to distinguish. Indent comments describing code blocks by four spaces.
+  Place labels, function comments, other full-line comments, variable declarations, and data directives at column 1.
+- Start inline comments in column 40.
 - Preserve each instruction's address, original bytes, mnemonic, and operand information, including its addressing
   mode. A meaningful name may replace a generated label or numeric operand without changing the encoded address.
 - Give variables and labels meaningful names of at most 16 characters. When an instruction uses a named variable or
@@ -70,19 +72,26 @@ Use English for names and explanations.
   rather than presenting a hypothesis as fact.
 - Separate logical blocks with at least one blank line and a short comment describing what each block does. Separate
   functions with a full-line comment describing the function, its parameters, and its results.
-- Identify data that the linear disassembler mistook for code and represent it as `db` blocks. Manually decode
-  instructions when necessary, retaining the original addresses and bytes.
+- Identify data that the linear disassembler mistook for code and represent it as `db` blocks, or `dw` for 16-bit
+  values such as vectors. Manually decode instructions when necessary, retaining the original addresses and bytes.
 
 For example, the following is a synthetic illustration of formatting, not a claim about a game's code:
 
 ```text
-    ; GameState ($0010): Current state; values and users are not yet known.
+; GameState ($0010): Current state; values and users are not yet known.
+GameState EQU $10
 
+; MainEntry ($C000): Example routine; inputs and results are not yet known.
+MainEntry:
     ; Call the initialization routine.
-    $C000: 20 34 C0  JSR InitScreen ; InitScreen ($C034)
+    $C000: 20 34 C0  JSR InitScreen    ; InitScreen ($C034)
 
     ; Read the current game state.
-    $C003: A5 10     LDA GameState  ; GameState ($0010)
+    $C003: A5 10     LDA GameState     ; GameState ($0010)
+
+; Store example text as data.
+ExampleText:
+$C005: 41 42     db "AB"
 ```
 
 Explain algorithms in adjacent Markdown when listing comments alone are insufficient. Do not overwrite an annotated

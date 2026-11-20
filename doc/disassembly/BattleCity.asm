@@ -1,3 +1,10 @@
+; Source: ROMs\BattleCity (Japan).nes; exact revision unconfirmed.
+; SHA-256: 166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c
+; Mapper 0, 16 KiB PRG: CPU $C000-$FFFF, mirrored at $8000-$BFFF.
+; CPU addresses below are not file offsets; the PRG starts at file offset $0010.
+; PPU registers: https://bugzmanov.github.io/nes_ebook/chapter_6_1.html
+; Interrupts: https://bugzmanov.github.io/nes_ebook/chapter_6_2.html
+
 PPUCTRL EQU $2000
 PPUMASK EQU $2001
 PPUSTATUS EQU $2002
@@ -5,52 +12,52 @@ OAMADDR EQU $2003
 PPUSCROLL EQU $2005
 PPUADDR EQU $2006
 PPUDATA EQU $2007
-PPUCTRL_2010 EQU $2010 ; mirror of PPUCTRL ($2000)
-PPUCTRL_2020 EQU $2020 ; mirror of PPUCTRL ($2000)
-PPUSTATUS_2022 EQU $2022 ; mirror of PPUSTATUS ($2002)
-PPUSCROLL_20DD EQU $20DD ; mirror of PPUSCROLL ($2005)
-PPUSCROLL_22DD EQU $22DD ; mirror of PPUSCROLL ($2005)
-PPUSCROLL_2315 EQU $2315 ; mirror of PPUSCROLL ($2005)
-PPUSTATUS_2422 EQU $2422 ; mirror of PPUSTATUS ($2002)
-PPUCTRL_2440 EQU $2440 ; mirror of PPUCTRL ($2000)
-PPUCTRL_24D0 EQU $24D0 ; mirror of PPUCTRL ($2000)
-OAMDATA_24D4 EQU $24D4 ; mirror of OAMDATA ($2004)
-PPUSCROLL_24DD EQU $24DD ; mirror of PPUSCROLL ($2005)
-PPUCTRL_2D20 EQU $2D20 ; mirror of PPUCTRL ($2000)
-PPUSTATUS_2D22 EQU $2D22 ; mirror of PPUSTATUS ($2002)
-OAMDATA_2D44 EQU $2D44 ; mirror of OAMDATA ($2004)
-OAMDATA_2DB4 EQU $2DB4 ; mirror of OAMDATA ($2004)
-PPUADDR_2E2E EQU $2E2E ; mirror of PPUADDR ($2006)
-PPUCTRL_2E40 EQU $2E40 ; mirror of PPUCTRL ($2000)
-PPUDATA_307F EQU $307F ; mirror of PPUDATA ($2007)
-PPUDATA_32FF EQU $32FF ; mirror of PPUDATA ($2007)
-OAMADDR_334B EQU $334B ; mirror of OAMADDR ($2003)
-PPUSCROLL_338D EQU $338D ; mirror of PPUSCROLL ($2005)
-OAMADDR_3393 EQU $3393 ; mirror of OAMADDR ($2003)
-OAMADDR_33D3 EQU $33D3 ; mirror of OAMADDR ($2003)
-PPUCTRL_33D8 EQU $33D8 ; mirror of PPUCTRL ($2000)
-PPUSCROLL_33DD EQU $33DD ; mirror of PPUSCROLL ($2005)
-PPUADDR_33DE EQU $33DE ; mirror of PPUADDR ($2006)
-PPUADDR_33EE EQU $33EE ; mirror of PPUADDR ($2006)
-OAMADDR_34C3 EQU $34C3 ; mirror of OAMADDR ($2003)
-PPUSCROLL_34DD EQU $34DD ; mirror of PPUSCROLL ($2005)
-PPUSTATUS_36D2 EQU $36D2 ; mirror of PPUSTATUS ($2002)
-OAMADDR_36E3 EQU $36E3 ; mirror of OAMADDR ($2003)
-PPUSCROLL_374D EQU $374D ; mirror of PPUSCROLL ($2005)
-PPUMASK_3931 EQU $3931 ; mirror of PPUMASK ($2001)
-PPUCTRL_3A78 EQU $3A78 ; mirror of PPUCTRL ($2000)
-OAMADDR_3B33 EQU $3B33 ; mirror of OAMADDR ($2003)
-OAMADDR_3BD3 EQU $3BD3 ; mirror of OAMADDR ($2003)
-OAMDATA_3D44 EQU $3D44 ; mirror of OAMDATA ($2004)
-PPUSCROLL_3D4D EQU $3D4D ; mirror of PPUSCROLL ($2005)
-PPUSCROLL_3DAD EQU $3DAD ; mirror of PPUSCROLL ($2005)
-OAMDATA_3DD4 EQU $3DD4 ; mirror of OAMDATA ($2004)
-PPUSCROLL_3DDD EQU $3DDD ; mirror of PPUSCROLL ($2005)
+PPUCTRL_2010 EQU $2010                 ; mirror of PPUCTRL ($2000)
+PPUCTRL_2020 EQU $2020                 ; mirror of PPUCTRL ($2000)
+PPUSTATUS_2022 EQU $2022               ; mirror of PPUSTATUS ($2002)
+PPUSCROLL_20DD EQU $20DD               ; mirror of PPUSCROLL ($2005)
+PPUSCROLL_22DD EQU $22DD               ; mirror of PPUSCROLL ($2005)
+PPUSCROLL_2315 EQU $2315               ; mirror of PPUSCROLL ($2005)
+PPUSTATUS_2422 EQU $2422               ; mirror of PPUSTATUS ($2002)
+PPUCTRL_2440 EQU $2440                 ; mirror of PPUCTRL ($2000)
+PPUCTRL_24D0 EQU $24D0                 ; mirror of PPUCTRL ($2000)
+OAMDATA_24D4 EQU $24D4                 ; mirror of OAMDATA ($2004)
+PPUSCROLL_24DD EQU $24DD               ; mirror of PPUSCROLL ($2005)
+PPUCTRL_2D20 EQU $2D20                 ; mirror of PPUCTRL ($2000)
+PPUSTATUS_2D22 EQU $2D22               ; mirror of PPUSTATUS ($2002)
+OAMDATA_2D44 EQU $2D44                 ; mirror of OAMDATA ($2004)
+OAMDATA_2DB4 EQU $2DB4                 ; mirror of OAMDATA ($2004)
+PPUADDR_2E2E EQU $2E2E                 ; mirror of PPUADDR ($2006)
+PPUCTRL_2E40 EQU $2E40                 ; mirror of PPUCTRL ($2000)
+PPUDATA_307F EQU $307F                 ; mirror of PPUDATA ($2007)
+PPUDATA_32FF EQU $32FF                 ; mirror of PPUDATA ($2007)
+OAMADDR_334B EQU $334B                 ; mirror of OAMADDR ($2003)
+PPUSCROLL_338D EQU $338D               ; mirror of PPUSCROLL ($2005)
+OAMADDR_3393 EQU $3393                 ; mirror of OAMADDR ($2003)
+OAMADDR_33D3 EQU $33D3                 ; mirror of OAMADDR ($2003)
+PPUCTRL_33D8 EQU $33D8                 ; mirror of PPUCTRL ($2000)
+PPUSCROLL_33DD EQU $33DD               ; mirror of PPUSCROLL ($2005)
+PPUADDR_33DE EQU $33DE                 ; mirror of PPUADDR ($2006)
+PPUADDR_33EE EQU $33EE                 ; mirror of PPUADDR ($2006)
+OAMADDR_34C3 EQU $34C3                 ; mirror of OAMADDR ($2003)
+PPUSCROLL_34DD EQU $34DD               ; mirror of PPUSCROLL ($2005)
+PPUSTATUS_36D2 EQU $36D2               ; mirror of PPUSTATUS ($2002)
+OAMADDR_36E3 EQU $36E3                 ; mirror of OAMADDR ($2003)
+PPUSCROLL_374D EQU $374D               ; mirror of PPUSCROLL ($2005)
+PPUMASK_3931 EQU $3931                 ; mirror of PPUMASK ($2001)
+PPUCTRL_3A78 EQU $3A78                 ; mirror of PPUCTRL ($2000)
+OAMADDR_3B33 EQU $3B33                 ; mirror of OAMADDR ($2003)
+OAMADDR_3BD3 EQU $3BD3                 ; mirror of OAMADDR ($2003)
+OAMDATA_3D44 EQU $3D44                 ; mirror of OAMDATA ($2004)
+PPUSCROLL_3D4D EQU $3D4D               ; mirror of PPUSCROLL ($2005)
+PPUSCROLL_3DAD EQU $3DAD               ; mirror of PPUSCROLL ($2005)
+OAMDATA_3DD4 EQU $3DD4                 ; mirror of OAMDATA ($2004)
+PPUSCROLL_3DDD EQU $3DDD               ; mirror of PPUSCROLL ($2005)
 PULSE1_CTRL EQU $4000
 OAMDMA EQU $4014
-APU_STATUS EQU $4015 ; read APU status, write channel enables
-JOY1_STROBE EQU $4016 ; read controller 1, write controller strobe
-JOY2_APU_FRAME EQU $4017 ; read controller 2, write APU frame counter
+APU_STATUS EQU $4015                   ; read APU status, write channel enables
+JOY1_STROBE EQU $4016                  ; read controller 1, write controller strobe
+JOY2_APU_FRAME EQU $4017               ; read controller 2, write APU frame counter
 L_0D20 EQU $0D20
 L_1010 EQU $1010
 L_1020 EQU $1020
@@ -73,104 +80,104 @@ L_549C EQU $549C
 L_5941 EQU $5941
 L_5942 EQU $5942
 L_5A4F EQU $5A4F
-L_8101 EQU $8101 ; mirror of $C101
-L_82EE EQU $82EE ; mirror of $C2EE
-L_84DD EQU $84DD ; mirror of $C4DD
-L_88D4 EQU $88D4 ; mirror of $C8D4
-L_88DD EQU $88DD ; mirror of $C8DD
-L_88ED EQU $88ED ; mirror of $C8ED
-L_89BD EQU $89BD ; mirror of $C9BD
-L_89DD EQU $89DD ; mirror of $C9DD
-L_8B7D EQU $8B7D ; mirror of $CB7D
-L_8D4D EQU $8D4D ; mirror of $CD4D
-L_8D88 EQU $8D88 ; mirror of $CD88
-L_8D8D EQU $8D8D ; mirror of $CD8D
-L_8D9D EQU $8D9D ; mirror of $CD9D
-L_8DD4 EQU $8DD4 ; mirror of $CDD4
-L_8DD8 EQU $8DD8 ; mirror of $CDD8
-L_8DDA EQU $8DDA ; mirror of $CDDA
-L_9449 EQU $9449 ; mirror of $D449
-L_944D EQU $944D ; mirror of $D44D
-L_9494 EQU $9494 ; mirror of $D494
-L_94DD EQU $94DD ; mirror of $D4DD
-L_97D5 EQU $97D5 ; mirror of $D7D5
-L_999D EQU $999D ; mirror of $D99D
-L_99B4 EQU $99B4 ; mirror of $D9B4
-L_99B9 EQU $99B9 ; mirror of $D9B9
-L_99DD EQU $99DD ; mirror of $D9DD
-L_99EC EQU $99EC ; mirror of $D9EC
-L_9B9B EQU $9B9B ; mirror of $DB9B
-L_9BBB EQU $9BBB ; mirror of $DBBB
-L_9BD9 EQU $9BD9 ; mirror of $DBD9
-L_9BDD EQU $9BDD ; mirror of $DBDD
-L_9CCD EQU $9CCD ; mirror of $DCCD
-L_9D49 EQU $9D49 ; mirror of $DD49
-L_9D4D EQU $9D4D ; mirror of $DD4D
-L_9D8D EQU $9D8D ; mirror of $DD8D
-L_9D9D EQU $9D9D ; mirror of $DD9D
-L_9DAA EQU $9DAA ; mirror of $DDAA
-L_9DBB EQU $9DBB ; mirror of $DDBB
-L_9DBD EQU $9DBD ; mirror of $DDBD
-L_9DD4 EQU $9DD4 ; mirror of $DDD4
-L_9DD5 EQU $9DD5 ; mirror of $DDD5
-L_9DD9 EQU $9DD9 ; mirror of $DDD9
-L_9DDB EQU $9DDB ; mirror of $DDDB
-L_9DDD EQU $9DDD ; mirror of $DDDD
-L_A2D8 EQU $A2D8 ; mirror of $E2D8
-L_A4AA EQU $A4AA ; mirror of $E4AA
-L_A978 EQU $A978 ; mirror of $E978
-L_A9CA EQU $A9CA ; mirror of $E9CA
-L_AA44 EQU $AA44 ; mirror of $EA44
-L_AA9D EQU $AA9D ; mirror of $EA9D
-L_AAA4 EQU $AAA4 ; mirror of $EAA4
-L_AAAA EQU $AAAA ; mirror of $EAAA
-L_AAAD EQU $AAAD ; mirror of $EAAD
-L_AABB EQU $AABB ; mirror of $EABB
-L_AADD EQU $AADD ; mirror of $EADD
-L_AB9B EQU $AB9B ; mirror of $EB9B
-L_ABBA EQU $ABBA ; mirror of $EBBA
-L_ABDD EQU $ABDD ; mirror of $EBDD
-L_ADAA EQU $ADAA ; mirror of $EDAA
-L_ADAB EQU $ADAB ; mirror of $EDAB
-L_ADDA EQU $ADDA ; mirror of $EDDA
-L_ADDD EQU $ADDD ; mirror of $EDDD
-L_B1D1 EQU $B1D1 ; mirror of $F1D1
-L_B44B EQU $B44B ; mirror of $F44B
-L_B44D EQU $B44D ; mirror of $F44D
-L_B4BB EQU $B4BB ; mirror of $F4BB
-L_B4DB EQU $B4DB ; mirror of $F4DB
-L_B4DD EQU $B4DD ; mirror of $F4DD
-L_B5D6 EQU $B5D6 ; mirror of $F5D6
-L_B6DD EQU $B6DD ; mirror of $F6DD
-L_B8DD EQU $B8DD ; mirror of $F8DD
-L_B99B EQU $B99B ; mirror of $F99B
-L_B9BD EQU $B9BD ; mirror of $F9BD
-L_B9DD EQU $B9DD ; mirror of $F9DD
-L_BABB EQU $BABB ; mirror of $FABB
-L_BB04 EQU $BB04 ; mirror of $FB04
-L_BB4B EQU $BB4B ; mirror of $FB4B
-L_BB6B EQU $BB6B ; mirror of $FB6B
-L_BB8B EQU $BB8B ; mirror of $FB8B
-L_BB99 EQU $BB99 ; mirror of $FB99
-L_BBAA EQU $BBAA ; mirror of $FBAA
-L_BBAD EQU $BBAD ; mirror of $FBAD
-L_BBBB EQU $BBBB ; mirror of $FBBB
-L_BBBD EQU $BBBD ; mirror of $FBBD
-L_BBCC EQU $BBCC ; mirror of $FBCC
-L_BBD3 EQU $BBD3 ; mirror of $FBD3
-L_BBD4 EQU $BBD4 ; mirror of $FBD4
-L_BBDB EQU $BBDB ; mirror of $FBDB
-L_BBDD EQU $BBDD ; mirror of $FBDD
-L_BD04 EQU $BD04 ; mirror of $FD04
-L_BD4D EQU $BD4D ; mirror of $FD4D
-L_BD99 EQU $BD99 ; mirror of $FD99
-L_BD9B EQU $BD9B ; mirror of $FD9B
-L_BDBB EQU $BDBB ; mirror of $FDBB
-L_BDBD EQU $BDBD ; mirror of $FDBD
-L_BDCB EQU $BDCB ; mirror of $FDCB
-L_BDD8 EQU $BDD8 ; mirror of $FDD8
-L_BDDB EQU $BDDB ; mirror of $FDDB
-L_BDDD EQU $BDDD ; mirror of $FDDD
+L_8101 EQU $8101                       ; mirror of $C101
+L_82EE EQU $82EE                       ; mirror of $C2EE
+L_84DD EQU $84DD                       ; mirror of $C4DD
+L_88D4 EQU $88D4                       ; mirror of $C8D4
+L_88DD EQU $88DD                       ; mirror of $C8DD
+L_88ED EQU $88ED                       ; mirror of $C8ED
+L_89BD EQU $89BD                       ; mirror of $C9BD
+L_89DD EQU $89DD                       ; mirror of $C9DD
+L_8B7D EQU $8B7D                       ; mirror of $CB7D
+L_8D4D EQU $8D4D                       ; mirror of $CD4D
+L_8D88 EQU $8D88                       ; mirror of $CD88
+L_8D8D EQU $8D8D                       ; mirror of $CD8D
+L_8D9D EQU $8D9D                       ; mirror of $CD9D
+L_8DD4 EQU $8DD4                       ; mirror of $CDD4
+L_8DD8 EQU $8DD8                       ; mirror of $CDD8
+L_8DDA EQU $8DDA                       ; mirror of $CDDA
+L_9449 EQU $9449                       ; mirror of $D449
+L_944D EQU $944D                       ; mirror of $D44D
+L_9494 EQU $9494                       ; mirror of $D494
+L_94DD EQU $94DD                       ; mirror of $D4DD
+L_97D5 EQU $97D5                       ; mirror of $D7D5
+L_999D EQU $999D                       ; mirror of $D99D
+L_99B4 EQU $99B4                       ; mirror of $D9B4
+L_99B9 EQU $99B9                       ; mirror of $D9B9
+L_99DD EQU $99DD                       ; mirror of $D9DD
+L_99EC EQU $99EC                       ; mirror of $D9EC
+L_9B9B EQU $9B9B                       ; mirror of $DB9B
+L_9BBB EQU $9BBB                       ; mirror of $DBBB
+L_9BD9 EQU $9BD9                       ; mirror of $DBD9
+L_9BDD EQU $9BDD                       ; mirror of $DBDD
+L_9CCD EQU $9CCD                       ; mirror of $DCCD
+L_9D49 EQU $9D49                       ; mirror of $DD49
+L_9D4D EQU $9D4D                       ; mirror of $DD4D
+L_9D8D EQU $9D8D                       ; mirror of $DD8D
+L_9D9D EQU $9D9D                       ; mirror of $DD9D
+L_9DAA EQU $9DAA                       ; mirror of $DDAA
+L_9DBB EQU $9DBB                       ; mirror of $DDBB
+L_9DBD EQU $9DBD                       ; mirror of $DDBD
+L_9DD4 EQU $9DD4                       ; mirror of $DDD4
+L_9DD5 EQU $9DD5                       ; mirror of $DDD5
+L_9DD9 EQU $9DD9                       ; mirror of $DDD9
+L_9DDB EQU $9DDB                       ; mirror of $DDDB
+L_9DDD EQU $9DDD                       ; mirror of $DDDD
+L_A2D8 EQU $A2D8                       ; mirror of $E2D8
+L_A4AA EQU $A4AA                       ; mirror of $E4AA
+L_A978 EQU $A978                       ; mirror of $E978
+L_A9CA EQU $A9CA                       ; mirror of $E9CA
+L_AA44 EQU $AA44                       ; mirror of $EA44
+L_AA9D EQU $AA9D                       ; mirror of $EA9D
+L_AAA4 EQU $AAA4                       ; mirror of $EAA4
+L_AAAA EQU $AAAA                       ; mirror of $EAAA
+L_AAAD EQU $AAAD                       ; mirror of $EAAD
+L_AABB EQU $AABB                       ; mirror of $EABB
+L_AADD EQU $AADD                       ; mirror of $EADD
+L_AB9B EQU $AB9B                       ; mirror of $EB9B
+L_ABBA EQU $ABBA                       ; mirror of $EBBA
+L_ABDD EQU $ABDD                       ; mirror of $EBDD
+L_ADAA EQU $ADAA                       ; mirror of $EDAA
+L_ADAB EQU $ADAB                       ; mirror of $EDAB
+L_ADDA EQU $ADDA                       ; mirror of $EDDA
+L_ADDD EQU $ADDD                       ; mirror of $EDDD
+L_B1D1 EQU $B1D1                       ; mirror of $F1D1
+L_B44B EQU $B44B                       ; mirror of $F44B
+L_B44D EQU $B44D                       ; mirror of $F44D
+L_B4BB EQU $B4BB                       ; mirror of $F4BB
+L_B4DB EQU $B4DB                       ; mirror of $F4DB
+L_B4DD EQU $B4DD                       ; mirror of $F4DD
+L_B5D6 EQU $B5D6                       ; mirror of $F5D6
+L_B6DD EQU $B6DD                       ; mirror of $F6DD
+L_B8DD EQU $B8DD                       ; mirror of $F8DD
+L_B99B EQU $B99B                       ; mirror of $F99B
+L_B9BD EQU $B9BD                       ; mirror of $F9BD
+L_B9DD EQU $B9DD                       ; mirror of $F9DD
+L_BABB EQU $BABB                       ; mirror of $FABB
+L_BB04 EQU $BB04                       ; mirror of $FB04
+L_BB4B EQU $BB4B                       ; mirror of $FB4B
+L_BB6B EQU $BB6B                       ; mirror of $FB6B
+L_BB8B EQU $BB8B                       ; mirror of $FB8B
+L_BB99 EQU $BB99                       ; mirror of $FB99
+L_BBAA EQU $BBAA                       ; mirror of $FBAA
+L_BBAD EQU $BBAD                       ; mirror of $FBAD
+L_BBBB EQU $BBBB                       ; mirror of $FBBB
+L_BBBD EQU $BBBD                       ; mirror of $FBBD
+L_BBCC EQU $BBCC                       ; mirror of $FBCC
+L_BBD3 EQU $BBD3                       ; mirror of $FBD3
+L_BBD4 EQU $BBD4                       ; mirror of $FBD4
+L_BBDB EQU $BBDB                       ; mirror of $FBDB
+L_BBDD EQU $BBDD                       ; mirror of $FBDD
+L_BD04 EQU $BD04                       ; mirror of $FD04
+L_BD4D EQU $BD4D                       ; mirror of $FD4D
+L_BD99 EQU $BD99                       ; mirror of $FD99
+L_BD9B EQU $BD9B                       ; mirror of $FD9B
+L_BDBB EQU $BDBB                       ; mirror of $FDBB
+L_BDBD EQU $BDBD                       ; mirror of $FDBD
+L_BDCB EQU $BDCB                       ; mirror of $FDCB
+L_BDD8 EQU $BDD8                       ; mirror of $FDD8
+L_BDDB EQU $BDDB                       ; mirror of $FDDB
+L_BDDD EQU $BDDD                       ; mirror of $FDDD
 L_CDCC EQU $CDCC
 L_D36A EQU $D36A
 L_D3A3 EQU $D3A3
@@ -198,100 +205,106 @@ L_F953 EQU $F953
 START EQU $C070
 IRQ EQU $C070
 
-$C000: 43        db $43
-L_C001:
-$C001: 4F        db $4F
-$C002: 50 59     BVC L_C05D
-$C004: 52        db $52
-$C005: 49 47     EOR #$47
-$C007: 48        PHA
-$C008: 54        db $54
-$C009: 20 31 39  JSR L_3931
-$C00C: 38        SEC
-$C00D: 31 20     AND ($20),Y
-$C00F: 31 39     AND ($39),Y
-$C011: 38        SEC
-$C012: 35 20     AND $20,X
-$C014: 4E 41 4D  LSR $4D41
-$C017: 43        db $43
-$C018: 4F        db $4F
-$C019: 20 4C 54  JSR L_544C
-$C01C: 44        db $44
-$C01D: 2E 0D 0A  ROL $0A0D
-$C020: 41 4C     EOR ($4C,X)
-$C022: 4C 20 52  JMP L_5220
-$C025: 49 47     EOR #$47
-$C027: 48        PHA
-$C028: 54        db $54
-$C029: 53        db $53
-$C02A: 20 52 45  JSR L_4552
-$C02D: 53        db $53
-$C02E: 45 52     EOR $52
-$C030: 56 45     LSR $45,X
-$C032: 44        db $44
-$C033: 20 20 20  JSR L_2020
-$C036: 20 20 20  JSR L_2020
-$C039: 20 20 20  JSR L_2020
-$C03C: 20 20 0D  JSR L_0D20
-$C03F: 0A        ASL A
-$C040: 52        db $52
-$C041: 59 4F 55  EOR $554F,Y
-$C044: 49 54     EOR #$54
-$C046: 49 20     EOR #$20
-$C048: 4F        db $4F
-$C049: 4F        db $4F
-$C04A: 4B        db $4B
-$C04B: 55 42     EOR $42,X
-$C04D: 4F        db $4F
-$C04E: 20 20 54  JSR L_5420
-$C051: 41 4B     EOR ($4B,X)
-$C053: 45 46     EOR $46
-$C055: 55 4D     EOR $4D,X
-$C057: 49 20     EOR #$20
-$C059: 48        PHA
-$C05A: 59 4F 55  EOR $554F,Y
-L_C05D:
-$C05D: 44        db $44
-$C05E: 4F        db $4F
-$C05F: 55 4A     EOR $4A,X
-$C061: 55 4E     EOR $4E,X
-$C063: 4B        db $4B
-$C064: 4F        db $4F
-$C065: 20 4F 5A  JSR L_5A4F
-$C068: 41 57     EOR ($57,X)
-$C06A: 41 20     EOR ($20,X)
-$C06C: 20 20 20  JSR L_2020
-$C06F: 20 78 A9  JSR L_A978
-$C072: 10 8D     BPL L_C001
-$C074: 00        BRK
-$C075: 20 D8 A2  JSR L_A2D8
-$C078: 02        db $02
-L_C079:
-$C079: AD 02 20  LDA PPUSTATUS
-$C07C: 10 FB     BPL L_C079
-$C07E: A9 06     LDA #$06
-$C080: 8D 01 20  STA PPUMASK
-$C083: CA        DEX
-$C084: D0 F3     BNE L_C079
-$C086: A2 7F     LDX #$7F
-$C088: 9A        TXS
-$C089: 20 91 D4  JSR L_D491
-$C08C: A9 00     LDA #$00
-$C08E: 85 4F     STA $4F
-$C090: 85 50     STA $50
-$C092: 20 67 D4  JSR L_D467
+; RAM variables.
+; PpuPageOffset ($0005): Added to a RAM source page to form the PPU destination page in $D771.
+; InitGameState ($D491) sets $1C or $24; other values and users are not yet fully traced.
+PpuPageOffset EQU $05
+; PpuQueueEnd ($000C): End offset of queued PPU writes starting at $0180; $00 means the queue is empty.
+; InitGameState ($D491) clears it; $D6B3 advances it and NMI ($D400) drains it through $D8FD.
+PpuQueueEnd EQU $0C
+; OamIndex ($000D): Byte offset into the shadow OAM buffer at $0200.
+; InitGameState ($D491) sets $00; HideSprites ($DA93) sets $04 and $DA2B uses it for sprite writes.
+OamIndex EQU $0D
+; OamStep ($000E): Signed byte added to OamIndex ($000D) by $DA2B.
+; InitGameState ($D491) sets $04; HideSprites ($DA93) negates it to $FC (-4). Other values are untraced.
+OamStep EQU $0E
+; PaletteReq ($004D): Background palette request; values with bit 7 set are skipped by NMI ($D400).
+; InitGameState ($D491) and $D50E set $FF; nonnegative values select a palette, with valid indices untraced.
+PaletteReq EQU $4D
+; ScrollY ($004F): Vertical scroll byte written to PPUSCROLL by NMI ($D400).
+; ResetEntry ($C070) clears it; $C7AB also changes it. Other values and users are not yet analyzed.
+ScrollY EQU $4F
+; PpuCtrlBits ($0050): Bits ORed with $B0 and written to PPUCTRL by NMI ($D400).
+; ResetEntry ($C070) writes $00; $C9C0 writes $02. Other values and users are not yet analyzed.
+PpuCtrlBits EQU $50
+; PpuDataOffset ($0060): Offset added to selected data bytes by $D6DD and $D8D2.
+; InitGameState ($D491) sets $00; other values and users are not yet fully traced.
+PpuDataOffset EQU $60
+; StringTrim ($006B): Controls how far $D934 steps back after finding a $FF terminator.
+; InitGameState ($D491) sets $00; $01 is also written elsewhere. Other values and users are untraced.
+StringTrim EQU $6B
+; PauseFlag ($006D): Likely pause state; $C1F9 toggles $00/$01 and $EA7E uses it to select audio processing.
+; InitGameState ($D491) sets $00; the complete range and other users are not yet traced.
+PauseFlag EQU $6D
+; TileAttrBits ($006E): Bits ORed into a shadow OAM attribute when $DA2B reads $22 from its indirect source.
+; InitGameState ($D491) sets $20; other values and users are not yet fully traced.
+TileAttrBits EQU $6E
+; OptionIndex ($0083): Selector used as a jump-table index at $CA58; $C9C0 cycles it through $00-$02.
+; InitGameState ($D491) sets $00 when the RAM marker differs; other values and users are untraced.
+OptionIndex EQU $83
+
+; CreditsText ($C000-$C06F): ASCII text with CR/LF separators and space padding, not a null-terminated string.
+; The 16 bytes at $C040 are also copied to and compared with RAM $0110-$011F by $D4E3 and $D4EF.
+CreditsText:
+$C000: 43 4F 50 59 52 49 47 48 54 20 31 39 38 31 20 31  db "COPYRIGHT 1981 1"
+$C010: 39 38 35 20 4E 41 4D 43 4F 20 4C 54 44 2E 0D 0A  db "985 NAMCO LTD.", $0D, $0A
+$C020: 41 4C 4C 20 52 49 47 48 54 53 20 52 45 53 45 52  db "ALL RIGHTS RESER"
+$C030: 56 45 44 20 20 20 20 20 20 20 20 20 20 20 0D 0A  db "VED           ", $0D, $0A
+$C040: 52 59 4F 55 49 54 49 20 4F 4F 4B 55 42 4F 20 20  db "RYOUITI OOKUBO  "
+$C050: 54 41 4B 45 46 55 4D 49 20 48 59 4F 55 44 4F 55  db "TAKEFUMI HYOUDOU"
+$C060: 4A 55 4E 4B 4F 20 4F 5A 41 57 41 20 20 20 20 20  db "JUNKO OZAWA     "
+
+; ResetEntry ($C070): Reset and IRQ/BRK entry; initialize the machine and enter a repeating call sequence.
+; Inputs: CPU reset or IRQ/BRK; no explicit parameters. Output: transfers control to MainLoop ($C09C).
+ResetEntry:
+    ; Mask IRQs, request PPUCTRL $10, and clear the decimal flag; NES arithmetic is binary regardless of D.
+    ; The PPU can ignore the PPUCTRL write during power-up warm-up. $10 selects background pattern table $1000.
+    $C070: 78        SEI
+    $C071: A9 10     LDA #$10
+    $C073: 8D 00 20  STA PPUCTRL       ; PPUCTRL ($2000): NMI generation bit clear
+    $C076: D8        CLD
+    $C077: A2 02     LDX #$02
+
+    ; Wait for vblank flag. Reading PPUSTATUS clears its vblank flag, so the second pass waits for another set.
+WaitVblank:
+    $C079: AD 02 20  LDA PPUSTATUS     ; PPUSTATUS ($2002), bit 7 is vblank
+    $C07C: 10 FB     BPL WaitVblank    ; WaitVblank ($C079)
+    $C07E: A9 06     LDA #$06
+    $C080: 8D 01 20  STA PPUMASK       ; PPUMASK ($2001): disable background and sprite rendering if accepted
+    $C083: CA        DEX
+    $C084: D0 F3     BNE WaitVblank    ; WaitVblank ($C079)
+
+    ; Initialize the stack, then initialize RAM, video buffers, and audio.
+    $C086: A2 7F     LDX #$7F
+    $C088: 9A        TXS
+    $C089: 20 91 D4  JSR InitGameState ; InitGameState ($D491)
+
+    ; Clear the scroll and PPU control variables, then synchronize with vblank and enable PPU NMIs.
+    $C08C: A9 00     LDA #$00
+    $C08E: 85 4F     STA ScrollY       ; ScrollY ($004F)
+    $C090: 85 50     STA PpuCtrlBits   ; PpuCtrlBits ($0050)
+    $C092: 20 67 D4  JSR EnablePpuNmi  ; EnablePpuNmi ($D467)
+
+    ; This setup can also be entered from $C292; the purpose of $004B is not yet known.
+RestartSetup:
 L_C095:
-$C095: 20 7F D1  JSR L_D17F
-$C098: A9 00     LDA #$00
-$C09A: 85 4B     STA $4B
-L_C09C:
-$C09C: 20 6A D1  JSR L_D16A
-$C09F: 20 AB C7  JSR L_C7AB
+    $C095: 20 7F D1  JSR $D17F
+    $C098: A9 00     LDA #$00
+    $C09A: 85 4B     STA $4B
+
+    ; Call the following routines in sequence and repeat; their full behavior is not yet analyzed.
+    ; Some calls can transfer control directly to $C0A2 instead of returning normally.
+MainLoop:
+    $C09C: 20 6A D1  JSR $D16A
+    $C09F: 20 AB C7  JSR $C7AB
+
+    ; Other code can also resume the sequence here.
+LoopContinue:
 L_C0A2:
-$C0A2: 20 C0 C9  JSR L_C9C0
-$C0A5: 20 B5 C3  JSR L_C3B5
-$C0A8: 20 1D C4  JSR L_C41D
-$C0AB: 4C 9C C0  JMP L_C09C
+    $C0A2: 20 C0 C9  JSR $C9C0
+    $C0A5: 20 B5 C3  JSR $C3B5
+    $C0A8: 20 1D C4  JSR $C41D
+    $C0AB: 4C 9C C0  JMP MainLoop      ; MainLoop ($C09C)
 L_C0AE:
 $C0AE: A5 4B     LDA $4B
 $C0B0: D0 0C     BNE L_C0BE
@@ -2918,11 +2931,21 @@ $D462: 68        PLA
 $D463: AA        TAX
 $D464: A5 0F     LDA $0F
 $D466: 60        RTS
+
+; EnablePpuNmi ($D467): Wait for a vblank flag, then configure PPUCTRL and enable vblank NMIs.
+; Inputs: none; depends on PPUSTATUS ($2002). Outputs: A=$B0, N=1, Z=0; writes $B0 to PPUCTRL ($2000).
+; Polling PPUSTATUS clears its vblank flag and resets the scroll/address write latch.
+EnablePpuNmi:
 L_D467:
-$D467: 20 F5 D5  JSR L_D5F5
-$D46A: A9 B0     LDA #$B0
-$D46C: 8D 00 20  STA PPUCTRL
-$D46F: 60        RTS
+    ; Poll until the vblank flag is observed; it may already be set.
+    $D467: 20 F5 D5  JSR WaitForVblank ; WaitForVblank ($D5F5)
+
+    ; Enable NMI, select 8x16 sprites, background table $1000, nametable $2000, and PPUDATA increment 1.
+    ; The PPU may ignore this write during startup warm-up; this routine does not write PPUMASK.
+    $D46A: A9 B0     LDA #$B0
+    $D46C: 8D 00 20  STA PPUCTRL       ; PPUCTRL ($2000)
+    $D46F: 60        RTS
+
 L_D470:
 $D470: 20 F6 D8  JSR L_D8F6
 $D473: A9 10     LDA #$10
@@ -2930,6 +2953,7 @@ $D475: 8D 00 20  STA PPUCTRL
 $D478: A9 06     LDA #$06
 $D47A: 8D 01 20  STA PPUMASK
 $D47D: 60        RTS
+ClearPpuBuf:
 L_D47E:
 $D47E: A9 00     LDA #$00
 $D480: AA        TAX
@@ -2941,44 +2965,62 @@ $D48A: 9D 00 07  STA $0700,X
 $D48D: E8        INX
 $D48E: D0 F1     BNE L_D481
 $D490: 60        RTS
+
+; InitGameState ($D491): Initialize game state, video buffers, and audio; preserve selected state if a marker matches.
+; Inputs: no register parameters; depends on PPU status and the RAM marker at $0110-$011F.
+; Outputs: initializes RAM and issues PPU/APU writes; A, X, Y, and flags are modified, with no return value.
+InitGameState:
 L_D491:
-$D491: A9 00     LDA #$00
-$D493: 85 60     STA $60
-$D495: 85 6B     STA $6B
-$D497: 85 0C     STA $0C
-$D499: 85 0D     STA $0D
-$D49B: 85 6D     STA $6D
-$D49D: A9 FF     LDA #$FF
-$D49F: 85 4D     STA $4D
-$D4A1: 20 02 D5  JSR L_D502
-$D4A4: A9 04     LDA #$04
-$D4A6: 85 0E     STA $0E
-$D4A8: A9 20     LDA #$20
-$D4AA: 85 6E     STA $6E
-$D4AC: 20 7E D4  JSR L_D47E
-$D4AF: 20 93 DA  JSR L_DA93
-$D4B2: A2 15     LDX #$15
-$D4B4: 20 FE D9  JSR L_D9FE
-$D4B7: A2 1D     LDX #$1D
-$D4B9: 20 FE D9  JSR L_D9FE
-$D4BC: 20 EF D4  JSR L_D4EF
-$D4BF: D0 0D     BNE L_D4CE
-$D4C1: A2 3D     LDX #$3D
-$D4C3: 20 FE D9  JSR L_D9FE
-$D4C6: A9 02     LDA #$02
-$D4C8: 85 3F     STA $3F
-$D4CA: A9 00     LDA #$00
-$D4CC: 85 83     STA $83
+    ; Clear state variables, mark the palette request inactive, and load initial palettes after vblank.
+    $D491: A9 00     LDA #$00
+    $D493: 85 60     STA PpuDataOffset ; PpuDataOffset ($0060)
+    $D495: 85 6B     STA StringTrim    ; StringTrim ($006B)
+    $D497: 85 0C     STA PpuQueueEnd   ; PpuQueueEnd ($000C)
+    $D499: 85 0D     STA OamIndex      ; OamIndex ($000D)
+    $D49B: 85 6D     STA PauseFlag     ; PauseFlag ($006D)
+    $D49D: A9 FF     LDA #$FF
+    $D49F: 85 4D     STA PaletteReq    ; PaletteReq ($004D)
+    $D4A1: 20 02 D5  JSR InitPalettes  ; InitPalettes ($D502)
+
+    ; Clear the PPU buffer and hide shadow OAM sprites 1-63; HideSprites sets OamStep=$FC and OamIndex=$04.
+    $D4A4: A9 04     LDA #$04
+    $D4A6: 85 0E     STA OamStep       ; OamStep ($000E)
+    $D4A8: A9 20     LDA #$20
+    $D4AA: 85 6E     STA TileAttrBits  ; TileAttrBits ($006E)
+    $D4AC: 20 7E D4  JSR ClearPpuBuf   ; ClearPpuBuf ($D47E)
+    $D4AF: 20 93 DA  JSR HideSprites   ; HideSprites ($DA93)
+
+    ; Initialize two eight-byte zero-page records at $0015-$001C and $001D-$0024.
+    $D4B2: A2 15     LDX #$15
+    $D4B4: 20 FE D9  JSR InitRecord    ; InitRecord ($D9FE)
+    $D4B7: A2 1D     LDX #$1D
+    $D4B9: 20 FE D9  JSR InitRecord    ; InitRecord ($D9FE)
+
+    ; Keep the third record and option if $0110-$011F matches the 16-byte marker at $C040-$C04F.
+    ; On mismatch initialize $003D-$0044 and set $003F to $02; the role of $003F is not yet known.
+    $D4BC: 20 EF D4  JSR CheckMarker   ; CheckMarker ($D4EF)
+    $D4BF: D0 0D     BNE FinishInit    ; FinishInit ($D4CE)
+    $D4C1: A2 3D     LDX #$3D
+    $D4C3: 20 FE D9  JSR InitRecord    ; InitRecord ($D9FE)
+    $D4C6: A9 02     LDA #$02
+    $D4C8: 85 3F     STA $3F
+    $D4CA: A9 00     LDA #$00
+    $D4CC: 85 83     STA OptionIndex   ; OptionIndex ($0083)
+
+    ; Copy the cleared buffer to PPU $2000-$23FF and $2800-$2BFF, then store the marker and initialize audio.
+FinishInit:
 L_D4CE:
-$D4CE: A9 1C     LDA #$1C
-$D4D0: 85 05     STA $05
-$D4D2: 20 B4 D7  JSR L_D7B4
-$D4D5: A9 24     LDA #$24
-$D4D7: 85 05     STA $05
-$D4D9: 20 B4 D7  JSR L_D7B4
-$D4DC: 20 E3 D4  JSR L_D4E3
-$D4DF: 20 51 EA  JSR L_EA51
-$D4E2: 60        RTS
+    $D4CE: A9 1C     LDA #$1C
+    $D4D0: 85 05     STA PpuPageOffset ; PpuPageOffset ($0005)
+    $D4D2: 20 B4 D7  JSR CopyPpuBuffer ; CopyPpuBuffer ($D7B4)
+    $D4D5: A9 24     LDA #$24
+    $D4D7: 85 05     STA PpuPageOffset ; PpuPageOffset ($0005)
+    $D4D9: 20 B4 D7  JSR CopyPpuBuffer ; CopyPpuBuffer ($D7B4)
+    $D4DC: 20 E3 D4  JSR StoreMarker   ; StoreMarker ($D4E3)
+    $D4DF: 20 51 EA  JSR InitAudio     ; InitAudio ($EA51)
+    $D4E2: 60        RTS
+
+StoreMarker:
 L_D4E3:
 $D4E3: A2 0F     LDX #$0F
 L_D4E5:
@@ -2987,6 +3029,7 @@ $D4E8: 9D 10 01  STA $0110,X
 $D4EB: CA        DEX
 $D4EC: 10 F7     BPL L_D4E5
 $D4EE: 60        RTS
+CheckMarker:
 L_D4EF:
 $D4EF: A2 0F     LDX #$0F
 L_D4F1:
@@ -3000,9 +3043,10 @@ $D4FE: 60        RTS
 L_D4FF:
 $D4FF: A9 00     LDA #$00
 $D501: 60        RTS
+InitPalettes:
 L_D502:
 $D502: 20 F5 D5  JSR L_D5F5
-$D505: 20 3E D5  JSR L_D53E
+$D505: 20 3E D5  JSR InitSpritePal
 $D508: A9 00     LDA #$00
 $D50A: 20 0E D5  JSR L_D50E
 $D50D: 60        RTS
@@ -3032,33 +3076,38 @@ $D534: 8D 06 20  STA PPUADDR
 $D537: 8D 06 20  STA PPUADDR
 $D53A: 8D 06 20  STA PPUADDR
 $D53D: 60        RTS
-L_D53E:
-$D53E: A2 00     LDX #$00
-$D540: A0 10     LDY #$10
-$D542: A9 3F     LDA #$3F
-$D544: 8D 06 20  STA PPUADDR
-$D547: 8C 06 20  STY PPUADDR
+
+; InitSpritePal ($D53E): Copy four fixed sprite palettes to PPU palette memory.
+; Inputs: PPUADDR ($2006) expects its first write, PPUCTRL ($2000) bit 2 is clear, and PPU memory is writable.
+; Outputs: 16 writes to PPUDATA ($2007); PPU address=$3F20, A=$20, X=$10, Y=$00, N=0, Z=1.
+; The routine does not wait for vblank; its caller InitPalettes ($D502) reads PPUSTATUS before calling it.
+InitSpritePal:
+    ; Set the PPU address to $3F10; Y also counts the 16 bytes to copy.
+    $D53E: A2 00     LDX #$00
+    $D540: A0 10     LDY #$10
+    $D542: A9 3F     LDA #$3F
+    $D544: 8D 06 20  STA PPUADDR       ; PPUADDR ($2006), high byte
+    $D547: 8C 06 20  STY PPUADDR       ; PPUADDR ($2006), low byte
+
+    ; Copy the table to consecutive palette addresses through PPUDATA.
+SpritePalLoop:
 L_D54A:
-$D54A: BD 55 D5  LDA $D555,X
-$D54D: 8D 07 20  STA PPUDATA
-$D550: E8        INX
-$D551: 88        DEY
-$D552: D0 F6     BNE L_D54A
-$D554: 60        RTS
-$D555: 0F        db $0F
-$D556: 18        CLC
-$D557: 27        db $27
-$D558: 38        SEC
-$D559: 0F        db $0F
-$D55A: 0A        ASL A
-$D55B: 1B        db $1B
-$D55C: 3B        db $3B
-$D55D: 0F        db $0F
-$D55E: 0C        db $0C
-$D55F: 10 20     BPL L_D581
-$D561: 0F        db $0F
-$D562: 04        db $04
-$D563: 16 20     ASL $20,X
+    $D54A: BD 55 D5  LDA SpritePal,X   ; SpritePal ($D555)
+    $D54D: 8D 07 20  STA PPUDATA       ; PPUDATA ($2007)
+    $D550: E8        INX
+    $D551: 88        DEY
+    $D552: D0 F6     BNE SpritePalLoop ; SpritePalLoop ($D54A)
+    $D554: 60        RTS
+
+; SpritePal ($D555-$D564): Four rows of NES color indices ($00-$3F), read by InitSpritePal ($D53E).
+; Sprite pixel value 0 is transparent; the first byte of each row is written to a mirrored background entry.
+; PPU $3F10/$3F14/$3F18/$3F1C mirror $3F00/$3F04/$3F08/$3F0C respectively.
+SpritePal:
+    $D555: 0F 18 27 38  db $0F, $18, $27, $38
+    $D559: 0F 0A 1B 3B  db $0F, $0A, $1B, $3B
+    $D55D: 0F 0C 10 20  db $0F, $0C, $10, $20
+    $D561: 0F 04 16 20  db $0F, $04, $16, $20
+
 $D565: 0F        db $0F
 $D566: 17        db $17
 $D567: 06 00     ASL $00
@@ -3183,6 +3232,7 @@ $D5F0: 00        BRK
 $D5F1: 0F        db $0F
 $D5F2: 00        BRK
 $D5F3: 10 00     BPL L_D5F5
+WaitForVblank:
 L_D5F5:
 $D5F5: AD 02 20  LDA PPUSTATUS
 $D5F8: 10 FB     BPL L_D5F5
@@ -3461,6 +3511,7 @@ $D7AF: 90 02     BCC L_D7B3
 $D7B1: E6 12     INC $12
 L_D7B3:
 $D7B3: 60        RTS
+CopyPpuBuffer:
 L_D7B4:
 $D7B4: A9 00     LDA #$00
 $D7B6: 85 11     STA $11
@@ -3811,6 +3862,7 @@ L_D9F9:
 $D9F9: A9 01     LDA #$01
 $D9FB: 85 38     STA $38
 $D9FD: 60        RTS
+InitRecord:
 L_D9FE:
 $D9FE: A9 00     LDA #$00
 $DA00: 95 00     STA $00,X
@@ -3902,6 +3954,7 @@ $DA8B: A6 54     LDX $54
 $DA8D: A4 55     LDY $55
 $DA8F: 20 2B DA  JSR L_DA2B
 $DA92: 60        RTS
+HideSprites:
 L_DA93:
 $DA93: A6 0D     LDX $0D
 $DA95: A5 0E     LDA $0E
@@ -6302,6 +6355,7 @@ $EA4B: 00        BRK
 $EA4C: 01 FF     ORA ($FF,X)
 $EA4E: 00        BRK
 $EA4F: 01 00     ORA ($00,X)
+InitAudio:
 L_EA51:
 $EA51: A9 0F     LDA #$0F
 $EA53: 8D 15 40  STA APU_STATUS
@@ -9290,7 +9344,8 @@ $FFF6: FF        db $FF
 $FFF7: FF        db $FF
 $FFF8: FF        db $FF
 $FFF9: FF        db $FF
-$FFFA: 00        BRK
-$FFFB: D4        db $D4
-$FFFC: 70 C0     BVS L_FFBE
-$FFFE: 70 C0     BVS L_FFC0
+
+; CPU vectors are 16-bit addresses stored low byte first, not instructions.
+$FFFA: 00 D4     dw NMI                ; NMI vector: NMI ($D400)
+$FFFC: 70 C0     dw ResetEntry         ; Reset vector: ResetEntry ($C070)
+$FFFE: 70 C0     dw ResetEntry         ; IRQ/BRK vector: ResetEntry ($C070)

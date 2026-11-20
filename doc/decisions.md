@@ -8,7 +8,9 @@ software-visible effect, and supporting references where relevant.
 ### Incremental disassembly annotations (2026-11-20)
 
 At the user's request, analyze only selected portions of a listing. Four-space indentation distinguishes examined
-code and data from raw column-one output; meaningful names, addresses, and comments make the results easier to study.
+instructions from raw column-one instructions. Code-block comments are also indented; labels, function comments,
+declarations, and data start in column one. Inline comments start in column 40. Meaningful names, addresses, and
+comments make the results easier to study.
 The [listing notes](disassembly/README.md) record the complete conventions. This changes documentation only and
 does not establish any new facts about the game or emulator behavior.
 
