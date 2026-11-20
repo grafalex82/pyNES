@@ -5,6 +5,21 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Linear instruction decoding for disassembly (2026-11-20)
+
+Task 1.2 of `disassemble-nes-rom` adds a static decoder independent of the CPU's execution handlers. A linear scan
+returns the address, original bytes, mnemonic, and operand for each official 6502 instruction. Relative branch
+operands show their calculated address; labels remain later work. Unofficial opcode bytes and every byte of an
+incomplete final instruction appear as `db`, preserving the entire input without claiming those bytes are code.
+
+The [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html) describes instruction
+encodings, addressing modes, and the one-byte BRK encoding. [py65's 6502 implementation][py65-6502] and an
+[independent opcode reference](https://www.pastraiser.com/cpu/6502/6502_opcodes.html) were consulted for comparison;
+the decoder was written independently. Synthetic tests cover all 151 official encodings, unofficial bytes, addressing
+modes, relative displacements, and incomplete final instructions. This scan does not execute or modify game ROMs.
+
+[py65-6502]: https://github.com/mnaberez/py65/blob/main/py65/devices/mpu6502.py
+
 ### Offline PRG loading for disassembly (2026-11-20)
 
 Task 1.1 of `disassemble-nes-rom` adds `load_prg_rom(path)` to the future disassembler. It uses `NESFile` directly

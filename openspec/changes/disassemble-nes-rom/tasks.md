@@ -4,7 +4,7 @@
 
 - [x] 1.1 Load mapper-0 PRG without constructing Machine; verify 16 KiB, 32 KiB, trainer, and unsupported layouts
   with synthetic cartridge tests.
-- [ ] 1.2 Decode all 151 official opcode/mode combinations using an independent reference; verify their mnemonics,
+- [x] 1.2 Decode all 151 official opcode/mode combinations using an independent reference; verify their mnemonics,
   lengths, operands, and bytes, plus `db` continuation and incomplete final instructions, with focused pytest cases.
 - [ ] 1.3 Collect direct branch, `JMP`, and `JSR` targets in a first pass and emit labels in a second; verify forward,
   backward, repeated, indirect, out-of-range, and mid-instruction targets with synthetic programs.
