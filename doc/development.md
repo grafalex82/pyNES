@@ -38,6 +38,7 @@ CPU instruction tests check only the instruction's direct effects, including the
 counter, and nominal cycles where applicable. They do not test logging or guard against unrelated side effects, such as
 changes to registers not used by the instruction. When setting up opcodes and operands, use a separate line for each
 byte. Do not add tests for program-counter wraparound.
+Make each tested instruction and its opcode easy to identify and find by mnemonic, including in parameterized tests.
 
 Documentation should not describe individual instruction behavior or list implemented and unimplemented instructions.
 Do not repeat routine program-counter or cycle-count changes for each instruction. Document deliberate departures

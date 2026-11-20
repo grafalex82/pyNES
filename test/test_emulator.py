@@ -24,7 +24,7 @@ def make_machine(tmp_path):
 def test_construction_starts_cpu_once_without_executing_or_clearing_ram(make_machine):
     # SEI followed by an unsupported opcode reveals any execution during construction.
     machine = make_machine(start_address=0x0200)
-    machine.write_byte(0x0200, 0x78)
+    machine.write_byte(0x0200, 0x78)  # SEI opcode
     machine.write_byte(0x0201, 0x02)
     machine.write_byte(0x0100, 0xA5)
     emulator = Emulator(machine)
@@ -44,7 +44,7 @@ def test_construction_starts_cpu_once_without_executing_or_clearing_ram(make_mac
 def test_step_executes_exactly_one_instruction(make_machine):
     # The following unsupported opcode would fail if step fetched more than once.
     machine = make_machine()
-    machine.write_byte(0, 0x78)
+    machine.write_byte(0, 0x78)  # SEI opcode
     machine.write_byte(1, 0x02)
     emulator = Emulator(machine)
     emulator.cpu.interrupt_disable = False
@@ -61,8 +61,8 @@ def test_step_executes_exactly_one_instruction(make_machine):
 def test_separate_emulators_have_independent_cpu_state(make_machine):
     first_machine = make_machine()
     second_machine = make_machine()
-    first_machine.write_byte(0, 0x38)
-    second_machine.write_byte(0, 0xEA)
+    first_machine.write_byte(0, 0x38)  # SEC opcode
+    second_machine.write_byte(0, 0xEA)  # NOP opcode
     first = Emulator(first_machine)
     second = Emulator(second_machine)
 
@@ -80,8 +80,10 @@ def test_separate_emulators_have_independent_cpu_state(make_machine):
 def test_run_stops_at_first_complete_instruction_boundary(make_machine, budget, expected_steps):
     # SEC, CLC, NOP and SEI expose both the instruction boundary and the flag effects.
     machine = make_machine()
-    for address, opcode in enumerate((0x38, 0x18, 0xEA, 0x78)):
-        machine.write_byte(address, opcode)
+    machine.write_byte(0, 0x38)  # SEC opcode
+    machine.write_byte(1, 0x18)  # CLC opcode
+    machine.write_byte(2, 0xEA)  # NOP opcode
+    machine.write_byte(3, 0x78)  # SEI opcode
     emulator = Emulator(machine)
     emulator.cpu.interrupt_disable = False
 
@@ -106,7 +108,7 @@ def test_run_zero_does_not_fetch_from_unconnected_memory(make_machine):
 def test_run_uses_fresh_budgets_after_prior_execution_and_overshoot(make_machine):
     machine = make_machine()
     for address in range(9):
-        machine.write_byte(address, 0xEA)
+        machine.write_byte(address, 0xEA)  # NOP opcode
     emulator = Emulator(machine)
 
     # An existing total must not be mistaken for the new target.
@@ -127,7 +129,7 @@ def test_run_uses_fresh_budgets_after_prior_execution_and_overshoot(make_machine
 
 def test_run_propagates_failure_after_retaining_completed_instruction(make_machine):
     machine = make_machine()
-    machine.write_byte(0, 0x78)
+    machine.write_byte(0, 0x78)  # SEI opcode
     machine.write_byte(1, 0x02)
     emulator = Emulator(machine)
     emulator.cpu.interrupt_disable = False
@@ -152,7 +154,7 @@ def test_run_propagates_failure_after_retaining_completed_instruction(make_machi
 def test_reset_preserves_connected_cpu_memory_and_cycles(make_machine):
     # Keep code and stack-page data in the supplied Machine across repeated resets.
     machine = make_machine(start_address=0x0200)
-    machine.write_byte(0x0200, 0xEA)
+    machine.write_byte(0x0200, 0xEA)  # NOP opcode
     machine.write_byte(0x0201, 0x02)
     machine.write_byte(0x0100, 0xA5)
     emulator = Emulator(machine)

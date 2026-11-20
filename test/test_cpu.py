@@ -85,7 +85,7 @@ def test_jsr_absolute_pushes_return_address(make_cpu, initial_sp, final_sp, high
     # Asymmetric destination and return addresses expose reversed bytes.
     cpu, machine = make_cpu(start_address=0x0567)
     cpu.sp = initial_sp
-    machine.write_byte(0x0567, 0x20)
+    machine.write_byte(0x0567, 0x20)  # JSR opcode
     machine.write_byte(0x0568, 0x34)
     machine.write_byte(0x0569, 0x12)
 
@@ -102,7 +102,7 @@ def test_jsr_absolute_fetches_high_operand_after_stack_writes(make_cpu):
     # Both operand bytes overlap the two stack destinations.
     cpu, machine = make_cpu(start_address=0x01FA)
     cpu.sp = 0xFC
-    machine.write_byte(0x01FA, 0x20)
+    machine.write_byte(0x01FA, 0x20)  # JSR opcode
     machine.write_byte(0x01FB, 0x34)
     machine.write_byte(0x01FC, 0x99)
 
@@ -123,7 +123,7 @@ def test_rts_pulls_return_address(make_cpu, initial_sp, final_sp, low_address, h
     # Distinct stack bytes expose reversed pulls, including across the stack boundary.
     cpu, machine = make_cpu(start_address=0x0567)
     cpu.sp = initial_sp
-    machine.write_byte(0x0567, 0x60)
+    machine.write_byte(0x0567, 0x60)  # RTS opcode
     machine.write_byte(low_address, 0x34)
     machine.write_byte(high_address, 0x12)
 
@@ -151,7 +151,7 @@ def test_asl_accumulator(make_cpu, initial, expected, carry, incoming_carry):
     cpu.carry = incoming_carry
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0x0A)
+    machine.write_byte(0x0567, 0x0A)  # ASL opcode
 
     # Check the shifted value and flags without relying on unrelated state.
     cpu.step()
@@ -178,7 +178,7 @@ def test_lsr_accumulator(make_cpu, initial, expected, carry, incoming_carry):
     cpu.carry = incoming_carry
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0x4A)
+    machine.write_byte(0x0567, 0x4A)  # LSR opcode
 
     # Check the shifted value and flags without relying on unrelated state.
     cpu.step()
@@ -206,7 +206,7 @@ def test_rol_accumulator(make_cpu, initial, incoming_carry, expected, carry):
     cpu.carry = incoming_carry
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0x2A)
+    machine.write_byte(0x0567, 0x2A)  # ROL opcode
 
     # The rotated byte determines the resulting flags.
     cpu.step()
@@ -234,7 +234,7 @@ def test_ror_accumulator(make_cpu, initial, incoming_carry, expected, carry):
     cpu.carry = incoming_carry
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0x6A)
+    machine.write_byte(0x0567, 0x6A)  # ROR opcode
 
     # The rotated byte determines the resulting flags.
     cpu.step()
@@ -601,7 +601,7 @@ def test_indexed_absolute_shift_and_rotate(
 def test_jmp_absolute_loads_destination(make_cpu):
     # An asymmetric target exposes reversed operand bytes.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0x4C)
+    machine.write_byte(0x0000, 0x4C)  # JMP opcode
     machine.write_byte(0x0001, 0x34)
     machine.write_byte(0x0002, 0x12)
 
@@ -614,7 +614,7 @@ def test_jmp_absolute_loads_destination(make_cpu):
 def test_jmp_indirect_loads_destination(make_cpu):
     # Distinct pointer and target bytes expose incorrect address or byte order.
     cpu, machine = make_cpu(start_address=0x0200)
-    machine.write_byte(0x0200, 0x6C)
+    machine.write_byte(0x0200, 0x6C)  # JMP opcode
     machine.write_byte(0x0201, 0x34)
     machine.write_byte(0x0202, 0x12)
     machine.write_byte(0x1234, 0x78)
@@ -629,7 +629,7 @@ def test_jmp_indirect_loads_destination(make_cpu):
 def test_jmp_indirect_wraps_pointer_within_page(make_cpu):
     # A different value on the next page distinguishes the original CPU's behavior.
     cpu, machine = make_cpu(start_address=0x0400)
-    machine.write_byte(0x0400, 0x6C)
+    machine.write_byte(0x0400, 0x6C)  # JMP opcode
     machine.write_byte(0x0401, 0xFF)
     machine.write_byte(0x0402, 0x12)
     machine.write_byte(0x12FF, 0x78)
@@ -646,7 +646,7 @@ def test_jmp_indirect_wraps_pointer_at_end_of_address_space(make_cpu):
     # ROM supplies the low target byte at $FFFF and a zero high byte at $FF00.
     cpu, machine = make_cpu(start_address=0xFFFF, prg_program=b"\x78")
     cpu.pc = 0x0200
-    machine.write_byte(0x0200, 0x6C)
+    machine.write_byte(0x0200, 0x6C)  # JMP opcode
     machine.write_byte(0x0201, 0xFF)
     machine.write_byte(0x0202, 0xFF)
     machine.write_byte(0x0000, 0x56)
@@ -719,7 +719,7 @@ def test_step_preserves_state_when_opcode_read_fails(make_cpu):
 def test_step_sei_sets_interrupt_disable(make_cpu, initial_i):
     # Place SEI at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0x78)
+    machine.write_byte(0x0000, 0x78)  # SEI opcode
     cpu.interrupt_disable = initial_i
 
     # SEI sets I from either initial value.
@@ -732,7 +732,7 @@ def test_step_sei_sets_interrupt_disable(make_cpu, initial_i):
 def test_step_cli_clears_interrupt_disable(make_cpu, initial_i):
     # Place CLI at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0x58)
+    machine.write_byte(0x0000, 0x58)  # CLI opcode
     cpu.interrupt_disable = initial_i
 
     # CLI clears I from either initial value.
@@ -745,7 +745,7 @@ def test_step_cli_clears_interrupt_disable(make_cpu, initial_i):
 def test_step_clc_clears_carry(make_cpu, initial_c):
     # Place CLC at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0x18)
+    machine.write_byte(0x0000, 0x18)  # CLC opcode
     cpu.carry = initial_c
 
     # CLC clears C from either initial value.
@@ -758,7 +758,7 @@ def test_step_clc_clears_carry(make_cpu, initial_c):
 def test_step_sec_sets_carry(make_cpu, initial_c):
     # Place SEC at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0x38)
+    machine.write_byte(0x0000, 0x38)  # SEC opcode
     cpu.carry = initial_c
 
     # SEC sets C from either initial value.
@@ -771,7 +771,7 @@ def test_step_sec_sets_carry(make_cpu, initial_c):
 def test_step_cld_clears_decimal_flag(make_cpu, initial_d):
     # Place CLD at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0xD8)
+    machine.write_byte(0x0000, 0xD8)  # CLD opcode
     cpu.decimal = initial_d
 
     # CLD clears D from either initial value.
@@ -784,7 +784,7 @@ def test_step_cld_clears_decimal_flag(make_cpu, initial_d):
 def test_step_sed_sets_decimal_flag(make_cpu, initial_d):
     # Place SED at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0xF8)
+    machine.write_byte(0x0000, 0xF8)  # SED opcode
     cpu.decimal = initial_d
 
     # SED sets D from either initial value.
@@ -797,7 +797,7 @@ def test_step_sed_sets_decimal_flag(make_cpu, initial_d):
 def test_step_clv_clears_overflow(make_cpu, initial_v):
     # Place CLV at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0xB8)
+    machine.write_byte(0x0000, 0xB8)  # CLV opcode
     cpu.overflow = initial_v
 
     # CLV clears V from either initial value.
@@ -809,7 +809,7 @@ def test_step_clv_clears_overflow(make_cpu, initial_v):
 def test_step_nop_advances_pc(make_cpu):
     # Place the official one-byte NOP at the default reset address in RAM.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0xEA)
+    machine.write_byte(0x0000, 0xEA)  # NOP opcode
 
     # The opcode fetch advances PC by one byte.
     cpu.step()
@@ -840,7 +840,7 @@ def test_adc_zero_page_indexed(
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0x75)
+    machine.write_byte(0x0567, 0x75)  # ADC opcode
     machine.write_byte(0x0568, source)
     machine.write_byte(destination, operand)
 
@@ -866,7 +866,10 @@ def test_adc_zero_page_indexed(
     (0x09, 0x01, False, 0x0A, False, False),
 ])
 @pytest.mark.parametrize("decimal", [False, True])
-@pytest.mark.parametrize("opcode, index_register", [(0x7D, "x"), (0x79, "y")])
+@pytest.mark.parametrize("opcode, index_register", [
+    (0x7D, "x"),  # ADC absolute,X
+    (0x79, "y"),  # ADC absolute,Y
+])
 @pytest.mark.parametrize("base, index, source, cycles", [
     (0x0120, 0x12, 0x0132, 4),
     (0x00FF, 0x01, 0x0100, 5),
@@ -921,7 +924,7 @@ def test_adc_absolute(make_cpu, initial, operand, incoming_carry, expected, carr
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0200, 0x6D)
+    machine.write_byte(0x0200, 0x6D)  # ADC opcode
     machine.write_byte(0x0201, 0x56)
     machine.write_byte(0x0202, 0x04)
     machine.write_byte(0x0456, operand)
@@ -959,7 +962,7 @@ def test_adc_zero_page(make_cpu, initial, operand, incoming_carry, expected, car
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0x65)
+    machine.write_byte(0x0567, 0x65)  # ADC opcode
     machine.write_byte(0x0568, source)
     machine.write_byte(source, operand)
 
@@ -996,7 +999,7 @@ def test_adc_immediate(make_cpu, initial, operand, incoming_carry, expected, car
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0x69)
+    machine.write_byte(0x0567, 0x69)  # ADC opcode
     machine.write_byte(0x0568, operand)
 
     # Binary addition updates A and C/V/N/Z independently of D.
@@ -1035,7 +1038,7 @@ def test_sbc_zero_page_indexed(
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0xF5)
+    machine.write_byte(0x0567, 0xF5)  # SBC opcode
     machine.write_byte(0x0568, source)
     machine.write_byte(destination, operand)
 
@@ -1062,7 +1065,10 @@ def test_sbc_zero_page_indexed(
     (0x00, 0xFF, False, 0x00, False, False),
 ])
 @pytest.mark.parametrize("decimal", [False, True])
-@pytest.mark.parametrize("opcode, index_register", [(0xFD, "x"), (0xF9, "y")])
+@pytest.mark.parametrize("opcode, index_register", [
+    (0xFD, "x"),  # SBC absolute,X
+    (0xF9, "y"),  # SBC absolute,Y
+])
 @pytest.mark.parametrize("base, index, source, cycles", [
     (0x0120, 0x12, 0x0132, 4),
     (0x00FF, 0x01, 0x0100, 5),
@@ -1118,7 +1124,7 @@ def test_sbc_absolute(make_cpu, initial, operand, incoming_carry, expected, carr
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0200, 0xED)
+    machine.write_byte(0x0200, 0xED)  # SBC opcode
     machine.write_byte(0x0201, 0x56)
     machine.write_byte(0x0202, 0x04)
     machine.write_byte(0x0456, operand)
@@ -1156,7 +1162,7 @@ def test_sbc_immediate(make_cpu, initial, operand, incoming_carry, expected, car
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0xE9)
+    machine.write_byte(0x0567, 0xE9)  # SBC opcode
     machine.write_byte(0x0568, operand)
 
     # Binary subtraction updates A and C/V/N/Z independently of D.
@@ -1192,7 +1198,7 @@ def test_sbc_zero_page(make_cpu, initial, operand, incoming_carry, expected, car
     cpu.overflow = not overflow
     cpu.negative = not bool(expected & 0x80)
     cpu.zero = expected != 0
-    machine.write_byte(0x0567, 0xE5)
+    machine.write_byte(0x0567, 0xE5)  # SBC opcode
     machine.write_byte(0x0568, source)
     machine.write_byte(source, operand)
 
@@ -1433,7 +1439,7 @@ def test_bit_zero_page(make_cpu, accumulator, operand, negative, overflow, zero,
     cpu.negative = not negative
     cpu.overflow = not overflow
     cpu.zero = not zero
-    machine.write_byte(0x0567, 0x24)
+    machine.write_byte(0x0567, 0x24)  # BIT opcode
     machine.write_byte(0x0568, source)
     machine.write_byte(source, operand)
 
@@ -1462,7 +1468,7 @@ def test_bit_absolute(make_cpu, accumulator, operand, negative, overflow, zero):
     cpu.negative = not negative
     cpu.overflow = not overflow
     cpu.zero = not zero
-    machine.write_byte(0x0200, 0x2C)
+    machine.write_byte(0x0200, 0x2C)  # BIT opcode
     machine.write_byte(0x0201, 0x56)
     machine.write_byte(0x0202, 0x04)
     machine.write_byte(0x0456, operand)
@@ -1477,7 +1483,11 @@ def test_bit_absolute(make_cpu, accumulator, operand, negative, overflow, zero):
     assert cpu.cycles == 4
 
 
-@pytest.mark.parametrize("opcode, register", [(0xC9, "a"), (0xE0, "x"), (0xC0, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0xC9, "a"),  # CMP immediate
+    (0xE0, "x"),  # CPX immediate
+    (0xC0, "y"),  # CPY immediate
+])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),
     (0x42, 0x42, True, True, False),
@@ -1506,7 +1516,11 @@ def test_immediate_compare_updates_cnz(make_cpu, opcode, register, value, operan
     assert cpu.cycles == 2
 
 
-@pytest.mark.parametrize("opcode, register", [(0xC5, "a"), (0xE4, "x"), (0xC4, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0xC5, "a"),  # CMP zero page
+    (0xE4, "x"),  # CPX zero page
+    (0xC4, "y"),  # CPY zero page
+])
 @pytest.mark.parametrize("source", [0x00, 0xFF])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),
@@ -1546,7 +1560,7 @@ def test_zero_page_compare_updates_cnz(make_cpu, opcode, register, source, value
     (0x80, 0x01, True, False, False),
     (0xFF, 0x00, True, False, True),
 ])
-def test_indexed_zero_page_compare_updates_cnz(
+def test_cmp_indexed_zero_page_updates_cnz(
     make_cpu, source, index, destination, value, operand, carry, zero, negative,
 ):
     # Set X and start C/N/Z opposite to the expected comparison result.
@@ -1556,7 +1570,7 @@ def test_indexed_zero_page_compare_updates_cnz(
     cpu.carry = not carry
     cpu.zero = not zero
     cpu.negative = not negative
-    machine.write_byte(0x0567, 0xD5)
+    machine.write_byte(0x0567, 0xD5)  # CMP zero page,X
     machine.write_byte(0x0568, source)
     machine.write_byte(destination, operand)
 
@@ -1570,7 +1584,11 @@ def test_indexed_zero_page_compare_updates_cnz(
     assert cpu.cycles == 4
 
 
-@pytest.mark.parametrize("opcode, register", [(0xCD, "a"), (0xEC, "x"), (0xCC, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0xCD, "a"),  # CMP absolute
+    (0xEC, "x"),  # CPX absolute
+    (0xCC, "y"),  # CPY absolute
+])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),
     (0x42, 0x42, True, True, False),
@@ -1601,7 +1619,10 @@ def test_absolute_compare_updates_cnz(make_cpu, opcode, register, value, operand
     assert cpu.cycles == 4
 
 
-@pytest.mark.parametrize("opcode, index_register", [(0xDD, "x"), (0xD9, "y")])
+@pytest.mark.parametrize("opcode, index_register", [
+    (0xDD, "x"),  # CMP absolute,X
+    (0xD9, "y"),  # CMP absolute,Y
+])
 @pytest.mark.parametrize("base, index, source, cycles", [
     (0x0120, 0x12, 0x0132, 4),
     (0x00FF, 0x01, 0x0100, 5),
@@ -1615,7 +1636,7 @@ def test_absolute_compare_updates_cnz(make_cpu, opcode, register, value, operand
     (0x80, 0x01, True, False, False),
     (0xFF, 0x00, True, False, True),
 ])
-def test_indexed_absolute_compare_updates_cnz(
+def test_cmp_indexed_absolute_updates_cnz(
     make_cpu, opcode, index_register, base, index, source, cycles, value, operand, carry, zero, negative,
 ):
     # Compare A with data at the indexed address, starting with opposite flags.
@@ -1640,7 +1661,11 @@ def test_indexed_absolute_compare_updates_cnz(
     assert cpu.cycles == cycles
 
 
-@pytest.mark.parametrize("opcode, register", [(0xA9, "a"), (0xA2, "x"), (0xA0, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0xA9, "a"),  # LDA immediate
+    (0xA2, "x"),  # LDX immediate
+    (0xA0, "y"),  # LDY immediate
+])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, value):
     # Start the destination at a value different from every tested operand.
@@ -1658,7 +1683,11 @@ def test_immediate_loads_update_register_and_nz(make_cpu, opcode, register, valu
     assert cpu.cycles == 2
 
 
-@pytest.mark.parametrize("opcode, register", [(0x85, "a"), (0x86, "x"), (0x84, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0x85, "a"),  # STA zero page
+    (0x86, "x"),  # STX zero page
+    (0x84, "y"),  # STY zero page
+])
 @pytest.mark.parametrize("destination", [0x00, 0xFF])
 @pytest.mark.parametrize("value", [0x00, 0x55, 0xFF])
 def test_zero_page_stores_write_register(make_cpu, opcode, register, destination, value):
@@ -1676,7 +1705,11 @@ def test_zero_page_stores_write_register(make_cpu, opcode, register, destination
     assert cpu.cycles == 3
 
 
-@pytest.mark.parametrize("opcode, register, index_register", [(0x95, "a", "x"), (0x96, "x", "y"), (0x94, "y", "x")])
+@pytest.mark.parametrize("opcode, register, index_register", [
+    (0x95, "a", "x"),  # STA zero page,X
+    (0x96, "x", "y"),  # STX zero page,Y
+    (0x94, "y", "x"),  # STY zero page,X
+])
 @pytest.mark.parametrize("operand, index, destination", [(0x20, 0x04, 0x24), (0xF0, 0x20, 0x10)])
 @pytest.mark.parametrize("value", [0x00, 0xA5, 0xFF])
 @pytest.mark.parametrize("flags", [0x20, 0xFF])
@@ -1698,7 +1731,11 @@ def test_indexed_zero_page_stores(make_cpu, opcode, register, index_register, op
     assert cpu.cycles == 4
 
 
-@pytest.mark.parametrize("opcode, register", [(0xA5, "a"), (0xA6, "x"), (0xA4, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0xA5, "a"),  # LDA zero page
+    (0xA6, "x"),  # LDX zero page
+    (0xA4, "y"),  # LDY zero page
+])
 @pytest.mark.parametrize("source", [0x00, 0xFF])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_zero_page_loads_update_register_and_nz(make_cpu, opcode, register, source, value):
@@ -1720,7 +1757,11 @@ def test_zero_page_loads_update_register_and_nz(make_cpu, opcode, register, sour
     assert cpu.cycles == 3
 
 
-@pytest.mark.parametrize("opcode, register, index_register", [(0xB5, "a", "x"), (0xB6, "x", "y"), (0xB4, "y", "x")])
+@pytest.mark.parametrize("opcode, register, index_register", [
+    (0xB5, "a", "x"),  # LDA zero page,X
+    (0xB6, "x", "y"),  # LDX zero page,Y
+    (0xB4, "y", "x"),  # LDY zero page,X
+])
 @pytest.mark.parametrize("operand, index, source", [(0x20, 0x04, 0x24), (0xF0, 0x20, 0x10)])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_indexed_zero_page_loads(make_cpu, opcode, register, index_register, operand, index, source, value):
@@ -1754,7 +1795,7 @@ def test_sta_indexed_indirect_writes_accumulator(make_cpu, operand, index, point
     cpu, machine = make_cpu(start_address=0x0567)
     cpu.a = value
     cpu.x = index
-    machine.write_byte(0x0567, 0x81)
+    machine.write_byte(0x0567, 0x81)  # STA opcode
     machine.write_byte(0x0568, operand)
     machine.write_byte(pointer_low, 0x45)
     machine.write_byte(pointer_high, 0x03)
@@ -1780,7 +1821,7 @@ def test_sta_indirect_indexed_writes_accumulator(
     cpu, machine = make_cpu(start_address=0x0567)
     cpu.a = value
     cpu.y = index
-    machine.write_byte(0x0567, 0x91)
+    machine.write_byte(0x0567, 0x91)  # STA opcode
     machine.write_byte(0x0568, pointer_low)
     machine.write_byte(pointer_low, low)
     machine.write_byte(pointer_high, high)
@@ -1806,7 +1847,7 @@ def test_lda_indexed_indirect_loads_accumulator(make_cpu, operand, index, pointe
     cpu.x = index
     cpu.negative = not bool(value & 0x80)
     cpu.zero = value != 0
-    machine.write_byte(0x0567, 0xA1)
+    machine.write_byte(0x0567, 0xA1)  # LDA opcode
     machine.write_byte(0x0568, operand)
     machine.write_byte(pointer_low, 0x45)
     machine.write_byte(pointer_high, 0x03)
@@ -1836,7 +1877,7 @@ def test_lda_indirect_indexed_loads_accumulator(
     cpu.y = index
     cpu.negative = not bool(value & 0x80)
     cpu.zero = value != 0
-    machine.write_byte(0x0567, 0xB1)
+    machine.write_byte(0x0567, 0xB1)  # LDA opcode
     machine.write_byte(0x0568, pointer_low)
     machine.write_byte(pointer_low, low)
     machine.write_byte(pointer_high, high)
@@ -1851,7 +1892,10 @@ def test_lda_indirect_indexed_loads_accumulator(
     assert cpu.cycles == cycles
 
 
-@pytest.mark.parametrize("opcode, index_register", [(0x9D, "x"), (0x99, "y")])
+@pytest.mark.parametrize("opcode, index_register", [
+    (0x9D, "x"),  # STA absolute,X
+    (0x99, "y"),  # STA absolute,Y
+])
 @pytest.mark.parametrize("base, index, destination", [
     (0x0120, 0x12, 0x0132),
     (0x00FF, 0x01, 0x0100),
@@ -1875,7 +1919,10 @@ def test_indexed_absolute_stores_write_accumulator(make_cpu, opcode, index_regis
 
 
 @pytest.mark.parametrize("opcode, register, index_register", [
-    (0xBD, "a", "x"), (0xB9, "a", "y"), (0xBE, "x", "y"), (0xBC, "y", "x"),
+    (0xBD, "a", "x"),  # LDA absolute,X
+    (0xB9, "a", "y"),  # LDA absolute,Y
+    (0xBE, "x", "y"),  # LDX absolute,Y
+    (0xBC, "y", "x"),  # LDY absolute,X
 ])
 @pytest.mark.parametrize("base, index, source, cycles", [
     (0x0120, 0x12, 0x0132, 4),
@@ -1906,7 +1953,11 @@ def test_indexed_absolute_loads_update_register_and_nz(
     assert cpu.cycles == cycles
 
 
-@pytest.mark.parametrize("opcode, register", [(0xAD, "a"), (0xAE, "x"), (0xAC, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0xAD, "a"),  # LDA absolute
+    (0xAE, "x"),  # LDX absolute
+    (0xAC, "y"),  # LDY absolute
+])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_absolute_loads_update_register_and_nz(make_cpu, opcode, register, value):
     # Use distinct address bytes to test little-endian addressing.
@@ -1929,7 +1980,11 @@ def test_absolute_loads_update_register_and_nz(make_cpu, opcode, register, value
     assert cpu.cycles == 4
 
 
-@pytest.mark.parametrize("opcode, register", [(0x8D, "a"), (0x8E, "x"), (0x8C, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0x8D, "a"),  # STA absolute
+    (0x8E, "x"),  # STX absolute
+    (0x8C, "y"),  # STY absolute
+])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 @pytest.mark.parametrize("flag", [False, True])
 def test_absolute_stores_write_register_without_changing_flags(make_cpu, opcode, register, value, flag):
@@ -1961,7 +2016,11 @@ def test_absolute_stores_write_register_without_changing_flags(make_cpu, opcode,
     assert cpu.cycles == 4
 
 
-@pytest.mark.parametrize("opcode, register", [(0x8D, "a"), (0x8E, "x"), (0x8C, "y")])
+@pytest.mark.parametrize("opcode, register", [
+    (0x8D, "a"),  # STA absolute
+    (0x8E, "x"),  # STX absolute
+    (0x8C, "y"),  # STY absolute
+])
 @pytest.mark.parametrize(
     "high_byte, error, message",
     [
@@ -1992,7 +2051,7 @@ def test_tsx_transfers_stack_pointer_and_updates_nz(make_cpu, value):
     cpu.x = 0x55
     cpu.negative = not bool(value & 0x80)
     cpu.zero = value != 0
-    machine.write_byte(0x0000, 0xBA)
+    machine.write_byte(0x0000, 0xBA)  # TSX opcode
 
     # TSX copies SP to X and sets N and Z from the copied value.
     cpu.step()
@@ -2017,7 +2076,7 @@ def test_txs_transfers_x_without_changing_flags(make_cpu, value, flag):
     cpu.interrupt_disable = flag
     cpu.zero = flag
     cpu.carry = flag
-    machine.write_byte(0x0000, 0x9A)
+    machine.write_byte(0x0000, 0x9A)  # TXS opcode
 
     # Unlike TSX, TXS does not update flags from the transferred value.
     cpu.step()
@@ -2035,7 +2094,12 @@ def test_txs_transfers_x_without_changing_flags(make_cpu, value, flag):
 
 @pytest.mark.parametrize(
     "opcode, source, destination",
-    [(0x8A, "x", "a"), (0x98, "y", "a"), (0xAA, "a", "x"), (0xA8, "a", "y")],
+    [
+        (0x8A, "x", "a"),  # TXA
+        (0x98, "y", "a"),  # TYA
+        (0xAA, "a", "x"),  # TAX
+        (0xA8, "a", "y"),  # TAY
+    ],
 )
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
 def test_register_transfer_updates_destination_and_nz(make_cpu, opcode, source, destination, value):
@@ -2097,14 +2161,14 @@ def test_index_increment_and_decrement(make_cpu, opcode, register, initial, expe
 @pytest.mark.parametrize(
     "opcode, flag, taken_flag",
     [
-        (0xF0, "zero", True),
-        (0xD0, "zero", False),
-        (0x10, "negative", False),
-        (0x30, "negative", True),
-        (0x90, "carry", False),
-        (0xB0, "carry", True),
-        (0x50, "overflow", False),
-        (0x70, "overflow", True),
+        (0xF0, "zero", True),       # BEQ
+        (0xD0, "zero", False),      # BNE
+        (0x10, "negative", False),  # BPL
+        (0x30, "negative", True),   # BMI
+        (0x90, "carry", False),     # BCC
+        (0xB0, "carry", True),      # BCS
+        (0x50, "overflow", False),  # BVC
+        (0x70, "overflow", True),   # BVS
     ],
 )
 @pytest.mark.parametrize(
@@ -2137,9 +2201,14 @@ def test_conditional_branch(make_cpu, opcode, flag, taken_flag, start, operand, 
 def test_cycles_accumulate_across_mixed_instructions(make_cpu):
     # Execute each supported encoding once in a synthetic RAM program.
     cpu, machine = make_cpu()
-    program = (0x18, 0x38, 0x58, 0x78, 0xD8, 0xF8, 0xB8, 0xEA)
-    for address, opcode in enumerate(program):
-        machine.write_byte(address, opcode)
+    machine.write_byte(0x0000, 0x18)  # CLC opcode
+    machine.write_byte(0x0001, 0x38)  # SEC opcode
+    machine.write_byte(0x0002, 0x58)  # CLI opcode
+    machine.write_byte(0x0003, 0x78)  # SEI opcode
+    machine.write_byte(0x0004, 0xD8)  # CLD opcode
+    machine.write_byte(0x0005, 0xF8)  # SED opcode
+    machine.write_byte(0x0006, 0xB8)  # CLV opcode
+    machine.write_byte(0x0007, 0xEA)  # NOP opcode
 
     # Each step contributes two, yielding sixteen cycles in total.
     for expected_cycles in range(2, 17, 2):
@@ -2150,7 +2219,7 @@ def test_cycles_accumulate_across_mixed_instructions(make_cpu):
 def test_cycles_do_not_wrap_at_16_bits(make_cpu):
     # Reuse one RAM NOP to advance the cumulative counter past $FFFF.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0xEA)
+    machine.write_byte(0x0000, 0xEA)  # NOP opcode
     for _ in range(32769):
         cpu.pc = 0x0000
         cpu.step()
@@ -2162,7 +2231,7 @@ def test_cycles_do_not_wrap_at_16_bits(make_cpu):
 def test_cycles_are_read_only_and_preserved_by_reset(make_cpu):
     # A new CPU starts at zero and counts a completed instruction.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0xEA)
+    machine.write_byte(0x0000, 0xEA)  # NOP opcode
     assert cpu.cycles == 0
     cpu.step()
     assert cpu.cycles == 2
@@ -2180,7 +2249,7 @@ def test_cycles_are_read_only_and_preserved_by_reset(make_cpu):
 def test_failed_step_preserves_accumulated_cycles(make_cpu, failed_pc):
     # A completed NOP precedes either an unsupported opcode or an unconnected read.
     cpu, machine = make_cpu()
-    machine.write_byte(0x0000, 0xEA)
+    machine.write_byte(0x0000, 0xEA)  # NOP opcode
     machine.write_byte(0x0001, 0x02)
     cpu.step()
     cpu.pc = failed_pc
@@ -2229,9 +2298,10 @@ def test_step_retains_completed_instructions_before_unsupported_opcode(make_cpu)
     cpu.y = 0x56
     cpu.sp = 0x9A
     cpu.p = 0xF9
-    program = (0x78, 0xD8, 0x02, 0x42)
-    for offset, value in enumerate(program):
-        machine.write_byte(0x0234 + offset, value)
+    machine.write_byte(0x0234, 0x78)  # SEI opcode
+    machine.write_byte(0x0235, 0xD8)  # CLD opcode
+    machine.write_byte(0x0236, 0x02)  # Unsupported opcode
+    machine.write_byte(0x0237, 0x42)
     ram = bytes(machine.read_byte(address) for address in range(2048))
 
     # The failed step retains the two completed flag changes and the original program bytes.
