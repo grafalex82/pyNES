@@ -246,6 +246,70 @@ def test_ror_accumulator(make_cpu, initial, incoming_carry, expected, carry):
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, initial, incoming_carry, expected, carry", [
+    # ASL
+    (0x06, 0x00, False, 0x00, False),
+    (0x06, 0x01, True, 0x02, False),
+    (0x06, 0x40, False, 0x80, False),
+    (0x06, 0x80, True, 0x00, True),
+    (0x06, 0xFF, False, 0xFE, True),
+    # LSR
+    (0x46, 0x00, False, 0x00, False),
+    (0x46, 0x01, True, 0x00, True),
+    (0x46, 0x02, True, 0x01, False),
+    (0x46, 0x80, False, 0x40, False),
+    (0x46, 0xFF, False, 0x7F, True),
+    # ROL
+    (0x26, 0x00, False, 0x00, False),
+    (0x26, 0x00, True, 0x01, False),
+    (0x26, 0x80, False, 0x00, True),
+    (0x26, 0x80, True, 0x01, True),
+    (0x26, 0x40, False, 0x80, False),
+    (0x26, 0x40, True, 0x81, False),
+    (0x26, 0xFF, True, 0xFF, True),
+    # ROR
+    (0x66, 0x00, False, 0x00, False),
+    (0x66, 0x00, True, 0x80, False),
+    (0x66, 0x01, False, 0x00, True),
+    (0x66, 0x01, True, 0x80, True),
+    (0x66, 0x02, False, 0x01, False),
+    (0x66, 0x02, True, 0x81, False),
+    (0x66, 0xFF, True, 0xFF, True),
+])
+@pytest.mark.parametrize("destination", [0x00, 0xFF])
+def test_zero_page_shift_and_rotate(
+    make_cpu, monkeypatch, opcode, initial, incoming_carry, expected, carry, destination,
+):
+    # Place the instruction away from its zero-page data and set the affected flags.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, destination)
+    machine.write_byte(destination, initial)
+
+    # Observe writes while still delegating each one to the connected Machine.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # The original and modified bytes are both written in order.
+    cpu.step()
+    assert writes == [(destination, initial), (destination, expected)]
+    assert machine.read_byte(destination) == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 5
+
+
 def test_jmp_absolute_loads_destination(make_cpu):
     # An asymmetric target exposes reversed operand bytes.
     cpu, machine = make_cpu()

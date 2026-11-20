@@ -203,27 +203,27 @@ Resume another task only when it is selected for implementation.
 
 ## 35. ASL zero page ($06)
 
-- [ ] 35.1 Implement the selected encoding; verify the memory result, original and final writes, C/N/Z, zero-page
+- [x] 35.1 Implement the selected encoding; verify the memory result, original and final writes, C/N/Z, zero-page
   endpoints, PC, and cycles with focused synthetic pytest cases.
-- [ ] 35.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 35.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 36. LSR zero page ($46)
 
-- [ ] 36.1 Implement the selected encoding; verify the memory result, original and final writes, C/N/Z, zero-page
+- [x] 36.1 Implement the selected encoding; verify the memory result, original and final writes, C/N/Z, zero-page
   endpoints, PC, and cycles with focused synthetic pytest cases.
-- [ ] 36.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 36.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 37. ROL zero page ($26)
 
-- [ ] 37.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 37.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   C/N/Z, zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
-- [ ] 37.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 37.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 38. ROR zero page ($66)
 
-- [ ] 38.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 38.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   C/N/Z, zero-page endpoints, PC, and cycles with focused synthetic pytest cases.
-- [ ] 38.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 38.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 39. AND zero page ($25)
 

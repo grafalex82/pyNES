@@ -675,35 +675,79 @@ class CPU:
 
 
     def _asl_accumulator(self, address, opcode):
-        self._carry = bool(self._a & 0x80)
-        self._a = (self._a << 1) & 0xFF
+        self._a = self._shift_left(self._a)
         self._finish_register_update(address, opcode, "ASL", self._a)
 
 
+    def _asl_zero_page(self, address, opcode):
+        self._modify_zero_page(address, opcode, "ASL", self._shift_left)
+
+
+    def _shift_left(self, value):
+        self._carry = bool(value & 0x80)
+        return (value << 1) & 0xFF
+
+
+    def _modify_zero_page(self, address, opcode, mnemonic, operation):
+        # The 6502 writes the original byte as a bus cycle before writing the modified byte.
+        # This first write does not change zero-page RAM.
+        destination = self._fetch_byte()
+        original = self._machine.read_byte(destination)
+        self._machine.write_byte(destination, original)
+        value = operation(original)
+        self._machine.write_byte(destination, value)
+
+        # The resulting byte sets N/Z; the fetched address supplies the trace.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+        self._cycles += 5
+        self.log_instruction(address, (opcode, destination), mnemonic, f"${destination:02X}")
+
+
     def _lsr_accumulator(self, address, opcode):
-        self._carry = bool(self._a & 0x01)
-        self._a >>= 1
+        self._a = self._shift_right(self._a)
         self._finish_register_update(address, opcode, "LSR", self._a)
 
 
-    def _rol_accumulator(self, address, opcode):
-        # Preserve the incoming carry before replacing it with the outgoing bit.
-        incoming_carry = self._carry
-        self._carry = bool(self._a & 0x80)
-        self._a = ((self._a << 1) & 0xFF) | incoming_carry
+    def _lsr_zero_page(self, address, opcode):
+        self._modify_zero_page(address, opcode, "LSR", self._shift_right)
 
-        # N and Z reflect the rotated byte.
+
+    def _shift_right(self, value):
+        self._carry = bool(value & 0x01)
+        return value >> 1
+
+
+    def _rol_accumulator(self, address, opcode):
+        self._a = self._rotate_left(self._a)
         self._finish_register_update(address, opcode, "ROL", self._a)
 
 
-    def _ror_accumulator(self, address, opcode):
+    def _rol_zero_page(self, address, opcode):
+        self._modify_zero_page(address, opcode, "ROL", self._rotate_left)
+
+
+    def _rotate_left(self, value):
         # Preserve the incoming carry before replacing it with the outgoing bit.
         incoming_carry = self._carry
-        self._carry = bool(self._a & 0x01)
-        self._a = (self._a >> 1) | (incoming_carry << 7)
+        self._carry = bool(value & 0x80)
+        return ((value << 1) & 0xFF) | incoming_carry
 
-        # N and Z reflect the rotated byte.
+
+    def _ror_accumulator(self, address, opcode):
+        self._a = self._rotate_right(self._a)
         self._finish_register_update(address, opcode, "ROR", self._a)
+
+
+    def _ror_zero_page(self, address, opcode):
+        self._modify_zero_page(address, opcode, "ROR", self._rotate_right)
+
+
+    def _rotate_right(self, value):
+        # Preserve the incoming carry before replacing it with the outgoing bit.
+        incoming_carry = self._carry
+        self._carry = bool(value & 0x01)
+        return (value >> 1) | (incoming_carry << 7)
 
 
     def _txa(self, address, opcode):
@@ -870,7 +914,7 @@ class CPU:
         None,  # $03
         None,  # $04
         None,  # $05
-        None,  # $06
+        _asl_zero_page,  # $06
         None,  # $07
         None,  # $08
         _ora_immediate,  # $09
@@ -906,7 +950,7 @@ class CPU:
         None,  # $23
         None,  # $24
         None,  # $25
-        None,  # $26
+        _rol_zero_page,  # $26
         None,  # $27
         None,  # $28
         _and_immediate,  # $29
@@ -942,7 +986,7 @@ class CPU:
         None,  # $43
         None,  # $44
         None,  # $45
-        None,  # $46
+        _lsr_zero_page,  # $46
         None,  # $47
         None,  # $48
         _eor_immediate,  # $49
@@ -978,7 +1022,7 @@ class CPU:
         None,  # $63
         None,  # $64
         _adc_zero_page,  # $65
-        None,  # $66
+        _ror_zero_page,  # $66
         None,  # $67
         None,  # $68
         _adc_immediate,  # $69
