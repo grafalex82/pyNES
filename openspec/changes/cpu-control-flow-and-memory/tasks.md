@@ -402,51 +402,51 @@ Resume another task only when it is selected for implementation.
 
 ## 68. ASL absolute ($0E)
 
-- [ ] 68.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, PC, and
+- [x] 68.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 68.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 68.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 69. ASL absolute,X ($1E)
 
-- [ ] 69.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, page
+- [x] 69.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, page
   crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 69.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 69.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 70. LSR absolute ($4E)
 
-- [ ] 70.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, PC, and
+- [x] 70.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 70.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 70.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 71. LSR absolute,X ($5E)
 
-- [ ] 71.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, page
+- [x] 71.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, page
   crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 71.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 71.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 72. ROL absolute ($2E)
 
-- [ ] 72.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 72.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   and C/N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 72.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 72.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 73. ROL absolute,X ($3E)
 
-- [ ] 73.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 73.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   and C/N/Z, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 73.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 73.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 74. ROR absolute ($6E)
 
-- [ ] 74.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 74.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   and C/N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 74.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 74.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 75. ROR absolute,X ($7E)
 
-- [ ] 75.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 75.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   and C/N/Z, page crossing and effective address wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 75.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 75.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 76. Integration
 

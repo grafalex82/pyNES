@@ -894,6 +894,33 @@ class CPU:
         self._modify_zero_page(address, opcode, "ASL", self._shift_left)
 
 
+    def _asl_absolute(self, address, opcode):
+        self._modify_absolute(address, opcode, "ASL", self._shift_left)
+
+
+    def _asl_absolute_x(self, address, opcode):
+        self._modify_absolute(address, opcode, "ASL", self._shift_left, indexed=True)
+
+
+    def _modify_absolute(self, address, opcode, mnemonic, operation, indexed=False):
+        # Absolute,X wraps at 16 bits and omits the provisional indexed read.
+        base = self._fetch_word()
+        destination = (base + self._x) & 0xFFFF if indexed else base
+
+        # The 6502 writes the original byte before writing the modified byte.
+        original = self._machine.read_byte(destination)
+        self._machine.write_byte(destination, original)
+        value = operation(original)
+        self._machine.write_byte(destination, value)
+
+        # The resulting byte sets N/Z; the fetched address supplies the trace.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+        self._cycles += 6 + indexed
+        operand = f"${base:04X},X" if indexed else f"${base:04X}"
+        self.log_instruction(address, (opcode, base & 0xFF, base >> 8), mnemonic, operand)
+
+
     def _shift_left(self, value):
         self._carry = bool(value & 0x80)
         return (value << 1) & 0xFF
@@ -924,6 +951,14 @@ class CPU:
         self._modify_zero_page(address, opcode, "LSR", self._shift_right)
 
 
+    def _lsr_absolute(self, address, opcode):
+        self._modify_absolute(address, opcode, "LSR", self._shift_right)
+
+
+    def _lsr_absolute_x(self, address, opcode):
+        self._modify_absolute(address, opcode, "LSR", self._shift_right, indexed=True)
+
+
     def _shift_right(self, value):
         self._carry = bool(value & 0x01)
         return value >> 1
@@ -936,6 +971,14 @@ class CPU:
 
     def _rol_zero_page(self, address, opcode):
         self._modify_zero_page(address, opcode, "ROL", self._rotate_left)
+
+
+    def _rol_absolute(self, address, opcode):
+        self._modify_absolute(address, opcode, "ROL", self._rotate_left)
+
+
+    def _rol_absolute_x(self, address, opcode):
+        self._modify_absolute(address, opcode, "ROL", self._rotate_left, indexed=True)
 
 
     def _rotate_left(self, value):
@@ -952,6 +995,14 @@ class CPU:
 
     def _ror_zero_page(self, address, opcode):
         self._modify_zero_page(address, opcode, "ROR", self._rotate_right)
+
+
+    def _ror_absolute(self, address, opcode):
+        self._modify_absolute(address, opcode, "ROR", self._rotate_right)
+
+
+    def _ror_absolute_x(self, address, opcode):
+        self._modify_absolute(address, opcode, "ROR", self._rotate_right, indexed=True)
 
 
     def _rotate_right(self, value):
@@ -1133,7 +1184,7 @@ class CPU:
         None,  # $0B
         None,  # $0C
         _ora_absolute,  # $0D
-        None,  # $0E
+        _asl_absolute,  # $0E
         None,  # $0F
 
         # $10-$1F
@@ -1151,7 +1202,7 @@ class CPU:
         None,  # $1B
         None,  # $1C
         _ora_absolute_x,  # $1D
-        None,  # $1E
+        _asl_absolute_x,  # $1E
         None,  # $1F
 
         # $20-$2F
@@ -1169,7 +1220,7 @@ class CPU:
         None,  # $2B
         None,  # $2C
         _and_absolute,  # $2D
-        None,  # $2E
+        _rol_absolute,  # $2E
         None,  # $2F
 
         # $30-$3F
@@ -1187,7 +1238,7 @@ class CPU:
         None,  # $3B
         None,  # $3C
         _and_absolute_x,  # $3D
-        None,  # $3E
+        _rol_absolute_x,  # $3E
         None,  # $3F
 
         # $40-$4F
@@ -1205,7 +1256,7 @@ class CPU:
         None,  # $4B
         _jmp_absolute,  # $4C
         _eor_absolute,  # $4D
-        None,  # $4E
+        _lsr_absolute,  # $4E
         None,  # $4F
 
         # $50-$5F
@@ -1223,7 +1274,7 @@ class CPU:
         None,  # $5B
         None,  # $5C
         _eor_absolute_x,  # $5D
-        None,  # $5E
+        _lsr_absolute_x,  # $5E
         None,  # $5F
 
         # $60-$6F
@@ -1241,7 +1292,7 @@ class CPU:
         None,  # $6B
         _jmp_indirect,  # $6C
         _adc_absolute,  # $6D
-        None,  # $6E
+        _ror_absolute,  # $6E
         None,  # $6F
 
         # $70-$7F
@@ -1259,7 +1310,7 @@ class CPU:
         None,  # $7B
         None,  # $7C
         _adc_absolute_x,  # $7D
-        None,  # $7E
+        _ror_absolute_x,  # $7E
         None,  # $7F
 
         # $80-$8F

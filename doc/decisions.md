@@ -30,10 +30,10 @@ all ROMs and involves no patch. Synthetic tests check the resulting register and
 
 ### Omitted provisional reads for indexed writes (2026-11-19)
 
-Indexed absolute writes omit the hardware's provisional read before the write, retaining a functional bus model.
-That read occurs even without a page crossing and may trigger device side effects; those effects and bus-cycle timing
-are not modeled. This applies to all ROMs and involves no patch. Synthetic tests cover effective addresses and cycles,
-but do not check the omitted read. See section 6.1 of the
+Indexed absolute writes and read-modify-write operations omit the hardware's provisional read, retaining a functional
+bus model. That read occurs even without a page crossing and may trigger device side effects; those effects, bus-cycle
+timing, and DMA effects are not modeled. This applies to all ROMs and involves no patch. Synthetic tests cover effective
+addresses, cycles, and read-modify-write sequences, but not the omitted read. See section 6.1 of the
 [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
 
 ### Omitted provisional reads for indexed reads (2026-11-19)

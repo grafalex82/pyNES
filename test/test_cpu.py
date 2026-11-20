@@ -310,6 +310,138 @@ def test_zero_page_shift_and_rotate(
     assert cpu.cycles == 5
 
 
+@pytest.mark.parametrize("opcode, initial, incoming_carry, expected, carry", [
+    # ASL
+    (0x0E, 0x00, False, 0x00, False),
+    (0x0E, 0x01, True, 0x02, False),
+    (0x0E, 0x40, False, 0x80, False),
+    (0x0E, 0x80, True, 0x00, True),
+    (0x0E, 0xFF, False, 0xFE, True),
+    # LSR
+    (0x4E, 0x00, False, 0x00, False),
+    (0x4E, 0x01, True, 0x00, True),
+    (0x4E, 0x02, True, 0x01, False),
+    (0x4E, 0x80, False, 0x40, False),
+    (0x4E, 0xFF, False, 0x7F, True),
+    # ROL
+    (0x2E, 0x00, False, 0x00, False),
+    (0x2E, 0x00, True, 0x01, False),
+    (0x2E, 0x80, False, 0x00, True),
+    (0x2E, 0x80, True, 0x01, True),
+    (0x2E, 0x40, False, 0x80, False),
+    (0x2E, 0x40, True, 0x81, False),
+    (0x2E, 0xFF, True, 0xFF, True),
+    # ROR
+    (0x6E, 0x00, False, 0x00, False),
+    (0x6E, 0x00, True, 0x80, False),
+    (0x6E, 0x01, False, 0x00, True),
+    (0x6E, 0x01, True, 0x80, True),
+    (0x6E, 0x02, False, 0x01, False),
+    (0x6E, 0x02, True, 0x81, False),
+    (0x6E, 0xFF, True, 0xFF, True),
+])
+def test_absolute_shift_and_rotate(make_cpu, monkeypatch, opcode, initial, incoming_carry, expected, carry):
+    # Use distinct address bytes and set C/N/Z before executing the instruction.
+    cpu, machine = make_cpu(start_address=0x0200)
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0200, opcode)
+    machine.write_byte(0x0201, 0x56)
+    machine.write_byte(0x0202, 0x04)
+    machine.write_byte(0x0456, initial)
+
+    # Observe writes while still delegating each one to the connected Machine.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # Both writes occur in order and the final byte determines C/N/Z.
+    cpu.step()
+    assert writes == [(0x0456, initial), (0x0456, expected)]
+    assert machine.read_byte(0x0456) == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0203
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("opcode, initial, incoming_carry, expected, carry", [
+    # ASL
+    (0x1E, 0x00, False, 0x00, False),
+    (0x1E, 0x01, True, 0x02, False),
+    (0x1E, 0x40, False, 0x80, False),
+    (0x1E, 0x80, True, 0x00, True),
+    (0x1E, 0xFF, False, 0xFE, True),
+    # LSR
+    (0x5E, 0x00, False, 0x00, False),
+    (0x5E, 0x01, True, 0x00, True),
+    (0x5E, 0x02, True, 0x01, False),
+    (0x5E, 0x80, False, 0x40, False),
+    (0x5E, 0xFF, False, 0x7F, True),
+    # ROL
+    (0x3E, 0x00, False, 0x00, False),
+    (0x3E, 0x00, True, 0x01, False),
+    (0x3E, 0x80, False, 0x00, True),
+    (0x3E, 0x80, True, 0x01, True),
+    (0x3E, 0x40, False, 0x80, False),
+    (0x3E, 0x40, True, 0x81, False),
+    (0x3E, 0xFF, True, 0xFF, True),
+    # ROR
+    (0x7E, 0x00, False, 0x00, False),
+    (0x7E, 0x00, True, 0x80, False),
+    (0x7E, 0x01, False, 0x00, True),
+    (0x7E, 0x01, True, 0x80, True),
+    (0x7E, 0x02, False, 0x01, False),
+    (0x7E, 0x02, True, 0x81, False),
+    (0x7E, 0xFF, True, 0xFF, True),
+])
+@pytest.mark.parametrize("base, index, destination", [
+    (0x0120, 0x12, 0x0132),
+    (0x00FF, 0x01, 0x0100),
+    (0xFFFF, 0x01, 0x0000),
+])
+def test_indexed_absolute_shift_and_rotate(
+    make_cpu, monkeypatch, opcode, initial, incoming_carry, expected, carry, base, index, destination,
+):
+    # Set the indexed address and the affected flags before the instruction.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.x = index
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, base & 0xFF)
+    machine.write_byte(0x0569, base >> 8)
+    machine.write_byte(destination, initial)
+
+    # Observe writes while still delegating each one to the connected Machine.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # Both writes target the indexed address and always take seven cycles.
+    cpu.step()
+    assert writes == [(destination, initial), (destination, expected)]
+    assert machine.read_byte(destination) == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x056A
+    assert cpu.cycles == 7
+
+
 def test_jmp_absolute_loads_destination(make_cpu):
     # An asymmetric target exposes reversed operand bytes.
     cpu, machine = make_cpu()
