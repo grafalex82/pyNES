@@ -372,17 +372,17 @@ class CPU:
 
     def _lda_zero_page_x(self, address, opcode):
         operand, self._a = self._read_indexed_zero_page(self._x)
-        self._finish_indexed_zero_page_load(address, opcode, operand, self._a, "LDA", "X")
+        self._finish_indexed_zero_page_update(address, opcode, operand, self._a, "LDA", "X")
 
 
     def _ldx_zero_page_y(self, address, opcode):
         operand, self._x = self._read_indexed_zero_page(self._y)
-        self._finish_indexed_zero_page_load(address, opcode, operand, self._x, "LDX", "Y")
+        self._finish_indexed_zero_page_update(address, opcode, operand, self._x, "LDX", "Y")
 
 
     def _ldy_zero_page_x(self, address, opcode):
         operand, self._y = self._read_indexed_zero_page(self._x)
-        self._finish_indexed_zero_page_load(address, opcode, operand, self._y, "LDY", "X")
+        self._finish_indexed_zero_page_update(address, opcode, operand, self._y, "LDY", "X")
 
 
     def _read_indexed_zero_page(self, index):
@@ -392,8 +392,8 @@ class CPU:
         return operand, value
 
 
-    def _finish_indexed_zero_page_load(self, address, opcode, operand, value, mnemonic, index_name):
-        # N and Z describe the loaded byte.
+    def _finish_indexed_zero_page_update(self, address, opcode, operand, value, mnemonic, index_name):
+        # N and Z describe the resulting byte.
         self._negative = bool(value & 0x80)
         self._zero = value == 0
 
@@ -529,6 +529,12 @@ class CPU:
         self._finish_zero_page_update(address, opcode, "ADC", destination, self._a)
 
 
+    def _adc_zero_page_x(self, address, opcode):
+        source, operand = self._read_indexed_zero_page(self._x)
+        self._add_with_carry(operand)
+        self._finish_indexed_zero_page_update(address, opcode, source, self._a, "ADC", "X")
+
+
     def _adc_absolute(self, address, opcode):
         destination = self._fetch_word()
         operand = self._machine.read_byte(destination)
@@ -569,6 +575,12 @@ class CPU:
         operand = self._machine.read_byte(destination)
         self._subtract_with_borrow(operand)
         self._finish_zero_page_update(address, opcode, "SBC", destination, self._a)
+
+
+    def _sbc_zero_page_x(self, address, opcode):
+        source, operand = self._read_indexed_zero_page(self._x)
+        self._subtract_with_borrow(operand)
+        self._finish_indexed_zero_page_update(address, opcode, source, self._a, "SBC", "X")
 
 
     def _sbc_absolute(self, address, opcode):
@@ -1391,7 +1403,7 @@ class CPU:
         None,  # $72
         None,  # $73
         None,  # $74
-        None,  # $75
+        _adc_zero_page_x,  # $75
         None,  # $76
         None,  # $77
         _sei,  # $78
@@ -1535,7 +1547,7 @@ class CPU:
         None,  # $F2
         None,  # $F3
         None,  # $F4
-        None,  # $F5
+        _sbc_zero_page_x,  # $F5
         _inc_zero_page_x,  # $F6
         None,  # $F7
         _sed,  # $F8

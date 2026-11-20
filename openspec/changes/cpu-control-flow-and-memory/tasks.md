@@ -510,15 +510,15 @@ Resume another task only when it is selected for implementation.
 
 ## 86. ADC zero page,X ($75)
 
-- [ ] 86.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 86.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 86.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 86.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 87. SBC zero page,X ($F5)
 
-- [ ] 87.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
+- [x] 87.1 Implement the selected encoding; verify A, C/V/N/Z, incoming carry, signed overflow, and binary arithmetic
   with D clear and set, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 87.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 87.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 88. AND zero page,X ($35)
 
