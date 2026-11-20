@@ -184,7 +184,6 @@ L_D3A3 EQU $D3A3
 L_D3B4 EQU $D3B4
 L_D415 EQU $D415
 L_D4BD EQU $D4BD
-L_D57F EQU $D57F
 L_DD0D EQU $DD0D
 L_E4BF EQU $E4BF
 L_E82C EQU $E82C
@@ -209,6 +208,9 @@ IRQ EQU $C070
 ; PpuPageOffset ($0005): Added to a RAM source page to form the PPU destination page in $D771.
 ; InitGameState ($D491) sets $1C or $24; other values and users are not yet fully traced.
 PpuPageOffset EQU $05
+; FrameCounter ($000B): Eight-bit counter incremented by NMI ($D400), wrapping from $FF to $00.
+; WaitFrameTick ($D8F6) waits for it to change; $C567 clears it. Other users and writes are not fully traced.
+FrameCounter EQU $0B
 ; PpuQueueEnd ($000C): End offset of queued PPU writes starting at $0180; $00 means the queue is empty.
 ; InitGameState ($D491) clears it; $D6B3 advances it and NMI ($D400) drains it through $D8FD.
 PpuQueueEnd EQU $0C
@@ -218,8 +220,8 @@ OamIndex EQU $0D
 ; OamStep ($000E): Signed byte added to OamIndex ($000D) by $DA2B.
 ; InitGameState ($D491) sets $04; HideSprites ($DA93) negates it to $FC (-4). Other values are untraced.
 OamStep EQU $0E
-; PaletteReq ($004D): Background palette request; values with bit 7 set are skipped by NMI ($D400).
-; InitGameState ($D491) and $D50E set $FF; nonnegative values select a palette, with valid indices untraced.
+; PaletteReq ($004D): Background palette request; $00-$08 select a set, while NMI ($D400) skips values with bit 7 set.
+; InitGameState ($D491) and LoadBgPal ($D50E) set $FF to indicate no pending request.
 PaletteReq EQU $4D
 ; ScrollY ($004F): Vertical scroll byte written to PPUSCROLL by NMI ($D400).
 ; ResetEntry ($C070) clears it; $C7AB also changes it. Other values and users are not yet analyzed.
@@ -242,6 +244,9 @@ TileAttrBits EQU $6E
 ; OptionIndex ($0083): Selector used as a jump-table index at $CA58; $C9C0 cycles it through $00-$02.
 ; InitGameState ($D491) sets $00 when the RAM marker differs; other values and users are untraced.
 OptionIndex EQU $83
+; PpuBuffer ($0400-$07FF): 1 KiB RAM buffer containing nametable data and attributes; bytes can range from $00-$FF.
+; ClearPpuBuf ($D47E) clears it; CopyPpuBuffer ($D7B4) copies it to PPU memory. Other users are not fully traced.
+PpuBuffer EQU $0400
 
 ; CreditsText ($C000-$C06F): ASCII text with CR/LF separators and space padding, not a null-terminated string.
 ; The 16 bytes at $C040 are also copied to and compared with RAM $0110-$011F by $D4E3 and $D4EF.
@@ -253,6 +258,7 @@ $C030: 56 45 44 20 20 20 20 20 20 20 20 20 20 20 0D 0A  db "VED           ", $0D
 $C040: 52 59 4F 55 49 54 49 20 4F 4F 4B 55 42 4F 20 20  db "RYOUITI OOKUBO  "
 $C050: 54 41 4B 45 46 55 4D 49 20 48 59 4F 55 44 4F 55  db "TAKEFUMI HYOUDOU"
 $C060: 4A 55 4E 4B 4F 20 4F 5A 41 57 41 20 20 20 20 20  db "JUNKO OZAWA     "
+
 
 ; ResetEntry ($C070): Reset and IRQ/BRK entry; initialize the machine and enter a repeating call sequence.
 ; Inputs: CPU reset or IRQ/BRK; no explicit parameters. Output: transfers control to MainLoop ($C09C).
@@ -308,10 +314,10 @@ L_C0A2:
 L_C0AE:
 $C0AE: A5 4B     LDA $4B
 $C0B0: D0 0C     BNE L_C0BE
-$C0B2: 20 70 D4  JSR L_D470
+$C0B2: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $C0B5: 20 B0 C9  JSR L_C9B0
 $C0B8: 20 B4 D7  JSR L_D7B4
-$C0BB: 20 67 D4  JSR L_D467
+$C0BB: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 L_C0BE:
 $C0BE: 20 13 E4  JSR L_E413
 $C0C1: A9 10     LDA #$10
@@ -547,10 +553,10 @@ $C28F: 20 95 C2  JSR L_C295
 L_C292:
 $C292: 4C 95 C0  JMP L_C095
 L_C295:
-$C295: 20 70 D4  JSR L_D470
-$C298: 20 7E D4  JSR L_D47E
+$C295: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
+$C298: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $C29B: 20 B4 D7  JSR L_D7B4
-$C29E: 20 67 D4  JSR L_D467
+$C29E: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $C2A1: 60        RTS
 L_C2A2:
 $C2A2: A5 68     LDA $68
@@ -712,7 +718,7 @@ $C3D8: A9 1E     LDA #$1E
 $C3DA: 85 85     STA $85
 $C3DC: A9 02     LDA #$02
 $C3DE: 85 46     STA $46
-$C3E0: 20 70 D4  JSR L_D470
+$C3E0: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $C3E3: A2 1A     LDX #$1A
 $C3E5: 86 56     STX $56
 $C3E7: A0 46     LDY #$46
@@ -732,7 +738,7 @@ $C402: A9 A0     LDA #$A0
 $C404: 85 13     STA $13
 $C406: 20 D2 D8  JSR L_D8D2
 $C409: 20 B4 D7  JSR L_D7B4
-$C40C: 20 67 D4  JSR L_D467
+$C40C: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $C40F: 20 31 C3  JSR L_C331
 $C412: 20 F5 CA  JSR L_CAF5
 $C415: 20 F6 D8  JSR L_D8F6
@@ -762,13 +768,13 @@ $C443: 85 0C     STA $0C
 $C445: 20 6A D1  JSR L_D16A
 $C448: 4C A2 C0  JMP L_C0A2
 L_C44B:
-$C44B: 20 70 D4  JSR L_D470
+$C44B: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $C44E: A9 1C     LDA #$1C
 $C450: 85 05     STA $05
 $C452: A9 00     LDA #$00
 $C454: 85 4F     STA $4F
 $C456: 85 50     STA $50
-$C458: 20 7E D4  JSR L_D47E
+$C458: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $C45B: A2 10     LDX #$10
 $C45D: 86 56     STX $56
 $C45F: A0 32     LDY #$32
@@ -780,7 +786,7 @@ $C469: 85 13     STA $13
 $C46B: 20 D2 D8  JSR L_D8D2
 $C46E: 20 51 D9  JSR L_D951
 $C471: 20 B4 D7  JSR L_D7B4
-$C474: 20 67 D4  JSR L_D467
+$C474: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $C477: A9 00     LDA #$00
 $C479: 85 0A     STA $0A
 $C47B: A9 01     LDA #$01
@@ -800,15 +806,15 @@ $C497: A9 00     LDA #$00
 $C499: 85 4D     STA $4D
 $C49B: 60        RTS
 L_C49C:
-$C49C: 20 70 D4  JSR L_D470
+$C49C: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $C49F: A9 1C     LDA #$1C
 $C4A1: 85 05     STA $05
 $C4A3: A9 00     LDA #$00
 $C4A5: 85 4F     STA $4F
 $C4A7: 85 50     STA $50
-$C4A9: 20 7E D4  JSR L_D47E
+$C4A9: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $C4AC: 20 B4 D7  JSR L_D7B4
-$C4AF: 20 67 D4  JSR L_D467
+$C4AF: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $C4B2: 20 67 C5  JSR L_C567
 $C4B5: 20 67 C5  JSR L_C567
 $C4B8: A9 D3     LDA #$D3
@@ -883,10 +889,10 @@ $C550: A2 0C     LDX #$0C
 $C552: A0 10     LDY #$10
 $C554: 20 B3 D6  JSR L_D6B3
 $C557: 20 75 C5  JSR L_C575
-$C55A: 20 70 D4  JSR L_D470
+$C55A: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $C55D: 20 B0 C9  JSR L_C9B0
 $C560: 20 B4 D7  JSR L_D7B4
-$C563: 20 67 D4  JSR L_D467
+$C563: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $C566: 60        RTS
 L_C567:
 $C567: A9 00     LDA #$00
@@ -953,13 +959,13 @@ $C5D3: A4 57     LDY $57
 $C5D5: 20 7B DA  JSR L_DA7B
 $C5D8: 60        RTS
 L_C5D9:
-$C5D9: 20 70 D4  JSR L_D470
+$C5D9: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $C5DC: A9 1C     LDA #$1C
 $C5DE: 85 05     STA $05
 $C5E0: A9 00     LDA #$00
 $C5E2: 85 4F     STA $4F
 $C5E4: 85 50     STA $50
-$C5E6: 20 7E D4  JSR L_D47E
+$C5E6: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $C5E9: A2 3C     LDX #$3C
 $C5EB: 86 56     STX $56
 $C5ED: A0 46     LDY #$46
@@ -979,7 +985,7 @@ $C608: A9 48     LDA #$48
 $C60A: 85 13     STA $13
 $C60C: 20 D2 D8  JSR L_D8D2
 $C60F: 20 B4 D7  JSR L_D7B4
-$C612: 20 67 D4  JSR L_D467
+$C612: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $C615: A9 00     LDA #$00
 $C617: 85 0A     STA $0A
 $C619: A9 01     LDA #$01
@@ -994,10 +1000,10 @@ $C62B: D0 05     BNE L_C632
 $C62D: AD 18 03  LDA $0318
 $C630: D0 F2     BNE L_C624
 L_C632:
-$C632: 20 70 D4  JSR L_D470
-$C635: 20 7E D4  JSR L_D47E
+$C632: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
+$C635: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $C638: 20 B4 D7  JSR L_D7B4
-$C63B: 20 67 D4  JSR L_D467
+$C63B: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $C63E: 20 51 EA  JSR L_EA51
 $C641: 60        RTS
 L_C642:
@@ -2179,11 +2185,11 @@ $CF0A: A9 30     LDA #$30
 $CF0C: 85 60     STA $60
 $CF0E: A9 03     LDA #$03
 $CF10: 85 4D     STA $4D
-$CF12: 20 70 D4  JSR L_D470
-$CF15: 20 7E D4  JSR L_D47E
+$CF12: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
+$CF15: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $CF18: 20 D9 D0  JSR L_D0D9
 $CF1B: 20 B4 D7  JSR L_D7B4
-$CF1E: 20 67 D4  JSR L_D467
+$CF1E: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $CF21: A9 D2     LDA #$D2
 $CF23: 85 12     STA $12
 $CF25: A9 BD     LDA #$BD
@@ -2454,20 +2460,20 @@ $D166: 8D 05 03  STA $0305
 L_D169:
 $D169: 60        RTS
 L_D16A:
-$D16A: 20 70 D4  JSR L_D470
+$D16A: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $D16D: A9 03     LDA #$03
 $D16F: 85 4D     STA $4D
 $D171: A9 1C     LDA #$1C
 $D173: 85 05     STA $05
-$D175: 20 7E D4  JSR L_D47E
+$D175: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $D178: 20 B4 D7  JSR L_D7B4
-$D17B: 20 67 D4  JSR L_D467
+$D17B: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $D17E: 60        RTS
 L_D17F:
-$D17F: 20 70 D4  JSR L_D470
+$D17F: 20 70 D4  JSR DisableDisplay    ; DisableDisplay ($D470)
 $D182: A9 24     LDA #$24
 $D184: 85 05     STA $05
-$D186: 20 7E D4  JSR L_D47E
+$D186: 20 7E D4  JSR ClearPpuBuf       ; ClearPpuBuf ($D47E)
 $D189: A2 1A     LDX #$1A
 $D18B: 86 56     STX $56
 $D18D: A0 2E     LDY #$2E
@@ -2487,7 +2493,7 @@ $D1A8: A9 A0     LDA #$A0
 $D1AA: 85 13     STA $13
 $D1AC: 20 D2 D8  JSR L_D8D2
 $D1AF: 20 B4 D7  JSR L_D7B4
-$D1B2: 20 67 D4  JSR L_D467
+$D1B2: 20 67 D4  JSR EnablePpuNmi      ; EnablePpuNmi ($D467)
 $D1B5: A9 30     LDA #$30
 $D1B7: 85 60     STA $60
 $D1B9: A9 D2     LDA #$D2
@@ -2885,7 +2891,7 @@ $D410: AD 02 20  LDA PPUSTATUS
 $D413: 20 FD D8  JSR L_D8FD
 $D416: A5 4D     LDA $4D
 $D418: 30 03     BMI L_D41D
-$D41A: 20 0E D5  JSR L_D50E
+$D41A: 20 0E D5  JSR LoadBgPal         ; LoadBgPal ($D50E)
 L_D41D:
 $D41D: A5 50     LDA $50
 $D41F: 09 B0     ORA #$B0
@@ -2932,11 +2938,11 @@ $D463: AA        TAX
 $D464: A5 0F     LDA $0F
 $D466: 60        RTS
 
+
 ; EnablePpuNmi ($D467): Wait for a vblank flag, then configure PPUCTRL and enable vblank NMIs.
 ; Inputs: none; depends on PPUSTATUS ($2002). Outputs: A=$B0, N=1, Z=0; writes $B0 to PPUCTRL ($2000).
 ; Polling PPUSTATUS clears its vblank flag and resets the scroll/address write latch.
 EnablePpuNmi:
-L_D467:
     ; Poll until the vblank flag is observed; it may already be set.
     $D467: 20 F5 D5  JSR WaitForVblank ; WaitForVblank ($D5F5)
 
@@ -2946,31 +2952,49 @@ L_D467:
     $D46C: 8D 00 20  STA PPUCTRL       ; PPUCTRL ($2000)
     $D46F: 60        RTS
 
-L_D470:
-$D470: 20 F6 D8  JSR L_D8F6
-$D473: A9 10     LDA #$10
-$D475: 8D 00 20  STA PPUCTRL
-$D478: A9 06     LDA #$06
-$D47A: 8D 01 20  STA PPUMASK
-$D47D: 60        RTS
+
+; DisableDisplay ($D470): Wait for a frame-counter change, then disable PPU NMIs and rendering.
+; Inputs: no register parameters; FrameCounter ($000B) must change, normally through NMI ($D400).
+; Effects: writes $10 to PPUCTRL ($2000) and $06 to PPUMASK ($2001). Returns: no value; A and flags are clobbered.
+; The wait does not finish if the counter never changes. PPU register writes may be ignored during startup warm-up.
+DisableDisplay:
+    ; Wait until the value incremented by NMI changes.
+    $D470: 20 F6 D8  JSR WaitFrameTick ; WaitFrameTick ($D8F6)
+
+    ; Disable NMI; select 8x8 sprites, sprite table $0000, background table $1000, and nametable $2000.
+    ; PPUDATA increments by 1; PPU timing continues.
+    $D473: A9 10     LDA #$10
+    $D475: 8D 00 20  STA PPUCTRL       ; PPUCTRL ($2000)
+
+    ; Disable background and sprite rendering; left-edge enable bits remain set.
+    $D478: A9 06     LDA #$06
+    $D47A: 8D 01 20  STA PPUMASK       ; PPUMASK ($2001)
+    $D47D: 60        RTS
+
+
+; ClearPpuBuf ($D47E): Clear the 1 KiB PpuBuffer ($0400-$07FF) in CPU RAM.
+; Inputs: none. Effects: writes $00 to every buffer byte; it does not directly write PPU memory.
+; Returns: no value; A, X, and N/Z are clobbered.
 ClearPpuBuf:
-L_D47E:
-$D47E: A9 00     LDA #$00
-$D480: AA        TAX
-L_D481:
-$D481: 9D 00 04  STA $0400,X
-$D484: 9D 00 05  STA $0500,X
-$D487: 9D 00 06  STA $0600,X
-$D48A: 9D 00 07  STA $0700,X
-$D48D: E8        INX
-$D48E: D0 F1     BNE L_D481
-$D490: 60        RTS
+    ; Clear one byte in each of four pages per iteration; X wraps after 256 iterations.
+    ; PpuBuffer ($0400) + $0100/$0200/$0300 select the $0500/$0600/$0700 pages.
+    $D47E: A9 00     LDA #$00
+    $D480: AA        TAX
+
+ClearBufLoop:
+    $D481: 9D 00 04  STA PpuBuffer,X   ; PpuBuffer ($0400)
+    $D484: 9D 00 05  STA PpuBuffer+$0100,X
+    $D487: 9D 00 06  STA PpuBuffer+$0200,X
+    $D48A: 9D 00 07  STA PpuBuffer+$0300,X
+    $D48D: E8        INX
+    $D48E: D0 F1     BNE ClearBufLoop  ; ClearBufLoop ($D481)
+    $D490: 60        RTS
+
 
 ; InitGameState ($D491): Initialize game state, video buffers, and audio; preserve selected state if a marker matches.
 ; Inputs: no register parameters; depends on PPU status and the RAM marker at $0110-$011F.
 ; Outputs: initializes RAM and issues PPU/APU writes; A, X, Y, and flags are modified, with no return value.
 InitGameState:
-L_D491:
     ; Clear state variables, mark the palette request inactive, and load initial palettes after vblank.
     $D491: A9 00     LDA #$00
     $D493: 85 60     STA PpuDataOffset ; PpuDataOffset ($0060)
@@ -3020,6 +3044,7 @@ L_D4CE:
     $D4DF: 20 51 EA  JSR InitAudio     ; InitAudio ($EA51)
     $D4E2: 60        RTS
 
+
 StoreMarker:
 L_D4E3:
 $D4E3: A2 0F     LDX #$0F
@@ -3029,6 +3054,8 @@ $D4E8: 9D 10 01  STA $0110,X
 $D4EB: CA        DEX
 $D4EC: 10 F7     BPL L_D4E5
 $D4EE: 60        RTS
+
+
 CheckMarker:
 L_D4EF:
 $D4EF: A2 0F     LDX #$0F
@@ -3043,39 +3070,66 @@ $D4FE: 60        RTS
 L_D4FF:
 $D4FF: A9 00     LDA #$00
 $D501: 60        RTS
+
+
+; InitPalettes ($D502): Wait for a vblank flag, then initialize sprite and background palettes.
+; Inputs: no register parameters; PPUCTRL ($2000) bit 2 must be clear and PPU memory must accept writes.
+; Effects: loads both palettes, marks PaletteReq ($004D) inactive with $FF, and leaves PPU address at $0000.
+; Returns: no value; A, X, Y, and N/Z/C are clobbered.
+; The vblank flag may already be set, so the wait does not guarantee enough time for both transfers.
 InitPalettes:
-L_D502:
-$D502: 20 F5 D5  JSR L_D5F5
-$D505: 20 3E D5  JSR InitSpritePal
-$D508: A9 00     LDA #$00
-$D50A: 20 0E D5  JSR L_D50E
-$D50D: 60        RTS
-L_D50E:
-$D50E: 0A        ASL A
-$D50F: 0A        ASL A
-$D510: 0A        ASL A
-$D511: 0A        ASL A
-$D512: AA        TAX
-$D513: A0 10     LDY #$10
-$D515: A9 3F     LDA #$3F
-$D517: 8D 06 20  STA PPUADDR
-$D51A: A9 00     LDA #$00
-$D51C: 8D 06 20  STA PPUADDR
-L_D51F:
-$D51F: BD 65 D5  LDA $D565,X
-$D522: 8D 07 20  STA PPUDATA
-$D525: E8        INX
-$D526: 88        DEY
-$D527: D0 F6     BNE L_D51F
-$D529: A9 FF     LDA #$FF
-$D52B: 85 4D     STA $4D
-$D52D: A9 3F     LDA #$3F
-$D52F: 8D 06 20  STA PPUADDR
-$D532: A9 00     LDA #$00
-$D534: 8D 06 20  STA PPUADDR
-$D537: 8D 06 20  STA PPUADDR
-$D53A: 8D 06 20  STA PPUADDR
-$D53D: 60        RTS
+    ; Poll PPUSTATUS until the vblank flag is set; the read resets the shared address/scroll write latch.
+    $D502: 20 F5 D5  JSR WaitForVblank ; WaitForVblank ($D5F5)
+
+    ; Load the fixed sprite palette followed by background palette set $00.
+    $D505: 20 3E D5  JSR InitSpritePal ; InitSpritePal ($D53E)
+    $D508: A9 00     LDA #$00          ; Select background palette set 0.
+    $D50A: 20 0E D5  JSR LoadBgPal     ; LoadBgPal ($D50E)
+    $D50D: 60        RTS
+
+
+; LoadBgPal ($D50E): Load one 16-byte background palette set and clear the pending palette request.
+; Inputs: A's low nibble selects a set ($00-$08); the routine does not bounds-check the index.
+; PPUADDR ($2006) expects its first write, PPUCTRL ($2000) bit 2 is clear, and PPU memory is writable.
+; Effects: 16 writes to PPUDATA ($2007); PaletteReq ($004D)=$FF; PPU address=$0000.
+; Returns: no value; A, X, Y, and N/Z/C are clobbered.
+; The routine does not wait for vblank; its callers arrange PPU access.
+LoadBgPal:
+    ; Multiply the low nibble of A by 16 to select a set; the shifts discard the high nibble.
+    $D50E: 0A        ASL A
+    $D50F: 0A        ASL A
+    $D510: 0A        ASL A
+    $D511: 0A        ASL A
+    $D512: AA        TAX
+
+    ; Set the PPU address to $3F00; Y counts the 16 bytes to copy.
+    $D513: A0 10     LDY #$10
+    $D515: A9 3F     LDA #$3F
+    $D517: 8D 06 20  STA PPUADDR       ; PPUADDR ($2006), high byte
+    $D51A: A9 00     LDA #$00
+    $D51C: 8D 06 20  STA PPUADDR       ; PPUADDR ($2006), low byte
+
+    ; Copy the selected set to consecutive background palette addresses.
+BgPalLoop:
+    $D51F: BD 65 D5  LDA BgPalSets,X   ; BgPalSets ($D565)
+    $D522: 8D 07 20  STA PPUDATA       ; PPUDATA ($2007)
+    $D525: E8        INX
+    $D526: 88        DEY
+    $D527: D0 F6     BNE BgPalLoop     ; BgPalLoop ($D51F)
+
+    ; Mark the palette request as completed.
+    $D529: A9 FF     LDA #$FF
+    $D52B: 85 4D     STA PaletteReq    ; PaletteReq ($004D)
+
+    ; Set the PPU address to $3F00 and then to $0000; the reason for this sequence is not yet confirmed.
+    $D52D: A9 3F     LDA #$3F
+    $D52F: 8D 06 20  STA PPUADDR       ; PPUADDR ($2006), high byte
+    $D532: A9 00     LDA #$00
+    $D534: 8D 06 20  STA PPUADDR       ; PPUADDR ($2006), low byte
+    $D537: 8D 06 20  STA PPUADDR       ; PPUADDR ($2006), high byte
+    $D53A: 8D 06 20  STA PPUADDR       ; PPUADDR ($2006), low byte
+    $D53D: 60        RTS
+
 
 ; InitSpritePal ($D53E): Copy four fixed sprite palettes to PPU palette memory.
 ; Inputs: PPUADDR ($2006) expects its first write, PPUCTRL ($2000) bit 2 is clear, and PPU memory is writable.
@@ -3103,140 +3157,81 @@ L_D54A:
 ; Sprite pixel value 0 is transparent; the first byte of each row is written to a mirrored background entry.
 ; PPU $3F10/$3F14/$3F18/$3F1C mirror $3F00/$3F04/$3F08/$3F0C respectively.
 SpritePal:
-    $D555: 0F 18 27 38  db $0F, $18, $27, $38
-    $D559: 0F 0A 1B 3B  db $0F, $0A, $1B, $3B
-    $D55D: 0F 0C 10 20  db $0F, $0C, $10, $20
-    $D561: 0F 04 16 20  db $0F, $04, $16, $20
+    $D555: 0F 18 27 38  db $0F, $18, $27, $38   ; Dirty yellow
+    $D559: 0F 0A 1B 3B  db $0F, $0A, $1B, $3B   ; Green
+    $D55D: 0F 0C 10 20  db $0F, $0C, $10, $20   ; Dirty snow
+    $D561: 0F 04 16 20  db $0F, $04, $16, $20   ; Purple
 
-$D565: 0F        db $0F
-$D566: 17        db $17
-$D567: 06 00     ASL $00
-$D569: 0F        db $0F
-$D56A: 3C        db $3C
-$D56B: 10 12     BPL L_D57F
-$D56D: 0F        db $0F
-$D56E: 29 09     AND #$09
-$D570: 0B        db $0B
-$D571: 0F        db $0F
-$D572: 00        BRK
-$D573: 10 20     BPL L_D595
-$D575: 0F        db $0F
-$D576: 17        db $17
-$D577: 06 00     ASL $00
-$D579: 0F        db $0F
-$D57A: 3C        db $3C
-$D57B: 12        db $12
-$D57C: 12        db $12
-$D57D: 0F        db $0F
-$D57E: 29 09     AND #$09
-$D580: 0B        db $0B
-L_D581:
-$D581: 0F        db $0F
-$D582: 00        BRK
-$D583: 10 20     BPL L_D5A5
-$D585: 0F        db $0F
-$D586: 17        db $17
-$D587: 06 00     ASL $00
-$D589: 0F        db $0F
-$D58A: 12        db $12
-$D58B: 3C        db $3C
-$D58C: 12        db $12
-$D58D: 0F        db $0F
-$D58E: 29 09     AND #$09
-$D590: 0B        db $0B
-$D591: 0F        db $0F
-$D592: 00        BRK
-$D593: 10 20     BPL L_D5B5
-L_D595:
-$D595: 0F        db $0F
-$D596: 16 16     ASL $16,X
-$D598: 30 0F     BMI L_D5A9
-$D59A: 3C        db $3C
-$D59B: 10 16     BPL L_D5B3
-$D59D: 0F        db $0F
-$D59E: 29 09     AND #$09
-$D5A0: 27        db $27
-$D5A1: 0F        db $0F
-$D5A2: 00        BRK
-$D5A3: 10 20     BPL L_D5C5
-L_D5A5:
-$D5A5: 0F        db $0F
-$D5A6: 17        db $17
-$D5A7: 06 00     ASL $00
-L_D5A9:
-$D5A9: 0F        db $0F
-$D5AA: 3C        db $3C
-$D5AB: 10 00     BPL L_D5AD
-L_D5AD:
-$D5AD: 0F        db $0F
-$D5AE: 29 09     AND #$09
-$D5B0: 00        BRK
-$D5B1: 0F        db $0F
-$D5B2: 00        BRK
-L_D5B3:
-$D5B3: 10 00     BPL L_D5B5
-L_D5B5:
-$D5B5: 0F        db $0F
-$D5B6: 0F        db $0F
-$D5B7: 06 00     ASL $00
-$D5B9: 0F        db $0F
-$D5BA: 3C        db $3C
-$D5BB: 10 00     BPL L_D5BD
-L_D5BD:
-$D5BD: 0F        db $0F
-$D5BE: 29 09     AND #$09
-$D5C0: 00        BRK
-$D5C1: 0F        db $0F
-$D5C2: 00        BRK
-$D5C3: 10 00     BPL L_D5C5
-L_D5C5:
-$D5C5: 0F        db $0F
-$D5C6: 12        db $12
-$D5C7: 06 00     ASL $00
-$D5C9: 0F        db $0F
-$D5CA: 3C        db $3C
-$D5CB: 10 00     BPL L_D5CD
-L_D5CD:
-$D5CD: 0F        db $0F
-$D5CE: 29 09     AND #$09
-$D5D0: 00        BRK
-$D5D1: 0F        db $0F
-$D5D2: 00        BRK
-$D5D3: 10 00     BPL L_D5D5
-L_D5D5:
-$D5D5: 0F        db $0F
-$D5D6: 00        BRK
-$D5D7: 06 00     ASL $00
-$D5D9: 0F        db $0F
-$D5DA: 3C        db $3C
-$D5DB: 10 00     BPL L_D5DD
-L_D5DD:
-$D5DD: 0F        db $0F
-$D5DE: 29 09     AND #$09
-$D5E0: 00        BRK
-$D5E1: 0F        db $0F
-$D5E2: 00        BRK
-$D5E3: 10 00     BPL L_D5E5
-L_D5E5:
-$D5E5: 0F        db $0F
-$D5E6: 30 06     BMI L_D5EE
-$D5E8: 00        BRK
-$D5E9: 0F        db $0F
-$D5EA: 3C        db $3C
-$D5EB: 10 00     BPL L_D5ED
-L_D5ED:
-$D5ED: 0F        db $0F
-L_D5EE:
-$D5EE: 29 09     AND #$09
-$D5F0: 00        BRK
-$D5F1: 0F        db $0F
-$D5F2: 00        BRK
-$D5F3: 10 00     BPL L_D5F5
+; BgPalSets ($D565-$D5F4): Nine sets of 16 NES color indices ($00-$3F), selected by LoadBgPal ($D50E).
+; Each set contains four background palettes of four entries. Their uses in the game are not yet fully traced.
+; Writes to PPU $3F00/$3F04/$3F08/$3F0C also affect the sprite mirrors $3F10/$3F14/$3F18/$3F1C.
+BgPalSets:
+; Set $00.
+    $D565: 0F 17 06 00  db $0F, $17, $06, $00
+    $D569: 0F 3C 10 12  db $0F, $3C, $10, $12
+    $D56D: 0F 29 09 0B  db $0F, $29, $09, $0B
+    $D571: 0F 00 10 20  db $0F, $00, $10, $20
+
+; Set $01.
+    $D575: 0F 17 06 00  db $0F, $17, $06, $00
+    $D579: 0F 3C 12 12  db $0F, $3C, $12, $12
+    $D57D: 0F 29 09 0B  db $0F, $29, $09, $0B
+    $D581: 0F 00 10 20  db $0F, $00, $10, $20
+
+; Set $02.
+    $D585: 0F 17 06 00  db $0F, $17, $06, $00
+    $D589: 0F 12 3C 12  db $0F, $12, $3C, $12
+    $D58D: 0F 29 09 0B  db $0F, $29, $09, $0B
+    $D591: 0F 00 10 20  db $0F, $00, $10, $20
+
+; Set $03.
+    $D595: 0F 16 16 30  db $0F, $16, $16, $30
+    $D599: 0F 3C 10 16  db $0F, $3C, $10, $16
+    $D59D: 0F 29 09 27  db $0F, $29, $09, $27
+    $D5A1: 0F 00 10 20  db $0F, $00, $10, $20
+
+; Set $04.
+    $D5A5: 0F 17 06 00  db $0F, $17, $06, $00
+    $D5A9: 0F 3C 10 00  db $0F, $3C, $10, $00
+    $D5AD: 0F 29 09 00  db $0F, $29, $09, $00
+    $D5B1: 0F 00 10 00  db $0F, $00, $10, $00
+
+; Set $05.
+    $D5B5: 0F 0F 06 00  db $0F, $0F, $06, $00
+    $D5B9: 0F 3C 10 00  db $0F, $3C, $10, $00
+    $D5BD: 0F 29 09 00  db $0F, $29, $09, $00
+    $D5C1: 0F 00 10 00  db $0F, $00, $10, $00
+
+; Set $06.
+    $D5C5: 0F 12 06 00  db $0F, $12, $06, $00
+    $D5C9: 0F 3C 10 00  db $0F, $3C, $10, $00
+    $D5CD: 0F 29 09 00  db $0F, $29, $09, $00
+    $D5D1: 0F 00 10 00  db $0F, $00, $10, $00
+
+; Set $07.
+    $D5D5: 0F 00 06 00  db $0F, $00, $06, $00
+    $D5D9: 0F 3C 10 00  db $0F, $3C, $10, $00
+    $D5DD: 0F 29 09 00  db $0F, $29, $09, $00
+    $D5E1: 0F 00 10 00  db $0F, $00, $10, $00
+
+; Set $08.
+    $D5E5: 0F 30 06 00  db $0F, $30, $06, $00
+    $D5E9: 0F 3C 10 00  db $0F, $3C, $10, $00
+    $D5ED: 0F 29 09 00  db $0F, $29, $09, $00
+    $D5F1: 0F 00 10 00  db $0F, $00, $10, $00
+
+
+; WaitForVblank ($D5F5): Poll until the PPU vblank flag is observed set.
+; Inputs: none; depends on PPUSTATUS ($2002). Returns: no value; A and N/Z are clobbered.
+; Each PPUSTATUS read clears the vblank flag and resets the shared PPUSCROLL/PPUADDR write latch.
+; If the flag is already set, the routine returns immediately; it does not guarantee a full vblank remains.
 WaitForVblank:
-L_D5F5:
-$D5F5: AD 02 20  LDA PPUSTATUS
-$D5F8: 10 FB     BPL L_D5F5
-$D5FA: 60        RTS
+    ; LDA copies status bit 7 to N; branch back while the vblank flag was clear.
+    $D5F5: AD 02 20  LDA PPUSTATUS     ; PPUSTATUS ($2002)
+    $D5F8: 10 FB     BPL WaitForVblank ; WaitForVblank ($D5F5)
+    $D5FA: 60        RTS
+
+
 L_D5FB:
 $D5FB: A9 00     LDA #$00
 $D5FD: 85 00     STA $00
@@ -3511,6 +3506,8 @@ $D7AF: 90 02     BCC L_D7B3
 $D7B1: E6 12     INC $12
 L_D7B3:
 $D7B3: 60        RTS
+
+
 CopyPpuBuffer:
 L_D7B4:
 $D7B4: A9 00     LDA #$00
@@ -3526,6 +3523,8 @@ $D7C5: A5 12     LDA $12
 $D7C7: C9 08     CMP #$08
 $D7C9: D0 F2     BNE L_D7BD
 $D7CB: 60        RTS
+
+
 L_D7CC:
 $D7CC: A2 00     LDX #$00
 $D7CE: A9 11     LDA #$11
@@ -3691,12 +3690,17 @@ $D8F0: A4 5F     LDY $5F
 $D8F2: 4C D6 D8  JMP L_D8D6
 L_D8F5:
 $D8F5: 60        RTS
+
+
+WaitFrameTick:
 L_D8F6:
 $D8F6: A5 0B     LDA $0B
 L_D8F8:
 $D8F8: C5 0B     CMP $0B
 $D8FA: F0 FC     BEQ L_D8F8
 $D8FC: 60        RTS
+
+
 L_D8FD:
 $D8FD: A6 0C     LDX $0C
 $D8FF: A9 00     LDA #$00
@@ -3862,6 +3866,8 @@ L_D9F9:
 $D9F9: A9 01     LDA #$01
 $D9FB: 85 38     STA $38
 $D9FD: 60        RTS
+
+
 InitRecord:
 L_D9FE:
 $D9FE: A9 00     LDA #$00
@@ -3875,6 +3881,8 @@ $DA0C: 95 06     STA $06,X
 $DA0E: A9 FF     LDA #$FF
 $DA10: 95 07     STA $07,X
 $DA12: 60        RTS
+
+
 L_DA13:
 $DA13: 85 00     STA $00
 $DA15: A2 35     LDX #$35
@@ -3954,6 +3962,8 @@ $DA8B: A6 54     LDX $54
 $DA8D: A4 55     LDY $55
 $DA8F: 20 2B DA  JSR L_DA2B
 $DA92: 60        RTS
+
+
 HideSprites:
 L_DA93:
 $DA93: A6 0D     LDX $0D
@@ -3973,6 +3983,8 @@ $DAA8: E0 04     CPX #$04
 $DAAA: D0 F2     BNE L_DA9E
 $DAAC: 86 0D     STX $0D
 $DAAE: 60        RTS
+
+
 L_DAAF:
 $DAAF: F0 09     BEQ L_DABA
 $DAB1: B0 05     BCS L_DAB8
@@ -6355,6 +6367,8 @@ $EA4B: 00        BRK
 $EA4C: 01 FF     ORA ($FF,X)
 $EA4E: 00        BRK
 $EA4F: 01 00     ORA ($00,X)
+
+
 InitAudio:
 L_EA51:
 $EA51: A9 0F     LDA #$0F
@@ -6382,6 +6396,8 @@ $EA78: E8        INX
 $EA79: E0 1C     CPX #$1C
 $EA7B: D0 EA     BNE L_EA67
 $EA7D: 60        RTS
+
+
 L_EA7E:
 $EA7E: A5 6D     LDA $6D
 $EA80: D0 06     BNE L_EA88

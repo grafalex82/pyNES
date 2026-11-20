@@ -68,10 +68,12 @@ Use English for names and explanations.
 - Give variables and labels meaningful names of at most 16 characters. When an instruction uses a named variable or
   jump target, include its address in parentheses alongside the name, including for hardware register names. An
   instruction comment can hold this address without confusing it with 6502 indirect addressing syntax.
+- When a fully annotated function receives a name, replace references to its generated entry-point label throughout
+  the listing and remove the old label. Keep unexamined instructions in column 1.
 - Describe each variable in a comment: its role, possible values, and the functions that use it. State what is unknown
   rather than presenting a hypothesis as fact.
 - Separate logical blocks with at least one blank line and a short comment describing what each block does. Separate
-  functions with a full-line comment describing the function, its parameters, and its results.
+  functions with two blank lines and a full-line comment describing the function, its parameters, and its results.
 - Identify data that the linear disassembler mistook for code and represent it as `db` blocks, or `dw` for 16-bit
   values such as vectors. Manually decode instructions when necessary, retaining the original addresses and bytes.
 

@@ -52,8 +52,9 @@ independently. A synthetic asymmetric tile verifies both bitplanes, all four ind
 
 At the user's request, analyze only selected portions of a listing. Four-space indentation distinguishes examined
 instructions from raw column-one instructions. Code-block comments are also indented; labels, function comments,
-declarations, and data start in column one. Inline comments start in column 40. Meaningful names, addresses, and
-comments make the results easier to study.
+declarations, and data start in column one. Inline comments start in column 40. Two blank lines visually separate
+functions. Once a function is fully annotated and named, its generated entry-point label is replaced throughout the
+listing and removed, so references consistently use the meaningful name.
 The [listing notes](disassembly/README.md) record the complete conventions. This changes documentation only and
 does not establish any new facts about the game or emulator behavior.
 
