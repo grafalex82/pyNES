@@ -1318,6 +1318,70 @@ def test_immediate_compare_updates_cnz(make_cpu, opcode, register, value, operan
     assert cpu.cycles == 2
 
 
+@pytest.mark.parametrize("opcode, register", [(0xC5, "a"), (0xE4, "x"), (0xC4, "y")])
+@pytest.mark.parametrize("source", [0x00, 0xFF])
+@pytest.mark.parametrize("value, operand, carry, zero, negative", [
+    (0x00, 0x00, True, True, False),
+    (0x42, 0x42, True, True, False),
+    (0x00, 0x01, False, False, True),
+    (0x00, 0xFF, False, False, False),
+    (0x80, 0x01, True, False, False),
+    (0xFF, 0x00, True, False, True),
+])
+def test_zero_page_compare_updates_cnz(make_cpu, opcode, register, source, value, operand, carry, zero, negative):
+    # Start C/N/Z opposite to the result and keep data away from the instruction.
+    cpu, machine = make_cpu(start_address=0x0567)
+    setattr(cpu, register, value)
+    cpu.carry = not carry
+    cpu.zero = not zero
+    cpu.negative = not negative
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, source)
+    machine.write_byte(source, operand)
+
+    # The comparison preserves the source register and updates C/N/Z.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.carry is carry
+    assert cpu.zero is zero
+    assert cpu.negative is negative
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 3
+
+
+@pytest.mark.parametrize("source, index, destination", [(0x20, 0x04, 0x24), (0xF0, 0x20, 0x10)])
+@pytest.mark.parametrize("value, operand, carry, zero, negative", [
+    (0x00, 0x00, True, True, False),
+    (0x42, 0x42, True, True, False),
+    (0x00, 0x01, False, False, True),
+    (0x00, 0xFF, False, False, False),
+    (0x80, 0x01, True, False, False),
+    (0xFF, 0x00, True, False, True),
+])
+def test_indexed_zero_page_compare_updates_cnz(
+    make_cpu, source, index, destination, value, operand, carry, zero, negative,
+):
+    # Set X and start C/N/Z opposite to the expected comparison result.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value
+    cpu.x = index
+    cpu.carry = not carry
+    cpu.zero = not zero
+    cpu.negative = not negative
+    machine.write_byte(0x0567, 0xD5)
+    machine.write_byte(0x0568, source)
+    machine.write_byte(destination, operand)
+
+    # The flags reflect the byte at the wrapped zero-page address.
+    cpu.step()
+    assert cpu.a == value
+    assert cpu.carry is carry
+    assert cpu.zero is zero
+    assert cpu.negative is negative
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 4
+
+
 @pytest.mark.parametrize("opcode, register", [(0xCD, "a"), (0xEC, "x"), (0xCC, "y")])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),

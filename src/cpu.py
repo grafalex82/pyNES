@@ -442,6 +442,39 @@ class CPU:
         self._negative = bool(difference & 0x80)
 
 
+    def _cmp_zero_page(self, address, opcode):
+        self._compare_zero_page(address, opcode, "CMP", self._a)
+
+
+    def _cpx_zero_page(self, address, opcode):
+        self._compare_zero_page(address, opcode, "CPX", self._x)
+
+
+    def _cpy_zero_page(self, address, opcode):
+        self._compare_zero_page(address, opcode, "CPY", self._y)
+
+
+    def _cmp_zero_page_x(self, address, opcode):
+        # The indexed read wraps within zero page and omits the discarded read.
+        source, operand = self._read_indexed_zero_page(self._x)
+        self._compare(self._a, operand)
+
+        # Trace the original address byte after updating C/N/Z.
+        self._cycles += 4
+        self.log_instruction(address, (opcode, source), "CMP", f"${source:02X},X")
+
+
+    def _compare_zero_page(self, address, opcode, mnemonic, value):
+        # Compare the register with the byte at the selected zero-page address.
+        source = self._fetch_byte()
+        operand = self._machine.read_byte(source)
+        self._compare(value, operand)
+
+        # Trace the already fetched address without rereading memory.
+        self._cycles += 3
+        self.log_instruction(address, (opcode, source), mnemonic, f"${source:02X}")
+
+
     def _cmp_absolute(self, address, opcode):
         self._compare_absolute(address, opcode, "CMP", self._a)
 
@@ -1447,8 +1480,8 @@ class CPU:
         None,  # $C1
         None,  # $C2
         None,  # $C3
-        None,  # $C4
-        None,  # $C5
+        _cpy_zero_page,  # $C4
+        _cmp_zero_page,  # $C5
         _dec_zero_page,  # $C6
         None,  # $C7
         _iny,  # $C8
@@ -1466,7 +1499,7 @@ class CPU:
         None,  # $D2
         None,  # $D3
         None,  # $D4
-        None,  # $D5
+        _cmp_zero_page_x,  # $D5
         _dec_zero_page_x,  # $D6
         None,  # $D7
         _cld,  # $D8
@@ -1483,7 +1516,7 @@ class CPU:
         None,  # $E1
         None,  # $E2
         None,  # $E3
-        None,  # $E4
+        _cpx_zero_page,  # $E4
         _sbc_zero_page,  # $E5
         _inc_zero_page,  # $E6
         None,  # $E7

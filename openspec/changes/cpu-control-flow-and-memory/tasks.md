@@ -486,27 +486,27 @@ Resume another task only when it is selected for implementation.
 
 ## 82. CMP zero page ($C5)
 
-- [ ] 82.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
+- [x] 82.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
   PC, and cycles with focused synthetic pytest cases.
-- [ ] 82.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 82.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 83. CMP zero page,X ($D5)
 
-- [ ] 83.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, indexed zero-page
+- [x] 83.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, indexed zero-page
   wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 83.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 83.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 84. CPX zero page ($E4)
 
-- [ ] 84.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
+- [x] 84.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
   PC, and cycles with focused synthetic pytest cases.
-- [ ] 84.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 84.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 85. CPY zero page ($C4)
 
-- [ ] 85.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
+- [x] 85.1 Implement the selected encoding; verify equal, lower, and greater comparisons and C/N/Z, zero-page endpoints,
   PC, and cycles with focused synthetic pytest cases.
-- [ ] 85.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 85.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 86. ADC zero page,X ($75)
 
