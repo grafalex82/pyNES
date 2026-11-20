@@ -2,7 +2,7 @@
 
 import pytest
 
-from misc.disassemble import decode_prg, load_prg_rom
+from misc.disassemble import decode_prg, disassemble_prg, load_prg_rom
 
 
 @pytest.fixture
@@ -158,3 +158,81 @@ def test_decodes_loaded_prg_without_trainer_or_chr(make_cartridge_file):
     assert decoded[:2] == [(0xC000, b"\xA9\x80", "LDA", "#$80"), (0xC002, b"\x85\x10", "STA", "$10")]
     assert decoded[-1] == (0xFFFF, b"\xEA", "NOP", "")
     assert b"".join(instruction_bytes for _, instruction_bytes, _, _ in decoded) == prg_rom
+
+
+def test_listing_reuses_forward_target_and_defines_backward_target():
+    program = b"\xD0\x04\xF0\x02\x30\xFA\xEA"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "L_C000:",
+        "$C000: D0 04    BNE L_C006",
+        "$C002: F0 02    BEQ L_C006",
+        "$C004: 30 FA    BMI L_C000",
+        "L_C006:",
+        "$C006: EA       NOP",
+    ]
+
+
+@pytest.mark.parametrize(
+    "opcode, mnemonic",
+    [(0x10, "BPL"), (0x30, "BMI"), (0x50, "BVC"), (0x70, "BVS"),
+     (0x90, "BCC"), (0xB0, "BCS"), (0xD0, "BNE"), (0xF0, "BEQ")],
+)
+def test_listing_labels_each_relative_branch(opcode, mnemonic):
+    program = bytes([0xEA, opcode, 0xFD])
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "L_C000:",
+        "$C000: EA       NOP",
+        f"$C001: {opcode:02X} FD    {mnemonic} L_C000",
+    ]
+
+
+def test_listing_labels_direct_jumps_but_keeps_indirect_pointer():
+    program = b"\x20\x09\xC0\x4C\x09\xC0\x6C\x09\xC0\xEA"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "$C000: 20 09 C0 JSR L_C009",
+        "$C003: 4C 09 C0 JMP L_C009",
+        "$C006: 6C 09 C0 JMP ($C009)",
+        "L_C009:",
+        "$C009: EA       NOP",
+    ]
+
+
+def test_listing_does_not_infer_indirect_jump_or_data_targets():
+    program = b"\x6C\x00\xC0\xAD\x00\xC0"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "$C000: 6C 00 C0 JMP ($C000)",
+        "$C003: AD 00 C0 LDA $C000",
+    ]
+
+
+def test_listing_uses_equ_for_targets_outside_or_inside_an_instruction():
+    program = b"\x4C\x04\xC0\xA9\x42\x20\x00\x20\x4C\x0B\xC0"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "L_2000 EQU $2000",
+        "L_C004 EQU $C004",
+        "L_C00B EQU $C00B",
+        "",
+        "$C000: 4C 04 C0 JMP L_C004",
+        "$C003: A9 42    LDA #$42",
+        "$C005: 20 00 20 JSR L_2000",
+        "$C008: 4C 0B C0 JMP L_C00B",
+    ]
+
+
+def test_listing_uses_equ_for_relative_target_outside_prg():
+    assert disassemble_prg(b"\xD0\xFB", 0xC000).splitlines() == [
+        "L_BFFD EQU $BFFD",
+        "",
+        "$C000: D0 FB    BNE L_BFFD",
+    ]
+
+
+def test_listing_can_label_data_without_inventing_targets_for_incomplete_instructions():
+    program = b"\x4C\x03\xC0\x02\x4C\xD0"
+    assert disassemble_prg(program, 0xC000).splitlines() == [
+        "$C000: 4C 03 C0 JMP L_C003",
+        "L_C003:",
+        "$C003: 02       db $02",
+        "$C004: 4C       db $4C",
+        "$C005: D0       db $D0",
+    ]

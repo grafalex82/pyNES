@@ -5,6 +5,22 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Two-pass control-flow labels for disassembly (2026-11-20)
+
+Task 1.3 of `disassemble-nes-rom` scans decoded lines once to collect direct relative branch and absolute `JMP` and
+`JSR` targets, then scans again to write a listing. Labels contain their exact 16-bit address and are reused when
+targets repeat. A target at a decoded line, including a `db` line, is defined there; a target between lines or outside
+the selected PRG range is defined with `EQU`. This avoids inventing an instruction boundary or changing an address.
+
+An indirect `JMP` supplies a pointer rather than its destination, so it remains numeric and creates no target label.
+Linear decoding can interpret data as instructions, making these labels hypotheses rather than verified code paths.
+The [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html) describes relative
+branches and indirect jumps; [py65's disassembler][py65-disassembler] was consulted for comparison. The two-pass
+implementation was written independently. Mirror annotations, hardware symbols, and the standalone command remain
+later work; no game ROM is required or modified.
+
+[py65-disassembler]: https://github.com/mnaberez/py65/blob/main/py65/disassembler.py
+
 ### Linear instruction decoding for disassembly (2026-11-20)
 
 Task 1.2 of `disassemble-nes-rom` adds a static decoder independent of the CPU's execution handlers. A linear scan

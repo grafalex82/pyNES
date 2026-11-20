@@ -106,3 +106,47 @@ def decode_prg(prg_rom, base_address):
             value = (address + size + displacement) & 0xFFFF
         yield address, instruction_bytes, mnemonic, operand_format.format(value)
         offset += size
+
+
+def _control_target(instruction_bytes, mnemonic, operand):
+    """Return a directly encoded control-flow target, or None for other lines."""
+    # Incomplete instructions are data even if their first byte is a branch or jump opcode.
+    if mnemonic == "db":
+        return None
+
+    # Indirect JMP contains a pointer address, not the destination stored at that pointer.
+    mode = _OPCODES[instruction_bytes[0]][1]
+    if mode == "rel" or (mode == "abs" and mnemonic in ("JMP", "JSR")):
+        return int(operand[1:], 16)
+    return None
+
+
+def disassemble_prg(prg_rom, base_address):
+    """Return a two-pass listing of PRG bytes with labels for direct control-flow targets."""
+    # The first scan finds targets and line boundaries without following control flow.
+    targets = set()
+    boundaries = set()
+    for address, instruction_bytes, mnemonic, operand in decode_prg(prg_rom, base_address):
+        boundaries.add(address)
+        target = _control_target(instruction_bytes, mnemonic, operand)
+        if target is not None:
+            targets.add(target)
+
+    # Addresses without a decoded line retain their exact value through EQU.
+    lines = [f"L_{target:04X} EQU ${target:04X}" for target in sorted(targets - boundaries)]
+    if lines:
+        lines.append("")
+
+    # The second scan places labels at boundaries and replaces direct target operands.
+    for address, instruction_bytes, mnemonic, operand in decode_prg(prg_rom, base_address):
+        if address in targets:
+            lines.append(f"L_{address:04X}:")
+        target = _control_target(instruction_bytes, mnemonic, operand)
+        if target is not None:
+            operand = f"L_{target:04X}"
+        byte_text = " ".join(f"{byte:02X}" for byte in instruction_bytes)
+        line = f"${address:04X}: {byte_text:<8} {mnemonic}"
+        if operand:
+            line += f" {operand}"
+        lines.append(line)
+    return "".join(f"{line}\n" for line in lines)
