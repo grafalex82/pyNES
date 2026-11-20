@@ -399,6 +399,75 @@ def test_zero_page_shift_and_rotate(
 
 @pytest.mark.parametrize("opcode, initial, incoming_carry, expected, carry", [
     # ASL
+    (0x16, 0x00, False, 0x00, False),
+    (0x16, 0x01, True, 0x02, False),
+    (0x16, 0x40, False, 0x80, False),
+    (0x16, 0x80, True, 0x00, True),
+    (0x16, 0xFF, False, 0xFE, True),
+    # LSR
+    (0x56, 0x00, False, 0x00, False),
+    (0x56, 0x01, True, 0x00, True),
+    (0x56, 0x02, True, 0x01, False),
+    (0x56, 0x80, False, 0x40, False),
+    (0x56, 0xFF, False, 0x7F, True),
+    # ROL
+    (0x36, 0x00, False, 0x00, False),
+    (0x36, 0x00, True, 0x01, False),
+    (0x36, 0x80, False, 0x00, True),
+    (0x36, 0x80, True, 0x01, True),
+    (0x36, 0x40, False, 0x80, False),
+    (0x36, 0x40, True, 0x81, False),
+    (0x36, 0xFF, True, 0xFF, True),
+    # ROR
+    (0x76, 0x00, False, 0x00, False),
+    (0x76, 0x00, True, 0x80, False),
+    (0x76, 0x01, False, 0x00, True),
+    (0x76, 0x01, True, 0x80, True),
+    (0x76, 0x02, False, 0x01, False),
+    (0x76, 0x02, True, 0x81, False),
+    (0x76, 0xFF, True, 0xFF, True),
+])
+@pytest.mark.parametrize("operand, index, destination", [
+    (0x20, 0x04, 0x24),
+    (0xF0, 0x20, 0x10),
+    (0xFC, 0x03, 0xFF),
+])
+def test_indexed_zero_page_shift_and_rotate(
+    make_cpu, monkeypatch, opcode, initial, incoming_carry, expected, carry, operand, index, destination,
+):
+    # Set X and the affected flags before addressing the byte in zero page.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.x = index
+    cpu.carry = incoming_carry
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(destination, initial)
+
+    # Observe both writes while still forwarding them to Machine.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # Both writes target the wrapped address and C/N/Z reflect the result.
+    cpu.step()
+    assert writes == [(destination, initial), (destination, expected)]
+    assert machine.read_byte(destination) == expected
+    assert cpu.carry is carry
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("opcode, initial, incoming_carry, expected, carry", [
+    # ASL
     (0x0E, 0x00, False, 0x00, False),
     (0x0E, 0x01, True, 0x02, False),
     (0x0E, 0x40, False, 0x80, False),

@@ -1010,6 +1010,10 @@ class CPU:
         self._modify_zero_page(address, opcode, "ASL", self._shift_left)
 
 
+    def _asl_zero_page_x(self, address, opcode):
+        self._modify_zero_page(address, opcode, "ASL", self._shift_left, indexed=True)
+
+
     def _asl_absolute(self, address, opcode):
         self._modify_absolute(address, opcode, "ASL", self._shift_left)
 
@@ -1071,6 +1075,10 @@ class CPU:
         self._modify_zero_page(address, opcode, "LSR", self._shift_right)
 
 
+    def _lsr_zero_page_x(self, address, opcode):
+        self._modify_zero_page(address, opcode, "LSR", self._shift_right, indexed=True)
+
+
     def _lsr_absolute(self, address, opcode):
         self._modify_absolute(address, opcode, "LSR", self._shift_right)
 
@@ -1091,6 +1099,10 @@ class CPU:
 
     def _rol_zero_page(self, address, opcode):
         self._modify_zero_page(address, opcode, "ROL", self._rotate_left)
+
+
+    def _rol_zero_page_x(self, address, opcode):
+        self._modify_zero_page(address, opcode, "ROL", self._rotate_left, indexed=True)
 
 
     def _rol_absolute(self, address, opcode):
@@ -1115,6 +1127,10 @@ class CPU:
 
     def _ror_zero_page(self, address, opcode):
         self._modify_zero_page(address, opcode, "ROR", self._rotate_right)
+
+
+    def _ror_zero_page_x(self, address, opcode):
+        self._modify_zero_page(address, opcode, "ROR", self._rotate_right, indexed=True)
 
 
     def _ror_absolute(self, address, opcode):
@@ -1314,7 +1330,7 @@ class CPU:
         None,  # $13
         None,  # $14
         _ora_zero_page_x,  # $15
-        None,  # $16
+        _asl_zero_page_x,  # $16
         None,  # $17
         _clc,  # $18
         _ora_absolute_y,  # $19
@@ -1350,7 +1366,7 @@ class CPU:
         None,  # $33
         None,  # $34
         _and_zero_page_x,  # $35
-        None,  # $36
+        _rol_zero_page_x,  # $36
         None,  # $37
         _sec,  # $38
         _and_absolute_y,  # $39
@@ -1386,7 +1402,7 @@ class CPU:
         None,  # $53
         None,  # $54
         _eor_zero_page_x,  # $55
-        None,  # $56
+        _lsr_zero_page_x,  # $56
         None,  # $57
         _cli,  # $58
         _eor_absolute_y,  # $59
@@ -1422,7 +1438,7 @@ class CPU:
         None,  # $73
         None,  # $74
         _adc_zero_page_x,  # $75
-        None,  # $76
+        _ror_zero_page_x,  # $76
         None,  # $77
         _sei,  # $78
         _adc_absolute_y,  # $79

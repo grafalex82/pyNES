@@ -540,27 +540,27 @@ Resume another task only when it is selected for implementation.
 
 ## 91. ASL zero page,X ($16)
 
-- [ ] 91.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, indexed
+- [x] 91.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, indexed
   zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 91.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 91.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 92. LSR zero page,X ($56)
 
-- [ ] 92.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, indexed
+- [x] 92.1 Implement the selected encoding; verify the memory result, original and final writes, and C/N/Z, indexed
   zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 92.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 92.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 93. ROL zero page,X ($36)
 
-- [ ] 93.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 93.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   and C/N/Z, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 93.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 93.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 94. ROR zero page,X ($76)
 
-- [ ] 94.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
+- [x] 94.1 Implement the selected encoding; verify the memory result, original and final writes, both incoming carries,
   and C/N/Z, indexed zero-page wrapping, PC, and cycles with focused synthetic pytest cases.
-- [ ] 94.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 94.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 95. Integration
 
