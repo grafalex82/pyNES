@@ -46,7 +46,7 @@ This is a learning project. Understanding each step matters more than reaching a
 - Run the relevant tests and report what was checked. Do not add tests just to exercise documentation or placeholders.
 - Record decisions with their rationale in doc/decisions.md; retain proposals as proposals until selected.
 - Document every departure from hardware behavior and every game patch, including its reason and affected ROM.
-- Keep annotated disassembly under doc/disassembly/ and grow it alongside execution knowledge.
+- Keep annotated disassembly under doc/disassembly/ and follow its README.md conventions for user-selected analysis.
 - Identify ROM revisions and mapper requirements from actual files, not titles alone.
 - Consult public references and other emulators for understanding, then explain and implement the behavior yourself.
 - Do not copy another emulator's implementation as is.

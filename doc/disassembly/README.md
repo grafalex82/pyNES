@@ -18,8 +18,8 @@ It reads PRG without executing it; a trainer is accepted but not mapped or inclu
 A 16 KiB PRG appears once at $C000-$FFFF; references to its $8000-$BFFF mirror use exact-address `EQU` aliases.
 A 32 KiB PRG appears once at $8000-$FFFF.
 
-Each instruction line shows its CPU address, one to three original bytes, mnemonic, and operands. For example, an
-excerpt could look like this:
+Each generated instruction line shows its CPU address, one to three original bytes, mnemonic, and operands. For
+example, an unannotated excerpt could look like this:
 
 ```text
 PPUCTRL EQU $2000
@@ -48,16 +48,42 @@ at those addresses are executable code.
 
 ## Annotating game code
 
-Game disassembly is deferred at the user's request. When it resumes, identify each source ROM before assigning fixed
-addresses or interpreting routines.
+Analyze only the part the user selects, one piece at a time. Questions about the code, architecture, or peripherals
+may instead be explored in discussion; do not automatically annotate additional sections. Identify each source ROM
+before assigning fixed addresses or interpreting routines.
 
 For each listing, record the ROM filename, SHA-256, revision when known, mapper, and relevant bank layout. Distinguish
 CPU addresses from file offsets and bank-relative locations. Include instruction bytes so observations can be checked
 against the original file.
 
-Use labels and English comments to explain what a routine computes, its inputs and outputs, important RAM variables,
-device accesses, and its role in the game. Mark uncertain interpretations as hypotheses. Separate executable code
-from data rather than assuming a linear sweep has identified every instruction correctly.
+These files are annotated listings for people to read, not conventional assembly source or input to an assembler.
+Use English for names and explanations.
 
-Expand listings as game execution reveals new routines. Explain algorithms in adjacent Markdown when assembly
-comments alone are insufficient. Record patched bytes separately and cross-reference doc/decisions.md.
+- Leave unexamined disassembler output starting in column 1. Indent analyzed instructions, data, labels, and their
+  comments by four spaces, so reviewed and unreviewed parts are easy to distinguish.
+- Preserve each instruction's address, original bytes, mnemonic, and operand information, including its addressing
+  mode. A meaningful name may replace a generated label or numeric operand without changing the encoded address.
+- Give variables and labels meaningful names of at most 16 characters. When an instruction uses a named variable or
+  jump target, include its address in parentheses alongside the name, including for hardware register names. An
+  instruction comment can hold this address without confusing it with 6502 indirect addressing syntax.
+- Describe each variable in a comment: its role, possible values, and the functions that use it. State what is unknown
+  rather than presenting a hypothesis as fact.
+- Separate logical blocks with at least one blank line and a short comment describing what each block does. Separate
+  functions with a full-line comment describing the function, its parameters, and its results.
+- Identify data that the linear disassembler mistook for code and represent it as `db` blocks. Manually decode
+  instructions when necessary, retaining the original addresses and bytes.
+
+For example, the following is a synthetic illustration of formatting, not a claim about a game's code:
+
+```text
+    ; GameState ($0010): Current state; values and users are not yet known.
+
+    ; Call the initialization routine.
+    $C000: 20 34 C0  JSR InitScreen ; InitScreen ($C034)
+
+    ; Read the current game state.
+    $C003: A5 10     LDA GameState  ; GameState ($0010)
+```
+
+Explain algorithms in adjacent Markdown when listing comments alone are insufficient. Do not overwrite an annotated
+listing with regenerated output. Record patched bytes separately and cross-reference [the decisions](../decisions.md).
