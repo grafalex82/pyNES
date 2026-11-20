@@ -78,8 +78,9 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 
 `misc\chr2png.py` provides `decode_tile(tile)` for converting one 16-byte CHR tile into an 8-by-8 grid of palette
 indices. `render_chr_sheets(chr_rom, palettes, scale)` converts 8 KiB of CHR data into two off-screen pygame surfaces,
-with supplied RGB palettes, one-pixel dotted separators, and optional 2x tile-pixel scaling. PNG output and the
-command-line interface are not implemented yet.
+with supplied RGB palettes, one-pixel dotted separators, and 1x through 4x tile-pixel scaling. `parse_options()` parses
+palette and scale arguments. The command-line utility loads a supported cartridge and writes both PNG sheets without
+starting emulation.
 
 [`NESFile`](src/nesfile.py) reads ordinary iNES and NES 2.0 metadata and extracts trainer, PRG, and CHR bytes.
 Unsupported format markers, NES 2.0 exponent-multiplier sizes, nonstandard console types, and declared miscellaneous
@@ -156,6 +157,41 @@ python misc\disassemble.py --help
 Both paths are relative to the working directory. An existing output is overwritten, but the input cartridge cannot
 be selected as the output. From another directory, use the full path to the script. The listing is not reassemblable
 source or a verified disassembly; see [listing notes](doc/disassembly/README.md) for the format and limitations.
+
+Export CHR tiles from a supported cartridge with exactly 8 KiB of CHR ROM, without executing it:
+
+```text
+python -m pip install -r requirements.txt
+python misc\chr2png.py "ROMs\your game.nes" "tiles"
+python misc\chr2png.py "ROMs\your game.nes" "tiles" --palette "0F 01 21 30" --scale 2
+python misc\chr2png.py "ROMs\your game.nes" "tiles" --palette-file "colors.txt"
+python misc\chr2png.py --help
+```
+
+Run these commands from the repository root, replacing the example paths with your own. The installed pygame must
+support PNG saving; the exporter does not open a window. From another working directory, use the full script path.
+ROM, palette file, and output prefix paths are relative to the working directory. Existing outputs are overwritten,
+but outputs cannot identify the ROM, palette file, or each other, including through hard links.
+
+The output prefix produces `tiles-0000.png` and `tiles-1000.png`, containing the first and second 4 KiB of CHR in
+file order. Each sheet has 256 tiles in a 16-by-16 grid. `--scale` accepts integers from 1 to 4, defaulting to 1.
+Each tile pixel becomes a scale-by-scale block without smoothing: scales 1, 2, 3, and 4 produce images of 143, 271,
+399, and 527 pixels per side, respectively. Gray dots and transparent gaps form one-output-pixel separators at every
+scale; there is no outer border.
+
+By default both sheets use opaque black, `#555555`, `#AAAAAA`, and white for pixel values 0 through 3. `--palette`
+and `--palette-file` are mutually exclusive. Either accepts exactly four or eight whitespace-separated, two-digit
+hexadecimal NES color codes from `00` through `3F`, not RGB values. Four codes select colors for both sheets; eight
+select four colors for each sheet, in output order. For example, a UTF-8 `colors.txt` can contain:
+
+```text
+0F 01 21 30
+0F 06 16 26
+```
+
+The colors are a fixed RGB approximation for preview, not a game's runtime palette or an exact video signal. CHR
+stores pixel indices, not palette colors; index 0 is opaque in these sheets even for tiles used as sprites. The
+exporter reads static file data without emulating mapper behavior. CHR RAM and other CHR ROM sizes are unsupported.
 
 Cartridge inputs are assumed structurally valid. The loader and utility do not validate signatures, lengths, section
 completeness, trailing bytes, or extensions, and do not repair headers or catch filesystem/parsing exceptions.

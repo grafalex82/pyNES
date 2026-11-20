@@ -85,9 +85,9 @@ to opaque RGB colors.
 ### Requirement: Keep dotted separators one pixel wide
 
 The PNGs SHALL have one-pixel gray dotted gutters between adjacent rows and columns, without an outer border or
-changes to tile pixels. The gaps between gray dots SHALL be transparent. The default scale SHALL be 1. With
-`--scale 2`, each tile pixel SHALL be duplicated to a 2-by-2 block of the same color without smoothing or enlarging
-the gutters. The command SHALL reject scale values other than 1 and 2.
+changes to tile pixels. The gaps between gray dots SHALL be transparent. The default scale SHALL be 1.
+The command SHALL accept integer scales from 1 through 4 and reject other values. Each tile pixel SHALL become a
+scale-by-scale block of the same color without smoothing or enlarging the gutters.
 
 #### Scenario: Inspect a native-sized sheet
 
@@ -100,3 +100,15 @@ the gutters. The command SHALL reject scale values other than 1 and 2.
 - **WHEN** the command is run with `--scale 2`
 - **THEN** each PNG is 271 by 271 pixels and every tile is 16 by 16 pixels
 - **AND** each source pixel is represented by four identical pixels, while the dotted gutters remain one pixel wide
+
+#### Scenario: Inspect larger sheets
+
+- **WHEN** the command is run with `--scale 3` or `--scale 4`
+- **THEN** each PNG is respectively 399 by 399 or 527 by 527 pixels
+- **AND** each tile pixel becomes a 3-by-3 or 4-by-4 block of the same color without smoothing
+- **AND** the dotted gutters remain one pixel wide
+
+#### Scenario: Reject an unsupported scale
+
+- **WHEN** the command is run with a scale outside 1 through 4
+- **THEN** it reports an argument error and writes neither PNG

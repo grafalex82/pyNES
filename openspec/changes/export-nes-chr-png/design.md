@@ -31,9 +31,9 @@ pattern table the game uses for sprites or backgrounds.
    and retain the [MIT notice](https://github.com/fogleman/nes/blob/master/LICENSE.md) with the table. Use the
    values only, not the emulator's implementation. A textual code list avoids a separate binary palette format.
 4. **Compose directly at the final size.** Use an off-screen pygame surface with per-pixel alpha. Reserve one
-   output pixel between every adjacent tile row and column. Draw each decoded pixel as a single pixel or a
-   solid block of four, so there is no resampling. Paint gutters `#808080` on alternating positions using the
-   parity of the sum of the output coordinates, leaving the other positions transparent. The same parity rule
+   output pixel between every adjacent tile row and column. Draw each decoded pixel as a solid scale-by-scale block
+   for integer scales from 1 through 4, so there is no resampling. Paint gutters `#808080` using the parity of the
+   sum of the output coordinates, leaving alternating positions transparent. The same parity rule
    handles intersections. Scaling a finished sheet would also scale the gutters, so scale only the tile pixels.
 5. **Resolve supported inputs before writing.** Use `argparse` for the CLI and report unsupported CHR sizes,
    malformed palette arguments, and path conflicts before saving either image. Follow the disassembler's precedent

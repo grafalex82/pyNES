@@ -1,6 +1,73 @@
-"""Decode and compose CHR tiles for a future offline PNG exporter."""
+"""Export cartridge CHR tiles to two offline PNG sheets."""
+
+import argparse
+from pathlib import Path
+import re
+import sys
 
 import pygame
+
+# Resolve component imports from this file so callers can use any working directory.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from nesfile import NESFile
+
+
+# RGB approximations from https://github.com/fogleman/nes/blob/master/nes/palette.go;
+# copyright and permission notice: misc\fogleman-nes-LICENSE.txt.
+NES_COLORS = (
+    0x666666, 0x002A88, 0x1412A7, 0x3B00A4, 0x5C007E, 0x6E0040, 0x6C0600, 0x561D00,
+    0x333500, 0x0B4800, 0x005200, 0x004F08, 0x00404D, 0x000000, 0x000000, 0x000000,
+    0xADADAD, 0x155FD9, 0x4240FF, 0x7527FE, 0xA01ACC, 0xB71E7B, 0xB53120, 0x994E00,
+    0x6B6D00, 0x388700, 0x0C9300, 0x008F32, 0x007C8D, 0x000000, 0x000000, 0x000000,
+    0xFFFEFF, 0x64B0FF, 0x9290FF, 0xC676FF, 0xF36AFF, 0xFE6ECC, 0xFE8170, 0xEA9E22,
+    0xBCBE00, 0x88D800, 0x5CE430, 0x45E082, 0x48CDDE, 0x4F4F4F, 0x000000, 0x000000,
+    0xFFFEFF, 0xC0DFFF, 0xD3D2FF, 0xE8C8FF, 0xFBC2FF, 0xFEC4EA, 0xFECCC5, 0xF7D8A5,
+    0xE4E594, 0xCFEF96, 0xBDF4AB, 0xB3F3CC, 0xB5EBF2, 0xB8B8B8, 0x000000, 0x000000,
+)
+
+DEFAULT_PALETTE = ((0, 0, 0), (85, 85, 85), (170, 170, 170), (255, 255, 255))
+
+
+def parse_palettes(text):
+    """Convert four or eight whitespace-separated NES hex codes into two four-color RGB palettes."""
+    # Each NES code selects one RGB approximation; reject other hexadecimal spellings and out-of-range values.
+    codes = text.split()
+    if len(codes) not in (4, 8):
+        raise ValueError("palette must contain exactly 4 or 8 NES color codes")
+    if any(not re.fullmatch(r"[0-9a-fA-F]{2}", code) or int(code, 16) > 0x3F for code in codes):
+        raise ValueError("palette codes must be two hexadecimal digits from 00 to 3F")
+
+    # Four entries are shared; eight select independent palettes in sheet order.
+    colors = tuple(tuple(NES_COLORS[int(code, 16)].to_bytes(3, "big")) for code in codes)
+    first = colors[:4]
+    return first, colors[4:] if len(colors) == 8 else first
+
+
+def parse_options(argv=None):
+    """Parse export options and return paths, scale, and two RGB palettes."""
+    # Both palette sources use the same textual format and cannot be selected simultaneously.
+    parser = argparse.ArgumentParser(description="Export CHR ROM tiles to two PNG sheets.")
+    parser.add_argument("rom", help="path to a valid iNES or NES 2.0 cartridge file")
+    parser.add_argument("output", help="output filename prefix")
+    palette_group = parser.add_mutually_exclusive_group()
+    palette_group.add_argument("--palette", help="4 or 8 whitespace-separated NES hex color codes")
+    palette_group.add_argument("--palette-file", help="UTF-8 file containing 4 or 8 NES hex color codes")
+    parser.add_argument("--scale", type=int, choices=(1, 2, 3, 4), default=1, help="tile pixel scale (default: 1)")
+    args = parser.parse_args(argv)
+
+    # Read a selected file before parsing; filesystem errors remain visible to the caller.
+    palette_text = args.palette
+    if args.palette_file is not None:
+        palette_text = Path(args.palette_file).read_text(encoding="utf-8")
+    if palette_text is None:
+        args.palettes = (DEFAULT_PALETTE, DEFAULT_PALETTE)
+    else:
+        try:
+            args.palettes = parse_palettes(palette_text)
+        except ValueError as error:
+            parser.error(str(error))
+    return args
 
 
 def decode_tile(tile):
@@ -23,13 +90,13 @@ def render_chr_sheets(chr_rom, palettes, scale=1):
     """Render 8 KiB of CHR data into two off-screen pygame surfaces.
 
     The input contains two consecutive 4 KiB tile sheets. Palettes supplies four RGB colors per sheet, ordered by
-    pixel index. Scale is 1 or 2 and affects tile pixels only. The returned surfaces are in CHR file order.
+    pixel index. Scale is 1 through 4 and affects tile pixels only. The returned surfaces are in CHR file order.
     """
     # A complete sheet pair avoids silently discarding data or inventing tiles.
     if len(chr_rom) != 8192:
         raise ValueError(f"Expected 8192 bytes of CHR ROM, got {len(chr_rom)}")
-    if scale not in (1, 2):
-        raise ValueError(f"Scale must be 1 or 2, got {scale}")
+    if scale not in (1, 2, 3, 4):
+        raise ValueError(f"Scale must be 1 through 4, got {scale}")
 
     # Separate the scaled tiles by one transparent output pixel, not one scaled pixel.
     tile_size = 8 * scale
@@ -58,3 +125,41 @@ def render_chr_sheets(chr_rom, palettes, scale=1):
                     surface.set_at((position, gutter), (128, 128, 128, 255))
         sheets.append(surface)
     return tuple(sheets)
+
+
+def same_file(first, second):
+    """Identify matching paths or existing hard links without requiring outputs to exist."""
+    return first.resolve() == second.resolve() or (first.exists() and second.exists() and first.samefile(second))
+
+
+def main():
+    # Both output paths are relative to the caller's working directory, like the input paths.
+    args = parse_options()
+    outputs = [Path(f"{args.output}-0000.png"), Path(f"{args.output}-1000.png")]
+    inputs = [Path(args.rom)]
+    if args.palette_file is not None:
+        inputs.append(Path(args.palette_file))
+
+    # Refuse path aliases and hard links before either output is opened.
+    if same_file(outputs[0], outputs[1]):
+        raise SystemExit("output paths must identify distinct files")
+    for output in outputs:
+        for source in inputs:
+            if same_file(output, source):
+                raise SystemExit(f"output path {output} must not identify input {source}")
+
+    # CHR RAM and banked CHR are not equivalent to an 8 KiB static ROM export.
+    chr_rom = NESFile(args.rom).get_chr_rom()
+    if not chr_rom:
+        raise NotImplementedError("Cartridge has no CHR ROM; CHR RAM export is not implemented")
+    if len(chr_rom) != 8192:
+        raise NotImplementedError(f"CHR ROM size {len(chr_rom)} bytes is not supported; expected 8192 bytes")
+    sheets = render_chr_sheets(chr_rom, args.palettes, args.scale)
+
+    # Surfaces are complete before saving, so unsupported inputs cannot truncate existing outputs.
+    for surface, output in zip(sheets, outputs):
+        pygame.image.save(surface, output)
+
+
+if __name__ == "__main__":
+    main()

@@ -5,6 +5,31 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### CHR sheet scaling (2026-11-20)
+
+At the user's request, the exporter accepts integer scales from 1 through 4. Each tile pixel becomes a solid square
+of that size, making the artwork larger without smoothing. Gray dotted separators remain one output pixel wide at
+every scale rather than scaling with the tiles. Synthetic tests cover both sheets, pixel blocks, and gutters.
+
+### Standalone CHR sheet export (2026-11-20)
+
+Task 2.2 of `export-nes-chr-png` loads CHR bytes through `NESFile` and writes the two completed pygame surfaces as PNG
+files without starting emulation. The two 4 KiB halves are exported in file order; mapper behavior is not inferred.
+CHR RAM and CHR ROM sizes other than 8 KiB are explicitly unsupported. The command checks destination aliases,
+including hard links to either input or the other destination, before writing. Synthetic subprocess tests exercise
+both sheets, palette and scaling options, trainer offsets, unsupported sizes, and preservation of existing files.
+
+### CHR preview palette options (2026-11-20)
+
+Task 2.1 of `export-nes-chr-png` parses four or eight whitespace-separated NES color codes, either inline or in a UTF-8
+file. Four codes are shared between sheets; eight select a palette for each sheet. Without a palette, the preview uses
+black, two gray levels, and white. Custom codes use the fixed RGB approximation from
+[fogleman/nes](https://github.com/fogleman/nes/blob/master/nes/palette.go), whose MIT notice accompanies the table.
+The codes select NES colors, not RGB values, because CHR bytes contain pixel indices rather than colors. A single
+palette per sheet and fixed RGB values make artwork inspectable without running the game, but cannot reproduce its
+runtime palettes or an exact physical video signal. This applies to every exported cartridge; the input ROM is not
+modified. Synthetic tests verify palette selection, scale choices, and invalid or conflicting arguments.
+
 ### CHR tile sheet composition (2026-11-20)
 
 Task 1.2 of `export-nes-chr-png` lays out each 4 KiB CHR half as a 16-by-16 grid on an off-screen pygame surface.

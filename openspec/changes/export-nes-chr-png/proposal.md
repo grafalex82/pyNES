@@ -10,7 +10,7 @@ viewer. An offline export makes it possible to study how NES bitplanes encode ti
 - Add a standalone command that exports exactly 8 KiB of CHR ROM as two PNG sheets of 256 tiles each.
 - Default to four opaque grayscale levels. Accept one shared NES preview palette or one per sheet, from either
   hexadecimal command-line values or a text file.
-- Separate tiles with one-pixel gray dotted gutters. Optionally double each tile pixel without widening the gutters.
+- Separate tiles with one-pixel gray dotted gutters. Scale tile pixels by 1 through 4 without widening the gutters.
 - Leave game palette discovery, CHR RAM, and larger banked CHR exports out of scope.
 
 ## Capabilities
