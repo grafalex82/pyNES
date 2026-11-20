@@ -812,6 +812,28 @@ def test_zero_page_stores_write_register(make_cpu, opcode, register, destination
     assert cpu.cycles == 3
 
 
+@pytest.mark.parametrize("opcode, register, index_register", [(0x95, "a", "x"), (0x96, "x", "y"), (0x94, "y", "x")])
+@pytest.mark.parametrize("operand, index, destination", [(0x20, 0x04, 0x24), (0xF0, 0x20, 0x10)])
+@pytest.mark.parametrize("value", [0x00, 0xA5, 0xFF])
+@pytest.mark.parametrize("flags", [0x20, 0xFF])
+def test_indexed_zero_page_stores(make_cpu, opcode, register, index_register, operand, index, destination, value, flags):
+    # Keep the instruction separate from indexed zero-page data.
+    cpu, machine = make_cpu(start_address=0x0567)
+    setattr(cpu, register, value)
+    setattr(cpu, index_register, index)
+    cpu.p = flags
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(destination, value ^ 0xFF)
+
+    # Stores preserve flags and write to the wrapped address.
+    cpu.step()
+    assert machine.read_byte(destination) == value
+    assert cpu.p == flags
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 4
+
+
 @pytest.mark.parametrize("opcode, register", [(0xA5, "a"), (0xA6, "x"), (0xA4, "y")])
 @pytest.mark.parametrize("source", [0x00, 0xFF])
 @pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
@@ -832,6 +854,29 @@ def test_zero_page_loads_update_register_and_nz(make_cpu, opcode, register, sour
     assert cpu.zero is (value == 0)
     assert cpu.pc == 0x0569
     assert cpu.cycles == 3
+
+
+@pytest.mark.parametrize("opcode, register, index_register", [(0xB5, "a", "x"), (0xB6, "x", "y"), (0xB4, "y", "x")])
+@pytest.mark.parametrize("operand, index, source", [(0x20, 0x04, 0x24), (0xF0, 0x20, 0x10)])
+@pytest.mark.parametrize("value", [0x00, 0x7F, 0x80, 0xFF])
+def test_indexed_zero_page_loads(make_cpu, opcode, register, index_register, operand, index, source, value):
+    # Put the data away from the instruction and start N/Z opposite to the expected values.
+    cpu, machine = make_cpu(start_address=0x0567)
+    setattr(cpu, register, 0x55)
+    setattr(cpu, index_register, index)
+    cpu.negative = not bool(value & 0x80)
+    cpu.zero = value != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(source, value)
+
+    # The indexed address supplies the register and its N/Z flags.
+    cpu.step()
+    assert getattr(cpu, register) == value
+    assert cpu.negative is bool(value & 0x80)
+    assert cpu.zero is (value == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 4
 
 
 @pytest.mark.parametrize("operand, index, pointer_low, pointer_high", [

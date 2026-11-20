@@ -245,39 +245,39 @@ Resume another task only when it is selected for implementation.
 
 ## 42. STA zero page,X ($95)
 
-- [ ] 42.1 Implement the selected encoding; verify the stored value, indexed zero-page wrapping, PC, and cycles with
+- [x] 42.1 Implement the selected encoding; verify the stored value, indexed zero-page wrapping, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 42.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 42.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 43. STX zero page,Y ($96)
 
-- [ ] 43.1 Implement the selected encoding; verify the stored value, indexed zero-page wrapping, PC, and cycles with
+- [x] 43.1 Implement the selected encoding; verify the stored value, indexed zero-page wrapping, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 43.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 43.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 44. STY zero page,X ($94)
 
-- [ ] 44.1 Implement the selected encoding; verify the stored value, indexed zero-page wrapping, PC, and cycles with
+- [x] 44.1 Implement the selected encoding; verify the stored value, indexed zero-page wrapping, PC, and cycles with
   focused synthetic pytest cases.
-- [ ] 44.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 44.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 45. LDA zero page,X ($B5)
 
-- [ ] 45.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page wrapping, PC, and cycles
+- [x] 45.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page wrapping, PC, and cycles
   with focused synthetic pytest cases.
-- [ ] 45.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 45.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 46. LDX zero page,Y ($B6)
 
-- [ ] 46.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page wrapping, PC, and cycles
+- [x] 46.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page wrapping, PC, and cycles
   with focused synthetic pytest cases.
-- [ ] 46.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 46.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 47. LDY zero page,X ($B4)
 
-- [ ] 47.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page wrapping, PC, and cycles
+- [x] 47.1 Implement the selected encoding; verify the loaded value, N/Z, indexed zero-page wrapping, PC, and cycles
   with focused synthetic pytest cases.
-- [ ] 47.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 47.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 48. Integration
 

@@ -15,10 +15,11 @@ patch. Synthetic tests verify pointer wrapping and data access, not the omitted 
 
 ### Omitted zero-page provisional read (2026-11-19)
 
-Indexed-indirect accesses omit the hardware's discarded read at the unindexed zero-page address to retain the functional
-bus model. Zero-page RAM reads have no side effects here, but bus-cycle and DMA effects are not modeled. This applies
-to all ROMs and involves no patch. Synthetic tests verify pointer wrapping and data access, not the omitted read. See
-section 6.4 of the [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
+Indexed-indirect and zero-page indexed accesses omit the hardware's discarded read at the unindexed zero-page address
+to retain the functional bus model. Zero-page RAM reads have no side effects here, but bus-cycle and DMA effects are
+not modeled. This applies to all ROMs and involves no patch. Synthetic tests verify address wrapping and data access,
+not the omitted read. See sections 6.2 and 6.4 of the
+[MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
 
 ### Omitted reads for accumulator operations (2026-11-19)
 

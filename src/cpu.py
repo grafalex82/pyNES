@@ -370,6 +370,38 @@ class CPU:
         self._finish_zero_page_update(address, opcode, "LDY", destination, self._y)
 
 
+    def _lda_zero_page_x(self, address, opcode):
+        operand, self._a = self._read_indexed_zero_page(self._x)
+        self._finish_indexed_zero_page_load(address, opcode, operand, self._a, "LDA", "X")
+
+
+    def _ldx_zero_page_y(self, address, opcode):
+        operand, self._x = self._read_indexed_zero_page(self._y)
+        self._finish_indexed_zero_page_load(address, opcode, operand, self._x, "LDX", "Y")
+
+
+    def _ldy_zero_page_x(self, address, opcode):
+        operand, self._y = self._read_indexed_zero_page(self._x)
+        self._finish_indexed_zero_page_load(address, opcode, operand, self._y, "LDY", "X")
+
+
+    def _read_indexed_zero_page(self, index):
+        # The index wraps within zero page; the discarded hardware read is omitted.
+        operand = self._fetch_byte()
+        value = self._machine.read_byte((operand + index) & 0xFF)
+        return operand, value
+
+
+    def _finish_indexed_zero_page_load(self, address, opcode, operand, value, mnemonic, index_name):
+        # N and Z describe the loaded byte.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # Trace the already fetched operand after updating the destination register.
+        self._cycles += 4
+        self.log_instruction(address, (opcode, operand), mnemonic, f"${operand:02X},{index_name}")
+
+
     def _finish_zero_page_update(self, address, opcode, mnemonic, destination, value):
         # N and Z reflect the resulting register byte.
         self._negative = bool(value & 0x80)
@@ -616,12 +648,35 @@ class CPU:
         self._store_zero_page(address, opcode, self._a, "STA")
 
 
+    def _sta_zero_page_x(self, address, opcode):
+        self._store_zero_page_indexed(address, opcode, self._a, self._x, "STA", "X")
+
+
+    def _store_zero_page_indexed(self, address, opcode, value, index, mnemonic, index_name):
+        # Indexing wraps inside zero page and omits the discarded hardware read.
+        operand = self._fetch_byte()
+        destination = (operand + index) & 0xFF
+        self._machine.write_byte(destination, value)
+
+        # Trace the original operand without rereading memory.
+        self._cycles += 4
+        self.log_instruction(address, (opcode, operand), mnemonic, f"${operand:02X},{index_name}")
+
+
     def _stx_zero_page(self, address, opcode):
         self._store_zero_page(address, opcode, self._x, "STX")
 
 
+    def _stx_zero_page_y(self, address, opcode):
+        self._store_zero_page_indexed(address, opcode, self._x, self._y, "STX", "Y")
+
+
     def _sty_zero_page(self, address, opcode):
         self._store_zero_page(address, opcode, self._y, "STY")
+
+
+    def _sty_zero_page_x(self, address, opcode):
+        self._store_zero_page_indexed(address, opcode, self._y, self._x, "STY", "X")
 
 
     def _store_zero_page(self, address, opcode, value, mnemonic):
@@ -1092,9 +1147,9 @@ class CPU:
         _sta_indirect_indexed,  # $91
         None,  # $92
         None,  # $93
-        None,  # $94
-        None,  # $95
-        None,  # $96
+        _sty_zero_page_x,  # $94
+        _sta_zero_page_x,  # $95
+        _stx_zero_page_y,  # $96
         None,  # $97
         _tya,  # $98
         _sta_absolute_y,  # $99
@@ -1128,9 +1183,9 @@ class CPU:
         _lda_indirect_indexed,  # $B1
         None,  # $B2
         None,  # $B3
-        None,  # $B4
-        None,  # $B5
-        None,  # $B6
+        _ldy_zero_page_x,  # $B4
+        _lda_zero_page_x,  # $B5
+        _ldx_zero_page_y,  # $B6
         None,  # $B7
         _clv,  # $B8
         _lda_absolute_y,  # $B9
