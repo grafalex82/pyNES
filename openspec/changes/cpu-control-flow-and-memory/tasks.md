@@ -351,54 +351,54 @@ Resume another task only when it is selected for implementation.
 
 ## 59. AND absolute ($2D)
 
-- [ ] 59.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 59.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 59.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 59.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 60. AND absolute,X ($3D)
 
-- [ ] 60.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+- [x] 60.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 60.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 60.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 61. AND absolute,Y ($39)
 
-- [ ] 61.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+- [x] 61.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 61.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 61.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 62. ORA absolute ($0D)
 
-- [ ] 62.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 62.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 62.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 62.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 63. ORA absolute,X ($1D)
 
-- [ ] 63.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+- [x] 63.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 63.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 63.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 64. ORA absolute,Y ($19)
 
-- [ ] 64.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+- [x] 64.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 64.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 64.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 65. EOR absolute ($4D)
 
-- [ ] 65.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
-- [ ] 65.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 65.1 Implement the selected encoding; verify A and N/Z, PC, and cycles with focused synthetic pytest cases.
+- [x] 65.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 66. EOR absolute,X ($5D)
 
-- [ ] 66.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+- [x] 66.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 66.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 66.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 67. EOR absolute,Y ($59)
 
-- [ ] 67.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
+- [x] 67.1 Implement the selected encoding; verify A and N/Z, page crossing and effective address wrapping, PC, and
   cycles with focused synthetic pytest cases.
-- [ ] 67.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
+- [x] 67.2 Review bus behavior and document any new hardware departure in doc/decisions.md, if applicable.
 
 ## 68. ASL absolute ($0E)
 

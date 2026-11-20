@@ -913,6 +913,103 @@ def test_zero_page_logic_updates_accumulator_and_nz(make_cpu, opcode, initial, o
     assert cpu.cycles == 3
 
 
+@pytest.mark.parametrize("opcode, initial, operand, expected", [
+    # AND
+    (0x2D, 0xF0, 0x0F, 0x00),
+    (0x2D, 0xFF, 0x80, 0x80),
+    (0x2D, 0xAB, 0x3C, 0x28),
+    (0x2D, 0xFF, 0xFF, 0xFF),
+    # ORA
+    (0x0D, 0x00, 0x00, 0x00),
+    (0x0D, 0x10, 0x80, 0x90),
+    (0x0D, 0x21, 0x42, 0x63),
+    (0x0D, 0xFF, 0x00, 0xFF),
+    # EOR
+    (0x4D, 0xFF, 0xFF, 0x00),
+    (0x4D, 0x0F, 0x8F, 0x80),
+    (0x4D, 0xA5, 0x3C, 0x99),
+    (0x4D, 0xFF, 0x80, 0x7F),
+])
+def test_absolute_logic_updates_accumulator_and_nz(make_cpu, opcode, initial, operand, expected):
+    # Use distinct address bytes and start N/Z opposite to their expected values.
+    cpu, machine = make_cpu(start_address=0x0200)
+    cpu.a = initial
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0200, opcode)
+    machine.write_byte(0x0201, 0x56)
+    machine.write_byte(0x0202, 0x04)
+    machine.write_byte(0x0456, operand)
+
+    # A and N/Z reflect the result read from the selected address.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0203
+    assert cpu.cycles == 4
+
+
+@pytest.mark.parametrize("opcode, index_register, initial, operand, expected", [
+    # AND absolute,X
+    (0x3D, "x", 0xF0, 0x0F, 0x00),
+    (0x3D, "x", 0xFF, 0x80, 0x80),
+    (0x3D, "x", 0xAB, 0x3C, 0x28),
+    (0x3D, "x", 0xFF, 0xFF, 0xFF),
+    # AND absolute,Y
+    (0x39, "y", 0xF0, 0x0F, 0x00),
+    (0x39, "y", 0xFF, 0x80, 0x80),
+    (0x39, "y", 0xAB, 0x3C, 0x28),
+    (0x39, "y", 0xFF, 0xFF, 0xFF),
+    # ORA absolute,X
+    (0x1D, "x", 0x00, 0x00, 0x00),
+    (0x1D, "x", 0x10, 0x80, 0x90),
+    (0x1D, "x", 0x21, 0x42, 0x63),
+    (0x1D, "x", 0xFF, 0x00, 0xFF),
+    # ORA absolute,Y
+    (0x19, "y", 0x00, 0x00, 0x00),
+    (0x19, "y", 0x10, 0x80, 0x90),
+    (0x19, "y", 0x21, 0x42, 0x63),
+    (0x19, "y", 0xFF, 0x00, 0xFF),
+    # EOR absolute,X
+    (0x5D, "x", 0xFF, 0xFF, 0x00),
+    (0x5D, "x", 0x0F, 0x8F, 0x80),
+    (0x5D, "x", 0xA5, 0x3C, 0x99),
+    (0x5D, "x", 0xFF, 0x80, 0x7F),
+    # EOR absolute,Y
+    (0x59, "y", 0xFF, 0xFF, 0x00),
+    (0x59, "y", 0x0F, 0x8F, 0x80),
+    (0x59, "y", 0xA5, 0x3C, 0x99),
+    (0x59, "y", 0xFF, 0x80, 0x7F),
+])
+@pytest.mark.parametrize("base, index, source, cycles", [
+    (0x0120, 0x12, 0x0132, 4),
+    (0x00FF, 0x01, 0x0100, 5),
+    (0xFFFF, 0x01, 0x0000, 5),
+])
+def test_indexed_absolute_logic_updates_accumulator_and_nz(
+    make_cpu, opcode, index_register, initial, operand, expected, base, index, source, cycles,
+):
+    # Address the test byte with X or Y and start N/Z opposite to the expected values.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    setattr(cpu, index_register, index)
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, base & 0xFF)
+    machine.write_byte(0x0569, base >> 8)
+    machine.write_byte(source, operand)
+
+    # A and N/Z reflect the indexed byte, with a cycle added on page crossing.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x056A
+    assert cpu.cycles == cycles
+
+
 @pytest.mark.parametrize("opcode, register", [(0xC9, "a"), (0xE0, "x"), (0xC0, "y")])
 @pytest.mark.parametrize("value, operand, carry, zero, negative", [
     (0x00, 0x00, True, True, False),

@@ -579,6 +579,24 @@ class CPU:
         self._finish_zero_page_update(address, opcode, "AND", source, self._a)
 
 
+    def _and_absolute(self, address, opcode):
+        source = self._fetch_word()
+        self._a &= self._machine.read_byte(source)
+        self._finish_absolute_update(address, opcode, "AND", source, self._a)
+
+
+    def _and_absolute_x(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._x)
+        self._a &= operand
+        self._finish_indexed_update(address, opcode, "AND", base, "X", self._a, crossed)
+
+
+    def _and_absolute_y(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._y)
+        self._a &= operand
+        self._finish_indexed_update(address, opcode, "AND", base, "Y", self._a, crossed)
+
+
     def _ora_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a |= operand
@@ -591,6 +609,24 @@ class CPU:
         self._finish_zero_page_update(address, opcode, "ORA", source, self._a)
 
 
+    def _ora_absolute(self, address, opcode):
+        source = self._fetch_word()
+        self._a |= self._machine.read_byte(source)
+        self._finish_absolute_update(address, opcode, "ORA", source, self._a)
+
+
+    def _ora_absolute_x(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._x)
+        self._a |= operand
+        self._finish_indexed_update(address, opcode, "ORA", base, "X", self._a, crossed)
+
+
+    def _ora_absolute_y(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._y)
+        self._a |= operand
+        self._finish_indexed_update(address, opcode, "ORA", base, "Y", self._a, crossed)
+
+
     def _eor_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a ^= operand
@@ -601,6 +637,24 @@ class CPU:
         source = self._fetch_byte()
         self._a ^= self._machine.read_byte(source)
         self._finish_zero_page_update(address, opcode, "EOR", source, self._a)
+
+
+    def _eor_absolute(self, address, opcode):
+        source = self._fetch_word()
+        self._a ^= self._machine.read_byte(source)
+        self._finish_absolute_update(address, opcode, "EOR", source, self._a)
+
+
+    def _eor_absolute_x(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._x)
+        self._a ^= operand
+        self._finish_indexed_update(address, opcode, "EOR", base, "X", self._a, crossed)
+
+
+    def _eor_absolute_y(self, address, opcode):
+        base, operand, crossed = self._read_absolute_indexed(self._y)
+        self._a ^= operand
+        self._finish_indexed_update(address, opcode, "EOR", base, "Y", self._a, crossed)
 
 
     def _finish_immediate_update(self, address, opcode, mnemonic, operand, value):
@@ -1078,7 +1132,7 @@ class CPU:
         _asl_accumulator,  # $0A
         None,  # $0B
         None,  # $0C
-        None,  # $0D
+        _ora_absolute,  # $0D
         None,  # $0E
         None,  # $0F
 
@@ -1092,11 +1146,11 @@ class CPU:
         None,  # $16
         None,  # $17
         _clc,  # $18
-        None,  # $19
+        _ora_absolute_y,  # $19
         None,  # $1A
         None,  # $1B
         None,  # $1C
-        None,  # $1D
+        _ora_absolute_x,  # $1D
         None,  # $1E
         None,  # $1F
 
@@ -1114,7 +1168,7 @@ class CPU:
         _rol_accumulator,  # $2A
         None,  # $2B
         None,  # $2C
-        None,  # $2D
+        _and_absolute,  # $2D
         None,  # $2E
         None,  # $2F
 
@@ -1128,11 +1182,11 @@ class CPU:
         None,  # $36
         None,  # $37
         _sec,  # $38
-        None,  # $39
+        _and_absolute_y,  # $39
         None,  # $3A
         None,  # $3B
         None,  # $3C
-        None,  # $3D
+        _and_absolute_x,  # $3D
         None,  # $3E
         None,  # $3F
 
@@ -1150,7 +1204,7 @@ class CPU:
         _lsr_accumulator,  # $4A
         None,  # $4B
         _jmp_absolute,  # $4C
-        None,  # $4D
+        _eor_absolute,  # $4D
         None,  # $4E
         None,  # $4F
 
@@ -1164,11 +1218,11 @@ class CPU:
         None,  # $56
         None,  # $57
         _cli,  # $58
-        None,  # $59
+        _eor_absolute_y,  # $59
         None,  # $5A
         None,  # $5B
         None,  # $5C
-        None,  # $5D
+        _eor_absolute_x,  # $5D
         None,  # $5E
         None,  # $5F
 
