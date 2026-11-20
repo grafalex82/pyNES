@@ -81,6 +81,10 @@ Unsupported format markers, NES 2.0 exponent-multiplier sizes, nonstandard conso
 ROM areas raise `NotImplementedError`. [`nesinfo.py`](misc/nesinfo.py) prints the format, mapper/submapper, section byte
 sizes, mirroring, and nonvolatile-memory flag through `NESFile`. These values describe file metadata.
 
+The future [`disassemble.py`](misc/disassemble.py) currently provides only `load_prg_rom(path)`, returning PRG bytes
+and their listing base for mapper/submapper 0 with 16 KiB or 32 KiB PRG. It accepts a trainer without mapping it.
+Instruction decoding and the disassembler command are not implemented yet.
+
 [`RAM`](src/ram.py) and [`ROM`](src/rom.py) provide device-relative byte access. [`Machine`](src/machine.py) connects
 zero-filled 2 KiB RAM and its CPU-address mirrors to fixed 16 KiB or 32 KiB mapper-0 PRG ROM. Construction requires
 mapper/submapper 0 and no trainer. ROM writes raise `PermissionError`; unconnected addresses and unsupported cartridge

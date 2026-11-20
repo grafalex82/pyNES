@@ -5,6 +5,17 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Offline PRG loading for disassembly (2026-11-20)
+
+Task 1.1 of `disassemble-nes-rom` adds `load_prg_rom(path)` to the future disassembler. It uses `NESFile` directly
+and returns the original PRG bytes with a listing base of $C000 for 16 KiB or $8000 for 32 KiB. Mapper/submapper
+and PRG-size limits are explicit. Unlike Machine, the offline loader accepts a trainer because `NESFile` already
+separates it from PRG; this does not implement trainer mapping or execute the cartridge.
+
+The selected windows follow the fixed PRG layout in the [memory guide](memory.md). A 16 KiB image is represented
+only once; later listing work will identify its lower mirror separately. Synthetic cartridges cover both formats,
+both sizes, trainers, unsupported layouts, and unchanged input. No instructions are decoded or game ROMs modified.
+
 ### Omitted indirect indexed provisional read (2026-11-19)
 
 Indirect-indexed writes omit the hardware's provisional indexed read even when no page is crossed; indirect-indexed

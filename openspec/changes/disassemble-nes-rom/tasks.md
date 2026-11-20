@@ -2,7 +2,7 @@
 
 ## 1. Decode PRG bytes
 
-- [ ] 1.1 Load mapper-0 PRG without constructing Machine; verify 16 KiB, 32 KiB, trainer, and unsupported layouts
+- [x] 1.1 Load mapper-0 PRG without constructing Machine; verify 16 KiB, 32 KiB, trainer, and unsupported layouts
   with synthetic cartridge tests.
 - [ ] 1.2 Decode all 151 official opcode/mode combinations using an independent reference; verify their mnemonics,
   lengths, operands, and bytes, plus `db` continuation and incomplete final instructions, with focused pytest cases.
