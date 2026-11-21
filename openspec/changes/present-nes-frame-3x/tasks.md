@@ -24,29 +24,32 @@
 - [x] 2.7 Add buffered reads from $2007. Verify CHR and nametable priming, immediate palette reads, the palette
       read's buffer refill, and increment behavior through register mirrors.
 
-## 3. Display the background
+## 3. Open the emulator window and synchronize frames with vblank
 
-- [ ] 3.1 Draw a stationary nametable using the $2000 background pattern table and the $2001 background
-      enable bit. Verify asymmetric tiles, both pattern tables, and transparent pattern index zero.
-- [ ] 3.2 Apply attribute quadrants. Verify different subpalettes across 16 × 16 regions in a synthetic scene.
-- [ ] 3.3 Add $2005 scrolling and the $2000 base nametable selection. Verify the shared write toggle and both
-      nametable boundary crossings. Record the whole-frame scrolling approximation in doc/decisions.md.
-
-## 4. Advance video and present emulated frames
-
-- [ ] 4.1 Advance the PPU by completed CPU cycles and derive $2002 bit 7 from the frame phase. Remove the temporary
+- [ ] 3.1 Open the 768 × 720 window before the first CPU block when running `python main.py ROM`.
+      Show the initial PPU frame and refresh it from `PPU.render_frame()` between bounded execution blocks.
+      Verify that a synthetic cartridge's palette writes update the visible color in the same window.
+      Verify startup order, close events, failure cleanup with traceback propagation, and `--help` without display
+      initialization. Document the command and the temporary frame sampling in README.md and doc/decisions.md.
+- [ ] 3.2 Advance the PPU by completed CPU cycles and derive $2002 bit 7 from the frame phase. Remove the temporary
       `_next_status` alternation and update its tests. Test status clearing, recurring vblank without polling, and
       zero-cycle runs. Document the timing and status approximation.
-- [ ] 4.2 Add CPU NMI entry at an instruction boundary. Verify the exact saved PC, status bits, vector read
+- [ ] 3.3 Publish completed frames at each vblank entry and present them in the existing window.
+      Replace between-block sampling. With NMI disabled, verify that a palette write between two vblanks
+      changes the next presented frame. Update the frame scheduling notes in doc/decisions.md.
+
+## 4. Display the background and support the game startup wait
+
+- [ ] 4.1 Draw a stationary nametable using the $2000 background pattern table and the $2001 background
+      enable bit. Verify asymmetric tiles, both pattern tables, and transparent pattern index zero.
+      Run a synthetic cartridge that writes a nametable and confirm that its tiles appear in the startup window.
+- [ ] 4.2 Apply attribute quadrants. Verify different subpalettes across 16 × 16 regions in a synthetic scene.
+- [ ] 4.3 Add CPU NMI entry at an instruction boundary. Verify the exact saved PC, status bits, vector read
       order, cycle charge, entry with I set, and return through RTI.
-- [ ] 4.3 Connect the $2000 NMI enable bit and service pending requests from the facade. Verify enable during
-      vblank and one request per rising condition. Run a synthetic NMI wait and a bounded Battle City check.
-      Record the observed stop before choosing the next game-facing behavior.
-- [ ] 4.4 Publish a completed frame at vblank entry. Verify that an NMI handler's palette update is visible
-      in the following completed frame.
-- [ ] 4.5 Open the display before the first CPU block when running `python main.py ROM`. With a synthetic
-      cartridge, verify startup order, frame presentation, close events, and failure cleanup with traceback
-      propagation. Verify that `--help` leaves the display uninitialized. Document the command in README.md.
+- [ ] 4.4 Connect the $2000 NMI enable bit and service pending requests from the facade. Verify enable during
+      vblank, one request per rising condition, and that a handler's palette write affects the following frame.
+      Run a synthetic NMI wait and a bounded Battle City check. Record the observed stop before choosing
+      the next game-facing behavior.
 
 ## 5. Display sprites and apply rendering modes
 
@@ -54,15 +57,22 @@
 - [ ] 5.2 Implement the $4014 OAM transfer. Test a mirrored CPU page, nonzero start address, and destination wrap.
       Record the omitted DMA stall and rerun Battle City if DMA was the observed obstacle.
 - [ ] 5.3 Draw 8 × 8 sprites from OAM and CHR. Verify the selected table, position, palette, transparency,
-      and both flips with an asymmetric synthetic sprite.
-- [ ] 5.4 Add 8 × 16 sprite selection. Verify both CHR tables and tile order before and after a vertical flip.
+      and pixel placement with an asymmetric synthetic sprite.
+- [ ] 5.4 Add 8 × 16 sprite selection. Verify both CHR tables and the order of the two tiles.
 - [ ] 5.5 Compose sprites with the background. Verify OAM ordering, behind-background priority, and all four
       $2001 layer enable combinations. Document whole-frame sprite evaluation in doc/decisions.md.
 - [ ] 5.6 Apply independent left-edge masks. Verify columns 0 through 7 and the first unmasked column.
 - [ ] 5.7 Apply grayscale. Verify that rendering uses the palette code masked with $30.
 - [ ] 5.8 Apply the NTSC RGB color emphasis approximation. Verify the three channel selections and document
       the mapping. Run the focused video tests and record the first observed frame or remaining game obstacle.
-- [ ] 5.9 Replace remaining uses of temporary register-write retention with the corresponding register state, then
+
+## 6. Add scrolling and sprite flips
+
+- [ ] 6.1 Add $2005 scrolling and the $2000 base nametable selection. Verify the shared write toggle and both
+      nametable boundary crossings. Record the whole-frame scrolling approximation in doc/decisions.md.
+- [ ] 6.2 Apply horizontal and vertical sprite flips from OAM. Verify asymmetric sprites in both sizes,
+      including the reversed tile order of an 8 × 16 sprite after a vertical flip.
+- [ ] 6.3 Replace remaining uses of temporary register-write retention with the corresponding register state, then
       remove `_last_writes` and `last_writes`. Preserve implemented register effects and accept status writes without
       changing vblank or the shared write toggle. Update focused tests and documentation, including the unmodeled
       status-write open-bus effect.

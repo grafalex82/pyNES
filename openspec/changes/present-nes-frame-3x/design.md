@@ -2,8 +2,8 @@
 
 ## Context
 
-The CHR exporter renders off-screen tile sheets. The console entry point runs bounded CPU blocks, and the PPU
-currently retains register writes for inspection. See [the proposal](proposal.md) for the first display milestone.
+The cartridge entry point runs bounded CPU blocks. The PPU can produce a backdrop frame from the palette, and
+`FrameDisplay` can present it. See [the proposal](proposal.md) for the order of the graphics milestones.
 
 ## Goals / Non-Goals
 
@@ -35,27 +35,35 @@ This model covers fixed NROM video wiring and whole-frame rendering at instructi
    reset with that port, then switch bit 7 to emulated vblank when frame timing is available. Use one PPUDATA
    read buffer. DMA copies an addressed CPU page through Machine into OAM with the existing OAM write behavior.
    [PPU register behavior in Mesen 2](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp)
-6. **Build the image in layers.** A backdrop frame is sufficient to verify the first palette write from a
+6. **Open the cartridge window early.** Load the cartridge and open the window before the first CPU block.
+   Present the first backdrop frame, then sample `PPU.render_frame()` between bounded execution blocks.
+   This makes current palette and VRAM changes visible before video timing is available. The host processes
+   pygame events between blocks and releases the display on close or on a propagated execution error. Handle
+   command-line help before display initialization.
+7. **Advance video at instruction boundaries.** Use a fixed NTSC-derived period of 29,781 nominal CPU cycles,
+   starting vblank at cycle 27,394 and clearing it at 29,667. Advance the phase by the elapsed cycles of
+   each completed instruction. Set PPUSTATUS bit 7 at vblank entry regardless of NMI enable. A status read
+   clears the flag while preserving the phase.
+8. **Present completed frames in the existing window.** When frame output is enabled, capture one frame at
+   each vblank entry. The host presents new completed frames in place of sampling between blocks. A synthetic
+   ROM can verify this transition by changing the backdrop with NMI disabled.
+9. **Build the image in layers.** A backdrop frame is sufficient to verify the first palette write from a
    synthetic CPU program. Decode background tiles from CHR and obtain palette selection from the attribute
    quadrants. Retain each background pixel's opacity when composing sprites so the sprite's priority applies
    even if its RGB color equals the backdrop. Select the first nontransparent sprite candidate in OAM order
    before resolving its background priority. Use a fixed RGB palette for output and apply the mask bits during
    composition. For the first NTSC profile, approximate each emphasis bit by reducing the other two RGB
    channels to three quarters of their previous value, using integer arithmetic.
-7. **Advance video at instruction boundaries.** Use a fixed NTSC-derived period of 29,781 nominal CPU cycles,
-   starting vblank at cycle 27,394 and clearing it at 29,667. Advance the phase by the elapsed cycles of
-   each completed instruction. With frame output enabled, capture the frame at vblank entry before the NMI
-   handler writes video state. Service any pending NMI at the completed instruction's boundary and charge its
-   seven nominal cycles to CPU and PPU progress without fetching a handler opcode as part of entry.
-8. **Start the video loop when a cartridge is supplied.** After loading the cartridge, open the window before
-   the first CPU block. Present completed frames through the same display boundary used for the synthetic frame.
-   Run bounded blocks through the facade and process pygame events between them. Release the display on close
-   or on any propagated execution error. Handle command-line help before display initialization.
+10. **Deliver NMI after frame capture.** Service a pending NMI at the completed instruction's boundary and
+    charge its seven nominal cycles to CPU and PPU progress without fetching a handler opcode as part of entry.
+    Capturing at vblank entry places an NMI handler's video writes in the following frame.
 
 ## Risks / Trade-offs
 
 - The SDL dummy driver can verify dimensions, colors, and surface reuse in pytest. A desktop smoke check can
   verify the actual window and confirm that it can be closed from the event loop.
+- The early window samples the current PPU state at host execution boundaries. Palette or VRAM updates can
+  become visible at those boundaries until frame delivery switches to emulated vblank.
 - Whole-frame sampling uses one state for the image. Mid-frame scroll or palette changes, sprite-zero hits,
   and per-scanline sprite evaluation can affect games that depend on raster timing. The first pass composes
   eligible sprites in OAM order and leaves those timing-dependent behaviors for a separately observed need.

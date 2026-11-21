@@ -8,8 +8,8 @@ the first image appears early and each new register effect or rendering behavior
 ## What Changes
 
 Implement the graphics sequence below within this change. Each task introduces one hardware behavior or
-one host prerequisite with its own verification. The [tasks](tasks.md) start with presentation of supplied
-frames and proceed through PPU-generated frames, background, timing, and sprites.
+one host prerequisite with its own verification. The [tasks](tasks.md) proceed from supplied frames to a
+cartridge window with vblank-driven PPU output, then add background tiles and sprites.
 
 ## PPU Graphics Roadmap
 
@@ -25,17 +25,19 @@ Sprite attributes live in the PPU's separate OAM. pygame presents the finished f
    `$2002` reads and the data increment of 1 or 32 selected by `$2000`. A synthetic program writes `$3F00`
    and displays the resulting backdrop before background or sprite rendering is available. Introduce buffered
    `$2007` reads as a separate behavior after that visible milestone.
-3. **Draw a stationary background.** Read tile numbers from the nametable and pixel indices from the pattern
-   table selected by `$2000`. Use palette RAM for colors. Add attribute-based palette selection, then
-   `$2005` scrolling and nametable crossings, with focused synthetic scenes for each behavior.
-4. **Advance frames and let the game leave its startup wait.** Replace alternating `$2002` values with vblank
-   based on nominal emulated CPU cycles. Verify that a status read clears the vblank flag. Introduce CPU NMI
-   entry and connect the PPU's NMI request to the enable bit in `$2000` as separately verified steps. Open the
-   pygame window at cartridge startup and present completed emulator frames there.
+3. **Open the emulator window and synchronize frames.** Open pygame at cartridge startup and initially display
+   the current PPU frame between CPU blocks. Then derive the `$2002` vblank flag from emulated CPU cycles and
+   switch the window to completed frames captured at vblank. A synthetic ROM can verify backdrop changes
+   with NMI disabled.
+4. **Draw the background and advance game startup.** Add stationary background tiles using the CHR table selected
+   by `$2000`, then select palettes using attributes. Add CPU NMI entry and connect the PPU's NMI request to
+   the enable bit in `$2000` as separately verified steps.
 5. **Draw sprites and combine layers.** Add OAM access (`$2003/$2004`) and DMA (`$4014`) as separate behaviors.
-   Draw 8 × 8 and 8 × 16 sprites from OAM and CHR, then verify transparency, flips, and priority. Exercise all four
+   Draw 8 × 8 and 8 × 16 sprites from OAM and CHR, then verify transparency and priority. Exercise all four
    `$2001` layer combinations: backdrop only, background only, sprites only, and both layers. Add the left
    eight-pixel masks, grayscale, and color emphasis separately.
+6. **Add scrolling and sprite flips.** Use `$2005` scrolling and base nametable selection, including nametable
+   crossings. Apply horizontal and vertical OAM flips after basic sprite rendering works.
 
 Use whole-frame rendering at first. If a game depends on mid-frame changes or the timing of a sprite-zero hit,
 give that behavior its own verification step. After each game-facing change, rerun Battle City and use the next

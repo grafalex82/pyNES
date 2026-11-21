@@ -31,6 +31,12 @@ those cycles. The next step SHALL start with the handler instruction.
 When frame output is enabled, each vblank entry SHALL publish one native-size frame composed from the PPU
 state at that boundary. The host SHALL be able to present the most recent completed frame.
 
+#### Scenario: Publish with NMI generation disabled
+
+- **WHEN** a program leaves PPUCTRL bit 7 clear and changes the backdrop color between two vblank entries
+- **THEN** the host can present one completed frame at each entry
+- **AND** the second frame shows the updated color
+
 #### Scenario: Publish before the interrupt updates video memory
 
 - **WHEN** a program writes a color during its vblank NMI handler
