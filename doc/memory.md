@@ -142,9 +142,18 @@ power-up contents. `machine.ppu.read_memory` and `write_memory` map the four log
 | Horizontal | Page 0 | Page 0 | Page 1 | Page 1 |
 | Vertical | Page 0 | Page 1 | Page 0 | Page 1 |
 
-Addresses $3000-$3EFF mirror $2000-$2EFF; $3F00 begins the unimplemented palette range. Four-screen mirroring raises
+Addresses $3000-$3EFF mirror $2000-$2EFF; $3F00 begins the palette range. Four-screen mirroring raises
 `NotImplementedError` on nametable access, while CPU execution and supported CHR access remain available.
 See [the nametable decision](decisions.md#ppu-nametable-ram-2026-11-21).
+
+## PPU palette memory
+
+PPU addresses $3F00-$3FFF access internal palette RAM. The 32-byte range $3F00-$3F1F repeats every 32 bytes;
+$3F10, $3F14, $3F18, and $3F1C also share storage with $3F00, $3F04, $3F08, and $3F0C, respectively.
+Writes retain only the low six bits, and internal reads return those raw color codes. For example, a write of $E1
+to $3F30 makes $3F00, $3F10, and $3F20 read as $21. Each PPU has independent zero-initialized palette storage.
+These internal memory accesses do not implement CPU-facing $2006/$2007 effects, rendering, or grayscale.
+See [the palette decision](decisions.md#ppu-palette-ram-2026-11-21).
 
 ## Supported configuration
 

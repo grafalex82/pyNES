@@ -15,7 +15,7 @@
       and an explicit error for unsupported CHR access. Check that PRG-only fixtures still execute.
 - [x] 2.2 Connect the two physical nametable VRAM pages. Verify both cartridge mirroring arrangements,
       the $3000-$3EFF mirror, and separation from CPU RAM.
-- [ ] 2.3 Map six-bit palette RAM. Verify repeated mirrors and the four sprite palette aliases.
+- [x] 2.3 Map six-bit palette RAM. Verify repeated mirrors and the four sprite palette aliases.
 - [ ] 2.4 Give $2006 its two-write address effect and reset the write toggle on $2002 reads. Test interrupted
       pairs and register aliases. Update doc/memory.md as the register effects replace the retained-write stub.
 - [ ] 2.5 Implement writes to $2007. Verify successive stores with both increments selected by $2000 bit 2.

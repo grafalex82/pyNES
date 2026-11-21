@@ -1,4 +1,4 @@
-"""Provide minimal PPU registers, pattern data, and nametable memory."""
+"""Provide minimal PPU registers, pattern data, nametable memory, and palette RAM."""
 
 
 class PPU:
@@ -11,6 +11,7 @@ class PPU:
         self._chr_size = chr_size
         self._nametable_ram = nametable_ram
         self._mirroring = mirroring
+        self._palette_ram = bytearray(32)
 
 
     @property
@@ -54,6 +55,16 @@ class PPU:
         return (page << 10) | (address & 0x03FF)
 
 
+    def _palette_offset(self, address):
+        # Palette RAM repeats every 32 bytes. Sprite palette entries 0x10/14/18/1C correspond to pixel
+        # index 0 (transparent), so they need no separate displayed colors. The PPU maps these addresses
+        # to 0x00/04/08/0C in the background palette; even direct memory reads and writes share those bytes.
+        offset = address & 0x1F
+        if offset in (0x10, 0x14, 0x18, 0x1C):
+            offset -= 0x10
+        return offset
+
+
     def read_memory(self, address):
         # NROM maps its two consecutive 4 KiB pattern tables directly to CHR ROM.
         if address < 0x2000:
@@ -63,7 +74,11 @@ class PPU:
         if address < 0x3F00:
             return self._nametable_ram.read_byte(self._nametable_offset(address))
 
-        # Palette memory is still unimplemented.
+        # PPU palette memory holds six-bit color codes, including mirrored addresses.
+        if address < 0x4000:
+            return self._palette_ram[self._palette_offset(address)]
+
+        # Only the 14-bit PPU address space is implemented.
         raise NotImplementedError(f"PPU memory read at address 0x{address:04X} is not implemented")
 
 
@@ -78,5 +93,10 @@ class PPU:
             self._nametable_ram.write_byte(self._nametable_offset(address), value)
             return
 
-        # Palette memory remains unimplemented until its own routing is introduced.
+        # Store only the six color bits at the shared palette address.
+        if address < 0x4000:
+            self._palette_ram[self._palette_offset(address)] = value & 0x3F
+            return
+
+        # Only the 14-bit PPU address space is implemented.
         raise NotImplementedError(f"PPU memory write at address 0x{address:04X} is not implemented")

@@ -5,6 +5,17 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU palette RAM (2026-11-21)
+
+Task 2.3 of `present-nes-frame-3x` adds PPU-owned palette storage: $3F00-$3F1F repeats throughout $3F00-$3FFF,
+and $3F10/$3F14/$3F18/$3F1C share entries with $3F00/$3F04/$3F08/$3F0C. Writes retain six bits and internal reads
+return the stored code. The storage starts at zero for reproducible tests rather than modeling uncertain power-up
+contents; this convention applies to cartridges using the PPU and does not modify ROMs. CPU-facing palette reads,
+their open-bus behavior, grayscale, and rendering remain separate work. Synthetic tests cover all repeated entries,
+both directions of the special aliases, six-bit masking, and isolation between PPUs and from nametable memory.
+See [NESdev's PPU memory map](https://www.nesdev.org/wiki/PPU_programmer_reference) and
+[Mesen's palette access](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/BaseNesPpu.cpp).
+
 ### PPU nametable RAM (2026-11-21)
 
 Task 2.2 of `present-nes-frame-3x` gives the PPU separate 2 KiB nametable RAM, supplied by Machine. The cartridge's

@@ -1,4 +1,4 @@
-"""Verify the PPU's mapper-0 pattern and nametable memory with synthetic cartridges."""
+"""Verify the PPU's pattern, nametable, and palette memory with synthetic cartridges."""
 
 import pytest
 
@@ -53,16 +53,6 @@ def test_unsupported_chr_configurations_fail_only_on_video_access(make_machine, 
             machine.ppu.read_memory(0x1000)
         else:
             machine.ppu.write_memory(0x1000, 0xA5)
-
-
-@pytest.mark.parametrize("operation", ["read", "write"])
-def test_palette_memory_remains_unimplemented(make_machine, operation):
-    machine = make_machine(bytes(8192))
-    with pytest.raises(NotImplementedError, match=rf"PPU memory {operation}.*0x3F00"):
-        if operation == "read":
-            machine.ppu.read_memory(0x3F00)
-        else:
-            machine.ppu.write_memory(0x3F00, 0xA5)
 
 
 @pytest.mark.parametrize("mirroring,pages", [(0, (0, 0, 1, 1)), (1, (0, 1, 0, 1))],
@@ -124,3 +114,52 @@ def test_four_screen_mirroring_is_rejected_only_on_nametable_access(make_machine
             machine.ppu.read_memory(0x2000)
         else:
             machine.ppu.write_memory(0x2000, 0xA5)
+
+
+@pytest.mark.parametrize("entry", range(32))
+@pytest.mark.parametrize("mirror", range(8))
+def test_palette_entries_repeat_across_the_full_palette_range(make_machine, entry, mirror):
+    # Explicit aliases distinguish the four shared sprite entries from all other colors.
+    aliases = {0x10: 0x00, 0x14: 0x04, 0x18: 0x08, 0x1C: 0x0C}
+    machine = make_machine(bytes(8192))
+    machine.ppu.write_memory(0x3F00 + mirror * 32 + entry, 0xA1)
+    selected = aliases.get(entry, entry)
+
+    # Each of the eight 32-byte ranges selects the same entries without changing adjacent colors.
+    for address in range(0x3F00, 0x4000):
+        candidate = (address - 0x3F00) % 32
+        expected = 0x21 if aliases.get(candidate, candidate) == selected else 0
+        assert machine.ppu.read_memory(address) == expected
+
+
+@pytest.mark.parametrize("background,sprite", [(0x00, 0x10), (0x04, 0x14), (0x08, 0x18), (0x0C, 0x1C)])
+def test_palette_aliases_share_writes_in_both_directions(make_machine, background, sprite):
+    machine = make_machine(bytes(8192))
+    machine.ppu.write_memory(0x3F00 + background, 0x12)
+    assert machine.ppu.read_memory(0x3F00 + sprite) == 0x12
+    machine.ppu.write_memory(0x3F00 + sprite + 0x20, 0xE1)
+    assert machine.ppu.read_memory(0x3F00 + background) == 0x21
+    assert machine.ppu.read_memory(0x3F00 + background + 0x20) == 0x21
+
+
+@pytest.mark.parametrize("value,expected", [(0x00, 0x00), (0x3F, 0x3F), (0x40, 0x00),
+                                           (0x80, 0x00), (0xE1, 0x21), (0xFF, 0x3F)])
+def test_palette_stores_only_six_color_bits(make_machine, value, expected):
+    machine = make_machine(bytes(8192))
+    machine.ppu.write_memory(0x3FFF, value)
+    assert machine.ppu.read_memory(0x3F1F) == expected
+
+
+def test_palette_is_independent_of_other_memory_and_machines(make_machine):
+    # Palette RAM belongs to each PPU and does not alias adjacent nametable memory.
+    first = make_machine(bytes(8192))
+    second = make_machine(bytes(8192))
+    first.ppu.write_memory(0x3EFF, 0xAB)
+    first.ppu.write_memory(0x3F00, 0x3F)
+    assert first.ppu.read_memory(0x3EFF) == 0xAB
+    assert first.ppu.read_memory(0x3F00) == 0x3F
+    assert second.ppu.read_memory(0x3F00) == 0
+
+    # Independent writes to another PPU cannot change the first palette.
+    second.ppu.write_memory(0x3F10, 0x12)
+    assert first.ppu.read_memory(0x3F00) == 0x3F
