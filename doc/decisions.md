@@ -5,6 +5,25 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU address latch (2026-11-21)
+
+Task 2.4 of `present-nes-frame-3x` adds the $2006 high/low write pair and resets its toggle on $2002 reads, including
+register mirrors. The first write replaces the upper six bits of a temporary address; the second replaces the low
+byte and copies the result to the current video address. Status writes do not change the toggle. The current and
+temporary addresses start at zero for reproducibility, and CPU reset does not reset the PPU.
+
+The transfer happens immediately after the second write; real PPU timing delays that transfer. This functional model
+also accepts writes during the hardware warmup interval and does not model rendering-time register interactions.
+The approximation applies to cartridges using the PPU, including the target images; no ROM was patched. The status
+byte still alternates as before, $2005 does not yet share the toggle, and $2007 data access is unimplemented.
+Synthetic tests exercise both write phases, high-bit masking, status interruption, mirrors, and independent PPUs.
+See [NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+A bounded BattleCity run reached 200,002 cycles at $D8FA; the next 20 instructions stayed at $D8F8/$D8FA while
+RAM $000B remained zero. The existing listing identifies this as a wait for the unimplemented PPU NMI. Its recorded
+SHA-256 matched before and after execution; this check does not establish playability.
+
 ### PPU palette RAM (2026-11-21)
 
 Task 2.3 of `present-nes-frame-3x` adds PPU-owned palette storage: $3F00-$3F1F repeats throughout $3F00-$3FFF,

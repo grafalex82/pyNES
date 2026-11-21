@@ -106,12 +106,12 @@ configurations raise `NotImplementedError`. See [the memory guide](doc/memory.md
 deliberate hardware departures, and a synthetic byte-access example.
 
 Each Machine also owns a minimal [`PPU`](src/ppu.py). Writes to $2000-$3FFF retain the last byte for each mirrored
-register offset for inspection, without register effects. Status reads alternate $00 and $80 as an approximation;
-other PPU reads remain unimplemented.
+register offset for inspection. A pair of $2006 writes selects a video address; reading $2002 resets the write pair.
+Status reads alternate $00 and $80 as an approximation; other PPU reads remain unimplemented.
 Its separate video address space connects 8 KiB of mapper-0 CHR ROM at $0000-$1FFF. CHR RAM and other CHR sizes
 raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pages map to $2000-$3EFF using the
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color
-codes at $3F00-$3FFF with hardware mirrors. CPU-facing video memory ports remain unimplemented.
+codes at $3F00-$3FFF with hardware mirrors. CPU-facing $2007 data access remains unimplemented.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4010-$4013 and $4015 have no audio effects;
 reads return $00, including inactive channel and interrupt status. Writes to the APU frame counter at $4017 are also

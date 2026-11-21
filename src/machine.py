@@ -24,7 +24,7 @@ class Machine:
     CPU memory map, with inclusive hexadecimal address ranges:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
         $0800-$1FFF  Three mirrors of the same internal RAM.
-        $2000-$3FFF  PPU registers and mirrors; minimal status reads and retained writes.
+        $2000-$3FFF  PPU registers and mirrors; status reads, address latch, and retained writes.
         $4000-$400F  APU registers; not connected yet.
         $4010-$4013  DMC registers; dummy writes and zero reads.
         $4014        Sprite DMA; not connected yet.
@@ -59,7 +59,7 @@ class Machine:
     RAM rejects integer byte values outside 0..255 with ValueError.
 
     This component provides byte access only. It does not construct a CPU, reset the
-    system, execute instructions, advance timing, or implement PPU register effects.
+    system, execute instructions, or advance timing.
     """
 
     def __init__(self, cartridge):

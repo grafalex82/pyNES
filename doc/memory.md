@@ -65,12 +65,23 @@ Each Machine owns a PPU. Addresses $2000-$3FFF select a register offset using th
 $200A, and $3FFA all select offset 2. `machine.ppu.last_writes` provides an inspection tuple with the last written
 byte for each offset; an unwritten offset is `None`. For example, writing $80 to $200A makes element 2 equal $80.
 
-These writes only retain bytes: they do not implement rendering, interrupts, video memory ports, or other register
-effects.
+The $2006 address port also selects a video address as described below; other register writes only retain bytes.
 They are accepted even at $2002, although hardware PPUSTATUS is read-only. This model also records writes immediately;
 hardware ignores writes to $2000, $2001, $2005, and $2006 during an initial warmup period. See the
 [decision record](decisions.md#ppu-register-write-retention-2026-11-19) for the rationale and affected ROMs.
 Reads use the same offset routing. The PPU's errors for unsupported reads propagate unchanged.
+
+## PPU address writes
+
+Two writes to $2006 or its mirrors select a video address: the first supplies the upper six bits and the second
+supplies the low byte. The first write changes a temporary address only; the second copies it to the current address.
+Reading $2002 or a mirror resets the write pair so the next $2006 write starts with the upper bits. Status writes do
+not reset the pair. The current address and temporary address start at zero for reproducibility.
+
+This functional model copies the address immediately after the second write and does not model PPU timing, the
+hardware warmup interval, or rendering-time interactions. $2005 still only retains writes and does not yet share
+the toggle; $2007 data access is also unimplemented.
+See [the decision record](decisions.md#ppu-address-latch-2026-11-21).
 
 ## PPU status reads
 
@@ -80,7 +91,8 @@ The retained byte for offset 2 is separate from the returned status and is uncha
 
 This read-driven alternation is an approximation intended to let software polling the vblank bit progress.
 Hardware vblank follows video timing, and reading PPUSTATUS clears its vblank flag; this model implements neither
-timing nor the hardware read side effects. Other status bits, open bus, rendering, and interrupts are not modeled.
+timing nor vblank clearing. Status reads do reset the address write pair. Other status bits, open bus, rendering,
+and interrupts are not modeled.
 See [the decision record](decisions.md#read-driven-ppu-status-2026-11-19) for the reason and affected ROMs.
 
 ## Internal RAM and its mirrors
@@ -127,7 +139,7 @@ occupy $0000-$0FFF and $1000-$1FFF. `write_memory(address, value)` routes writes
 raises `PermissionError` without changing data. This is a diagnostic departure from physical ROM behavior.
 
 CHR RAM and CHR ROM of other sizes raise `NotImplementedError` when pattern memory is accessed. Machine construction
-and CPU execution can still use a supported PRG configuration without CHR ROM. CPU-facing video memory ports remain
+and CPU execution can still use a supported PRG configuration without CHR ROM. CPU-facing $2007 data access remains
 unimplemented; internal video memory access alone does not produce an image.
 See [the CHR decision](decisions.md#fixed-chr-rom-for-the-ppu-2026-11-21).
 

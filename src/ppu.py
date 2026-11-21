@@ -2,7 +2,7 @@
 
 
 class PPU:
-    """Minimal PPU boundary; retained writes have no hardware register effects."""
+    """Minimal PPU boundary with an address latch and retained register writes."""
 
     def __init__(self, chr_rom, chr_size, nametable_ram, mirroring):
         self._last_writes = [None] * 8
@@ -12,6 +12,9 @@ class PPU:
         self._nametable_ram = nametable_ram
         self._mirroring = mirroring
         self._palette_ram = bytearray(32)
+        self._vram_address = 0
+        self._temporary_address = 0
+        self._awaiting_second_write = False
 
 
     @property
@@ -21,18 +24,39 @@ class PPU:
 
 
     def read_byte(self, offset):
-        # Alternate the vblank bit on status reads so polling can progress without video timing.
+        # PPUSTATUS ($2002) reports status and resets the address write pair.
         if offset == 2:
-            status = self._next_status
-            self._next_status ^= 0x80
-            return status
+            return self._read_ppustatus()
 
         # Other PPU register reads remain explicit missing behavior.
         raise NotImplementedError(f"PPU read at register offset 0x{offset:02X} is not implemented")
 
 
     def write_byte(self, offset, value):
+        # Retain all writes for inspection, including writes to the read-only hardware status register.
         self._last_writes[offset] = value
+
+        # PPUADDR ($2006) selects the PPU video address in two writes.
+        if offset == 6:
+            self._write_ppuaddr(value)
+
+
+    def _read_ppustatus(self):
+        # Reset the address write pair and alternate vblank until video timing is implemented.
+        self._awaiting_second_write = False
+        status = self._next_status
+        self._next_status ^= 0x80
+        return status
+
+
+    def _write_ppuaddr(self, value):
+        # The first write selects the upper six address bits; the second commits the full address.
+        if not self._awaiting_second_write:
+            self._temporary_address = (self._temporary_address & 0x00FF) | ((value & 0x3F) << 8)
+        else:
+            self._temporary_address = (self._temporary_address & 0x7F00) | value
+            self._vram_address = self._temporary_address
+        self._awaiting_second_write = not self._awaiting_second_write
 
 
     def _pattern_rom(self):
