@@ -50,17 +50,17 @@ Use the same addressing and timing cases as section 2. For `ADC` and `SBC`, veri
 set, both incoming C values, carry or borrow, and signed overflow. For `CMP`, verify C/Z/N for less than, equal,
 and greater than, including a wrapped negative difference; A is not assigned a subtraction result.
 
-- [ ] 3.1 Implement `ADC (zp,X) ($61)` and verify indirect addressing and binary addition.
+- [x] 3.1 Implement `ADC (zp,X) ($61)` and verify indirect addressing and binary addition.
   Run `python -m pytest test/test_cpu.py -k test_adc_indexed_indirect`.
-- [ ] 3.2 Implement `ADC (zp),Y ($71)` and verify indirect addressing and binary addition.
+- [x] 3.2 Implement `ADC (zp),Y ($71)` and verify indirect addressing and binary addition.
   Run `python -m pytest test/test_cpu.py -k test_adc_indirect_indexed`.
-- [ ] 3.3 Implement `SBC (zp,X) ($E1)` and verify indirect addressing and binary subtraction.
+- [x] 3.3 Implement `SBC (zp,X) ($E1)` and verify indirect addressing and binary subtraction.
   Run `python -m pytest test/test_cpu.py -k test_sbc_indexed_indirect`.
-- [ ] 3.4 Implement `SBC (zp),Y ($F1)` and verify indirect addressing and binary subtraction.
+- [x] 3.4 Implement `SBC (zp),Y ($F1)` and verify indirect addressing and binary subtraction.
   Run `python -m pytest test/test_cpu.py -k test_sbc_indirect_indexed`.
-- [ ] 3.5 Implement `CMP (zp,X) ($C1)` and verify indirect addressing and comparison flags.
+- [x] 3.5 Implement `CMP (zp,X) ($C1)` and verify indirect addressing and comparison flags.
   Run `python -m pytest test/test_cpu.py -k test_cmp_indexed_indirect_updates_cnz`.
-- [ ] 3.6 Implement `CMP (zp),Y ($D1)` and verify indirect addressing and comparison flags.
+- [x] 3.6 Implement `CMP (zp),Y ($D1)` and verify indirect addressing and comparison flags.
   Run `python -m pytest test/test_cpu.py -k test_cmp_indirect_indexed_updates_cnz`.
 
 ## 4. Single-byte stack operations

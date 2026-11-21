@@ -5,6 +5,50 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Indexed-indirect ADC (2026-11-21)
+
+Task 3.1 of `complete-official-cpu-opcodes` adds `ADC (zp,X)` ($61). X wraps the operand within zero page before
+the two-byte pointer is read through Machine; the selected byte then uses the existing binary addition path. The NES
+ignores D during arithmetic, but retains the flag, so A and C/V/N/Z reflect binary addition while D is unchanged.
+The instruction takes six nominal cycles. Its functional addressing path omits the discarded read at the unindexed
+zero-page operand; any read side effect there is absent. This applies to cartridges using the instruction and does
+not modify ROM data. Synthetic tests cover X wrapping, pointer high-byte wrapping at $FF, both incoming C values,
+carry and signed overflow, and D set or clear. See the [NESdev 2A03 reference](https://www.nesdev.org/wiki/2A03),
+[NESdev addressing modes](https://www.nesdev.org/wiki/CPU_addressing_modes), and
+[Mesen 2 CPU](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp).
+
+Task 3.2 adds `ADC (zp),Y` ($71), using the same binary arithmetic and flag rules after adding Y to the wrapped
+zero-page pointer. It costs five nominal cycles without a page crossing and six with one, including a wrap past
+$FFFF. The functional read omits the provisional address read on a page crossing, so mapped-device side effects at
+that address are absent. This applies to cartridges using the opcode and does not patch ROM data. Synthetic tests
+cover noncrossing, pointer-byte wrap, page crossing, effective-address wrap, arithmetic flags, and both D values.
+
+Task 3.3 adds `SBC (zp,X)` ($E1) and uses the existing binary subtraction path regardless of D. C reports no unsigned
+borrow, V reports signed overflow, N/Z follow the result in A, and D remains unchanged. The instruction takes six
+nominal cycles and shares the indexed-indirect discarded-read omission documented above. It affects cartridges using
+the opcode and does not patch ROM data. Synthetic tests cover both incoming C values, borrow and no-borrow results,
+overflow, pointer wrapping, and D set or clear. See the
+[NESdev instruction reference](https://www.nesdev.org/wiki/Instruction_reference). The behavior was compared with
+[Mesen 2](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp).
+
+Task 3.4 adds `SBC (zp),Y` ($F1) with the same binary subtraction and flag behavior. It takes five nominal cycles
+without a page crossing and six with one, including a wrap past $FFFF. The functional path omits the provisional
+read on a page crossing, so mapped-device read effects at that address are skipped. Synthetic cases cover pointer
+wrapping, page crossing, effective-address wrap, borrow, overflow, and D set or clear. This applies to cartridges
+using the opcode and does not modify ROM data.
+
+Task 3.5 adds `CMP (zp,X)` ($C1), which leaves A unchanged and derives C from unsigned ordering, Z from equality,
+and N from the wrapped eight-bit difference. It takes six nominal cycles and inherits the omitted discarded
+zero-page read from the shared indexed-indirect addressing path. Synthetic cases cover both X addition and pointer
+high-byte wrapping, less-than/equal/greater-than results, and a wrapped negative difference. This applies to
+cartridges using the opcode; no ROM is modified.
+
+Task 3.6 adds `CMP (zp),Y` ($D1) with the same flag behavior and unchanged A. It takes five nominal cycles without
+a page crossing and six with one, including a wrap past $FFFF. The functional read omits the provisional address
+read on a page crossing, so mapped-device side effects there are absent. Synthetic tests cover pointer-byte wrap,
+page crossing, effective-address wrap, comparisons in both directions, and a negative wrapped difference. This
+applies to cartridges using the opcode; no ROM is modified.
+
 ### Absolute INC and DEC read-modify-write (2026-11-21)
 
 Tasks 1.1 and 1.2 of `complete-official-cpu-opcodes` implement `INC absolute` ($EE) and `DEC absolute` ($CE) through

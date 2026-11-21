@@ -2535,3 +2535,310 @@ def test_register_setters_assert_value_ranges(cpu, register, maximum):
         with pytest.raises(AssertionError):
             setattr(cpu, register, value)
         assert getattr(cpu, register) == previous
+
+
+@pytest.mark.parametrize("initial, value, incoming_carry, expected, carry, overflow", [
+    (0x7F, 0x00, True, 0x80, False, True),
+    (0xFF, 0x00, True, 0x00, True, False),
+    (0x01, 0x01, False, 0x02, False, False),
+    (0x80, 0x80, False, 0x00, True, True),
+])
+@pytest.mark.parametrize("decimal", [False, True])
+@pytest.mark.parametrize("operand, index, pointer", [
+    (0x20, 0x04, 0x24),
+    (0xF0, 0x20, 0x10),
+    (0xFC, 0x03, 0xFF),
+])
+def test_adc_indexed_indirect(
+    make_cpu, initial, value, incoming_carry, expected, carry, overflow, decimal, operand, index, pointer,
+):
+    # Set X and the arithmetic flags before following the indexed zero-page pointer.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.x = index
+    cpu.carry = incoming_carry
+    cpu.decimal = decimal
+    cpu.overflow = not overflow
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0x61)  # ADC (zp,X) opcode
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(pointer, 0x34)
+    machine.write_byte((pointer + 1) & 0xFF, 0x02)
+    machine.write_byte(0x0234, value)
+
+    # Binary addition updates A and C/V/N/Z independently of D.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.overflow is overflow
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.decimal is decimal
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("initial, value, incoming_carry, expected, carry, overflow", [
+    (0x7F, 0x00, True, 0x80, False, True),
+    (0xFF, 0x00, True, 0x00, True, False),
+    (0x01, 0x01, False, 0x02, False, False),
+    (0x80, 0x80, False, 0x00, True, True),
+])
+@pytest.mark.parametrize("decimal", [False, True])
+@pytest.mark.parametrize("operand, low, high, index, source, cycles", [
+    (0x20, 0x30, 0x02, 0x04, 0x0234, 5),
+    (0xFF, 0xFF, 0x02, 0x01, 0x0300, 6),
+])
+def test_adc_indirect_indexed(
+    make_cpu, initial, value, incoming_carry, expected, carry, overflow, decimal, operand, low, high, index, source,
+    cycles,
+):
+    # Set Y and the arithmetic flags before following the zero-page pointer.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.y = index
+    cpu.carry = incoming_carry
+    cpu.decimal = decimal
+    cpu.overflow = not overflow
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0x71)  # ADC (zp),Y opcode
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(operand, low)
+    machine.write_byte((operand + 1) & 0xFF, high)
+    machine.write_byte(source, value)
+
+    # Binary addition updates A and C/V/N/Z independently of D.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.overflow is overflow
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.decimal is decimal
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == cycles
+
+
+def test_adc_indirect_indexed_wraps_effective_address(make_cpu):
+    # The wrapped target shares $0000 with the pointer's high byte, so both must contain $FF.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = 0x00
+    cpu.y = 0x01
+    cpu.carry = False
+    cpu.decimal = True
+    machine.write_byte(0x0567, 0x71)  # ADC (zp),Y opcode
+    machine.write_byte(0x0568, 0xFF)
+    machine.write_byte(0x00FF, 0xFF)
+    machine.write_byte(0x0000, 0xFF)
+
+    # The $FFFF + Y address wraps to $0000 and still takes the crossing cycle.
+    cpu.step()
+    assert cpu.a == 0xFF
+    assert cpu.carry is False
+    assert cpu.overflow is False
+    assert cpu.negative is True
+    assert cpu.zero is False
+    assert cpu.decimal is True
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("initial, value, incoming_carry, expected, carry, overflow", [
+    (0x80, 0x01, True, 0x7F, True, True),
+    (0x00, 0x00, False, 0xFF, False, False),
+    (0x42, 0x42, True, 0x00, True, False),
+    (0x7F, 0xFF, True, 0x80, False, True),
+])
+@pytest.mark.parametrize("decimal", [False, True])
+@pytest.mark.parametrize("operand, index, pointer", [
+    (0x20, 0x04, 0x24),
+    (0xF0, 0x20, 0x10),
+    (0xFC, 0x03, 0xFF),
+])
+def test_sbc_indexed_indirect(
+    make_cpu, initial, value, incoming_carry, expected, carry, overflow, decimal, operand, index, pointer,
+):
+    # Set X and the arithmetic flags before following the indexed zero-page pointer.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.x = index
+    cpu.carry = incoming_carry
+    cpu.decimal = decimal
+    cpu.overflow = not overflow
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0xE1)  # SBC (zp,X) opcode
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(pointer, 0x34)
+    machine.write_byte((pointer + 1) & 0xFF, 0x02)
+    machine.write_byte(0x0234, value)
+
+    # Binary subtraction updates A and C/V/N/Z independently of D.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.overflow is overflow
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.decimal is decimal
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("initial, value, incoming_carry, expected, carry, overflow", [
+    (0x80, 0x01, True, 0x7F, True, True),
+    (0x00, 0x00, False, 0xFF, False, False),
+    (0x42, 0x42, True, 0x00, True, False),
+    (0x7F, 0xFF, True, 0x80, False, True),
+])
+@pytest.mark.parametrize("decimal", [False, True])
+@pytest.mark.parametrize("operand, low, high, index, source, cycles", [
+    (0x20, 0x30, 0x02, 0x04, 0x0234, 5),
+    (0xFF, 0xFF, 0x02, 0x01, 0x0300, 6),
+])
+def test_sbc_indirect_indexed(
+    make_cpu, initial, value, incoming_carry, expected, carry, overflow, decimal, operand, low, high, index, source,
+    cycles,
+):
+    # Set Y and the arithmetic flags before following the zero-page pointer.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.y = index
+    cpu.carry = incoming_carry
+    cpu.decimal = decimal
+    cpu.overflow = not overflow
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, 0xF1)  # SBC (zp),Y opcode
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(operand, low)
+    machine.write_byte((operand + 1) & 0xFF, high)
+    machine.write_byte(source, value)
+
+    # Binary subtraction updates A and C/V/N/Z independently of D.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.carry is carry
+    assert cpu.overflow is overflow
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.decimal is decimal
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == cycles
+
+
+def test_sbc_indirect_indexed_wraps_effective_address(make_cpu):
+    # The wrapped target shares $0000 with the pointer's high byte, so both must contain $FF.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = 0x00
+    cpu.y = 0x01
+    cpu.carry = True
+    machine.write_byte(0x0567, 0xF1)  # SBC (zp),Y opcode
+    machine.write_byte(0x0568, 0xFF)
+    machine.write_byte(0x00FF, 0xFF)
+    machine.write_byte(0x0000, 0xFF)
+
+    # The $FFFF + Y address wraps to $0000 and still takes the crossing cycle.
+    cpu.step()
+    assert cpu.a == 0x01
+    assert cpu.carry is False
+    assert cpu.overflow is False
+    assert cpu.negative is False
+    assert cpu.zero is False
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("value, compared, carry, zero, negative", [
+    (0x40, 0x41, False, False, True),
+    (0x40, 0x40, True, True, False),
+    (0x40, 0x3F, True, False, False),
+    (0x00, 0x80, False, False, True),
+])
+@pytest.mark.parametrize("operand, index, pointer", [
+    (0x20, 0x04, 0x24),
+    (0xF0, 0x20, 0x10),
+    (0xFC, 0x03, 0xFF),
+])
+def test_cmp_indexed_indirect_updates_cnz(
+    make_cpu, value, compared, carry, zero, negative, operand, index, pointer,
+):
+    # Set X and opposite C/Z/N values before following the indexed zero-page pointer.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value
+    cpu.x = index
+    cpu.carry = not carry
+    cpu.zero = not zero
+    cpu.negative = not negative
+    machine.write_byte(0x0567, 0xC1)  # CMP (zp,X) opcode
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(pointer, 0x34)
+    machine.write_byte((pointer + 1) & 0xFF, 0x02)
+    machine.write_byte(0x0234, compared)
+
+    # CMP updates C/Z/N from the difference without storing it in A.
+    cpu.step()
+    assert cpu.a == value
+    assert cpu.carry is carry
+    assert cpu.zero is zero
+    assert cpu.negative is negative
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("value, compared, carry, zero, negative", [
+    (0x40, 0x41, False, False, True),
+    (0x40, 0x40, True, True, False),
+    (0x40, 0x3F, True, False, False),
+    (0x00, 0x80, False, False, True),
+])
+@pytest.mark.parametrize("operand, low, high, index, source, cycles", [
+    (0x20, 0x30, 0x02, 0x04, 0x0234, 5),
+    (0xFF, 0xFF, 0x02, 0x01, 0x0300, 6),
+])
+def test_cmp_indirect_indexed_updates_cnz(
+    make_cpu, value, compared, carry, zero, negative, operand, low, high, index, source, cycles,
+):
+    # Set Y and opposite C/Z/N values before following the zero-page pointer.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value
+    cpu.y = index
+    cpu.carry = not carry
+    cpu.zero = not zero
+    cpu.negative = not negative
+    machine.write_byte(0x0567, 0xD1)  # CMP (zp),Y opcode
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(operand, low)
+    machine.write_byte((operand + 1) & 0xFF, high)
+    machine.write_byte(source, compared)
+
+    # CMP updates C/Z/N from the difference without storing it in A.
+    cpu.step()
+    assert cpu.a == value
+    assert cpu.carry is carry
+    assert cpu.zero is zero
+    assert cpu.negative is negative
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == cycles
+
+
+def test_cmp_indirect_indexed_updates_cnz_wraps_effective_address(make_cpu):
+    # The wrapped target shares $0000 with the pointer's high byte, so both must contain $FF.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = 0x7F
+    cpu.y = 0x01
+    machine.write_byte(0x0567, 0xD1)  # CMP (zp),Y opcode
+    machine.write_byte(0x0568, 0xFF)
+    machine.write_byte(0x00FF, 0xFF)
+    machine.write_byte(0x0000, 0xFF)
+
+    # The $FFFF + Y address wraps to $0000 and still takes the crossing cycle.
+    cpu.step()
+    assert cpu.a == 0x7F
+    assert cpu.carry is False
+    assert cpu.zero is False
+    assert cpu.negative is True
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6

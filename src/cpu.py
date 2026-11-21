@@ -468,6 +468,26 @@ class CPU:
         self.log_instruction(address, (opcode, source), "CMP", f"${source:02X},X")
 
 
+    def _cmp_indexed_indirect(self, address, opcode):
+        # X selects a wrapping zero-page pointer to the value being compared.
+        operand, source = self._indexed_indirect_address()
+        self._compare(self._a, self._machine.read_byte(source))
+
+        # Count the fixed access cost and trace the fetched pointer operand.
+        self._cycles += 6
+        self.log_instruction(address, (opcode, operand), "CMP", f"(${operand:02X},X)")
+
+
+    def _cmp_indirect_indexed(self, address, opcode):
+        # Y indexes the address stored in a wrapping zero-page pointer.
+        operand, source, crossed = self._indirect_indexed_address()
+        self._compare(self._a, self._machine.read_byte(source))
+
+        # Count the page-crossing cost and trace the fetched pointer operand.
+        self._cycles += 5 + crossed
+        self.log_instruction(address, (opcode, operand), "CMP", f"(${operand:02X}),Y")
+
+
     def _compare_zero_page(self, address, opcode, mnemonic, value):
         # Compare the register with the byte at the selected zero-page address.
         source = self._fetch_byte()
@@ -558,6 +578,24 @@ class CPU:
         self._finish_indexed_update(address, opcode, "ADC", base, "Y", self._a, crossed)
 
 
+    def _adc_indexed_indirect(self, address, opcode):
+        # X selects a wrapping zero-page pointer to the value being added.
+        operand, source = self._indexed_indirect_address()
+        self._add_with_carry(self._machine.read_byte(source))
+
+        # Finish flags, cycles, and trace using the fetched operand byte.
+        self._finish_indexed_indirect_update(address, opcode, "ADC", operand, self._a)
+
+
+    def _adc_indirect_indexed(self, address, opcode):
+        # Y indexes the address stored in a wrapping zero-page pointer.
+        operand, source, crossed = self._indirect_indexed_address()
+        self._add_with_carry(self._machine.read_byte(source))
+
+        # Finish flags and include the nominal page-crossing cycle.
+        self._finish_indirect_indexed_update(address, opcode, "ADC", operand, self._a, crossed)
+
+
     def _add_with_carry(self, operand):
         # The NES adds in binary even when the stored decimal flag is set.
         total = self._a + operand + self._carry
@@ -604,6 +642,24 @@ class CPU:
         base, operand, crossed = self._read_absolute_indexed(self._y)
         self._subtract_with_borrow(operand)
         self._finish_indexed_update(address, opcode, "SBC", base, "Y", self._a, crossed)
+
+
+    def _sbc_indexed_indirect(self, address, opcode):
+        # X selects a wrapping zero-page pointer to the value being subtracted.
+        operand, source = self._indexed_indirect_address()
+        self._subtract_with_borrow(self._machine.read_byte(source))
+
+        # Finish flags, cycles, and trace using the fetched operand byte.
+        self._finish_indexed_indirect_update(address, opcode, "SBC", operand, self._a)
+
+
+    def _sbc_indirect_indexed(self, address, opcode):
+        # Y indexes the address stored in a wrapping zero-page pointer.
+        operand, source, crossed = self._indirect_indexed_address()
+        self._subtract_with_borrow(self._machine.read_byte(source))
+
+        # Finish flags and include the nominal page-crossing cycle.
+        self._finish_indirect_indexed_update(address, opcode, "SBC", operand, self._a, crossed)
 
 
     def _subtract_with_borrow(self, operand):
@@ -1482,7 +1538,7 @@ class CPU:
 
         # $60-$6F
         _rts,  # $60
-        None,  # $61
+        _adc_indexed_indirect,  # $61
         None,  # $62
         None,  # $63
         None,  # $64
@@ -1500,7 +1556,7 @@ class CPU:
 
         # $70-$7F
         _bvs,  # $70
-        None,  # $71
+        _adc_indirect_indexed,  # $71
         None,  # $72
         None,  # $73
         None,  # $74
@@ -1590,7 +1646,7 @@ class CPU:
 
         # $C0-$CF
         _cpy_immediate,  # $C0
-        None,  # $C1
+        _cmp_indexed_indirect,  # $C1
         None,  # $C2
         None,  # $C3
         _cpy_zero_page,  # $C4
@@ -1608,7 +1664,7 @@ class CPU:
 
         # $D0-$DF
         _bne,  # $D0
-        None,  # $D1
+        _cmp_indirect_indexed,  # $D1
         None,  # $D2
         None,  # $D3
         None,  # $D4
@@ -1626,7 +1682,7 @@ class CPU:
 
         # $E0-$EF
         _cpx_immediate,  # $E0
-        None,  # $E1
+        _sbc_indexed_indirect,  # $E1
         None,  # $E2
         None,  # $E3
         _cpx_zero_page,  # $E4
@@ -1644,7 +1700,7 @@ class CPU:
 
         # $F0-$FF
         _beq,  # $F0
-        None,  # $F1
+        _sbc_indirect_indexed,  # $F1
         None,  # $F2
         None,  # $F3
         None,  # $F4
