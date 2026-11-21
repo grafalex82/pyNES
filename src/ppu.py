@@ -1,5 +1,7 @@
 """Provide minimal PPU registers, pattern data, nametable memory, and palette RAM."""
 
+from nes_palette import NES_COLORS
+
 
 class PPU:
     """Minimal PPU boundary with an address latch and retained register writes."""
@@ -117,6 +119,13 @@ class PPU:
         if offset in (0x10, 0x14, 0x18, 0x1C):
             offset -= 0x10
         return offset
+
+
+    def render_frame(self):
+        """Render the backdrop as a native-size frame of packed RGB bytes."""
+        # Until layers are implemented, every pixel uses the universal backdrop color.
+        color = NES_COLORS[self.read_vram(0x3F00)].to_bytes(3, "big")
+        return color * (256 * 240)
 
 
     def read_vram(self, address):

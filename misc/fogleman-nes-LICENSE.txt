@@ -1,4 +1,4 @@
-RGB palette values in chr2png.py are from https://github.com/fogleman/nes.
+RGB palette values in src/nes_palette.py are from https://github.com/fogleman/nes.
 
 Copyright (C) 2015 Michael Fogleman
 

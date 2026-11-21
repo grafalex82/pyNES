@@ -77,7 +77,7 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 ## Current state
 
 [`FrameDisplay`](src/frame_display.py) presents supplied 256 × 240 packed RGB frames in a 768 × 720 pygame window,
-with each pixel enlarged to a 3 × 3 block. It is not yet connected to PPU output or the console entry point.
+with each pixel enlarged to a 3 × 3 block. The console entry point does not yet present PPU frames automatically.
 
 `misc\chr2png.py` provides `decode_tile(tile)` for converting one 16-byte CHR tile into an 8-by-8 grid of palette
 indices. `render_chr_sheets(chr_rom, palettes, scale)` converts 8 KiB of CHR data into two off-screen pygame surfaces,
@@ -114,6 +114,8 @@ Its separate video address space connects 8 KiB of mapper-0 CHR ROM at $0000-$1F
 raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pages map to $2000-$3EFF using the
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color
 codes at $3F00-$3FFF with hardware mirrors. CPU-facing $2007 data reads remain unimplemented.
+`PPU.render_frame()` produces a packed RGB frame filled with the color at $3F00, using a fixed RGB approximation.
+Background and sprite layers, display masks, and the hardware's forced-blank palette override are not yet rendered.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4010-$4013 and $4015 have no audio effects;
 reads return $00, including inactive channel and interrupt status. Writes to the APU frame counter at $4017 are also
@@ -229,9 +231,9 @@ select four colors for each sheet, in output order. For example, a UTF-8 `colors
 0F 06 16 26
 ```
 
-The colors are a fixed RGB approximation for preview, not a game's runtime palette or an exact video signal. CHR
-stores pixel indices, not palette colors; index 0 is opaque in these sheets even for tiles used as sprites. The
-exporter reads static file data without emulating mapper behavior. CHR RAM and other CHR ROM sizes are unsupported.
+The colors use the same fixed RGB approximation as the PPU frame renderer, not an exact video signal. CHR stores
+pixel indices, not palette colors; index 0 is opaque in these sheets even for tiles used as sprites. The exporter
+reads static file data without emulating mapper behavior. CHR RAM and other CHR ROM sizes are unsupported.
 
 Cartridge inputs are assumed structurally valid. The loader and utility do not validate signatures, lengths, section
 completeness, trailing bytes, or extensions, and do not repair headers or catch filesystem/parsing exceptions.

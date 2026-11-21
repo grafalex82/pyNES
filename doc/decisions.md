@@ -5,6 +5,24 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU backdrop frame (2026-11-21)
+
+Task 2.6 of `present-nes-frame-3x` adds `PPU.render_frame()`, which fills a 256 × 240 packed RGB frame with the
+color code at palette address $3F00. It uses the existing fixed RGB table, now shared with the CHR exporter through
+`src/nes_palette.py`; its [third-party license](../misc/fogleman-nes-LICENSE.txt) remains in the repository.
+The table approximates NES colors rather than modeling an analog video signal. Background and sprite layers,
+grayscale, and emphasis are not implemented by this step. The console does not yet present PPU-generated frames.
+
+The backdrop always comes from $3F00, even when rendering is disabled and the current video address points elsewhere
+in palette RAM. Hardware can instead display the color at that current address in forced blank. This simplification
+keeps the first frame focused on the universal backdrop; it affects cartridges using that effect, including the
+target images if they rely on it. No ROM was patched.
+See [NESdev PPU rendering](https://www.nesdev.org/wiki/PPU_rendering) and
+[Mesen's backdrop logic](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/BaseNesPpu.cpp).
+
+Synthetic CPU programs write colors through $2006/$2007 and verify every native and 3× pixel. A desktop check showed
+color $21 in the presenter and closed normally. These checks do not establish that any game produces a frame.
+
 ### Named PPU control settings (2026-11-21)
 
 At the user's request, PPUCTRL writes decode all eight bits into named booleans rather than requiring later code to
