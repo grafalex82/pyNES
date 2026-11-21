@@ -31,6 +31,37 @@ overflow, pointer wrapping, and D set or clear. See the
 [NESdev instruction reference](https://www.nesdev.org/wiki/Instruction_reference). The behavior was compared with
 [Mesen 2](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp).
 
+### Single-byte stack operations (2026-11-21)
+
+Task 4.1 adds `PHA` ($48). It writes A through Machine at `$0100 | SP`, then decrements SP modulo 256; A and P remain
+unchanged, PC advances one byte, and three nominal cycles accrue. The functional model omits the implied read of the
+next instruction byte, so any read side effect there is absent; SP wrap remains within page 1. This applies to any
+cartridge using PHA and does not modify ROM data. Synthetic tests verify the stored byte, both stack boundaries,
+register state, PC, and cycles. See [NESdev](https://www.nesdev.org/wiki/Instruction_reference). The behavior was also
+compared with [Mesen 2](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.h).
+
+Task 4.2 adds `PLA` ($68). It increments SP modulo 256 before reading `$0100 | SP` through Machine, loads A, and
+sets N/Z from the pulled byte. It takes four nominal cycles. The functional model omits both the implied next-byte
+read and the discarded read at the current stack position; read side effects at those addresses are absent. The
+stack access wraps within page 1. This applies to cartridges using PLA; no ROM is modified. Synthetic tests seed the
+stack through Machine and cover negative and zero results, SP wrap, PC, and cycles.
+
+Task 4.3 adds `PHP` ($08), which pushes `P | $30`, then decrements SP modulo 256. This sets the saved reserved and B
+bits even when the software inspection field `break_flag` is clear; the field itself and the rest of P remain
+unchanged. Hardware has no persistent B latch, so the inspection property does not dictate the bit PHP saves. The
+instruction takes three nominal cycles and omits the implied read of the next instruction byte; that read's device
+effects are absent. This applies to cartridges using PHP; ROM data is unchanged. Synthetic tests cover both software B
+values, stack wrap, the saved byte, PC, and cycles. See
+[NESdev](https://www.nesdev.org/wiki/Instruction_reference).
+
+Task 4.4 adds `PLP` ($28). It increments SP, reads the status byte through Machine, restores N/V/D/I/Z/C, ignores
+stack bits 5 and 4, and preserves the current software `break_flag`. The setter receives the popped byte with its B
+bit replaced by the current inspection value; this keeps PHP's forced saved B separate from mutable software state.
+PLP takes four nominal cycles. The functional model omits the implied next-byte read and the discarded read at the
+current stack position, so any read side effects there are absent. This applies to cartridges using PLP; ROM data is
+unchanged. Synthetic frames test all six flags, both saved/current B mismatches, stack wrap, PC, and cycles. See the
+[NESdev instruction reference](https://www.nesdev.org/wiki/Instruction_reference).
+
 Task 3.4 adds `SBC (zp),Y` ($F1) with the same binary subtraction and flag behavior. It takes five nominal cycles
 without a page crossing and six with one, including a wrap past $FFFF. The functional path omits the provisional
 read on a page crossing, so mapped-device read effects at that address are skipped. Synthetic cases cover pointer

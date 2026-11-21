@@ -68,13 +68,13 @@ and greater than, including a wrapped negative difference; A is not assigned a s
 Check stack position, SP wrap, and one-byte PC advance for each. Seed pull tests directly through Machine. Record
 the omitted reads and explain why saved B differs from the software inspection field.
 
-- [ ] 4.1 Implement `PHA ($48)`; verify the pushed accumulator and three cycles.
+- [x] 4.1 Implement `PHA ($48)`; verify the pushed accumulator and three cycles.
   Run `python -m pytest test/test_cpu.py -k test_pha_pushes_accumulator`.
-- [ ] 4.2 Implement `PLA ($68)`; verify negative and zero results in A/N/Z and four cycles.
+- [x] 4.2 Implement `PLA ($68)`; verify negative and zero results in A/N/Z and four cycles.
   Run `python -m pytest test/test_cpu.py -k test_pla_pulls_accumulator_and_updates_nz`.
-- [ ] 4.3 Implement `PHP ($08)`; verify the pushed status for both software B values and three cycles.
+- [x] 4.3 Implement `PHP ($08)`; verify the pushed status for both software B values and three cycles.
   Run `python -m pytest test/test_cpu.py -k test_php_pushes_status`.
-- [ ] 4.4 Implement `PLP ($28)`; verify the six restored flags, both mismatches between saved and current B,
+- [x] 4.4 Implement `PLP ($28)`; verify the six restored flags, both mismatches between saved and current B,
   and four cycles. Run `python -m pytest test/test_cpu.py -k test_plp_restores_status`.
 
 ## 5. Software interrupt and return

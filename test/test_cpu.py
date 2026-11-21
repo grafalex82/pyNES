@@ -2842,3 +2842,110 @@ def test_cmp_indirect_indexed_updates_cnz_wraps_effective_address(make_cpu):
     assert cpu.negative is True
     assert cpu.pc == 0x0569
     assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("value, initial_sp, stack_address, final_sp", [
+    (0x80, 0xFD, 0x01FD, 0xFC),
+    (0x00, 0x00, 0x0100, 0xFF),
+])
+@pytest.mark.parametrize("status", [0x20, 0xFF])
+def test_pha_pushes_accumulator(make_cpu, value, initial_sp, stack_address, final_sp, status):
+    # Seed the destination and all status fields so the push and preservation are observable.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value
+    cpu.sp = initial_sp
+    cpu.p = status
+    machine.write_byte(0x0567, 0x48)  # PHA opcode
+    machine.write_byte(stack_address, value ^ 0xFF)
+
+    # PHA writes at the pre-decrement stack position and preserves A and P.
+    cpu.step()
+    assert machine.read_byte(stack_address) == value
+    assert cpu.a == value
+    assert cpu.p == status
+    assert cpu.sp == final_sp
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 3
+
+
+@pytest.mark.parametrize("initial_sp, stack_address, value, final_sp, negative, zero", [
+    (0xFC, 0x01FD, 0x80, 0xFD, True, False),
+    (0xFF, 0x0100, 0x00, 0x00, False, True),
+])
+def test_pla_pulls_accumulator_and_updates_nz(
+    make_cpu, initial_sp, stack_address, value, final_sp, negative, zero,
+):
+    # Seed the stack through Machine and start N/Z opposite to the pulled value.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = value ^ 0xFF
+    cpu.sp = initial_sp
+    cpu.negative = not negative
+    cpu.zero = not zero
+    machine.write_byte(0x0567, 0x68)  # PLA opcode
+    machine.write_byte(stack_address, value)
+
+    # PLA pre-increments SP, loads A, and updates N/Z from the pulled byte.
+    cpu.step()
+    assert cpu.a == value
+    assert cpu.negative is negative
+    assert cpu.zero is zero
+    assert cpu.sp == final_sp
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 4
+
+
+@pytest.mark.parametrize("software_break, status", [(False, 0xA5), (True, 0xB5)])
+@pytest.mark.parametrize("initial_sp, stack_address, final_sp", [
+    (0xFD, 0x01FD, 0xFC),
+    (0x00, 0x0100, 0xFF),
+])
+def test_php_pushes_status(make_cpu, software_break, status, initial_sp, stack_address, final_sp):
+    # Seed software B, the other status fields, and a distinct stack destination.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.p = status
+    cpu.sp = initial_sp
+    machine.write_byte(0x0567, 0x08)  # PHP opcode
+    machine.write_byte(stack_address, 0x00)
+
+    # The saved B and reserved bits are forced high without changing software B.
+    cpu.step()
+    assert machine.read_byte(stack_address) == (status | 0x30)
+    assert cpu.p == status
+    assert cpu.break_flag is software_break
+    assert cpu.sp == final_sp
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 3
+
+
+@pytest.mark.parametrize(
+    "status, software_break, initial_sp, stack_address, final_sp, expected_flags, expected_p",
+    [
+        (0xBA, False, 0xFF, 0x0100, 0x00, (True, False, True, False, True, False), 0xAA),
+        (0xCF, True, 0xFC, 0x01FD, 0xFD, (True, True, True, True, True, True), 0xFF),
+        (0x30, False, 0xFE, 0x01FF, 0xFF, (False, False, False, False, False, False), 0x20),
+    ],
+)
+def test_plp_restores_status(
+    make_cpu, status, software_break, initial_sp, stack_address, final_sp, expected_flags, expected_p,
+):
+    # Set all six hardware flags opposite to their expected values and seed the stack directly.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.sp = initial_sp
+    cpu.break_flag = software_break
+    cpu.negative, cpu.overflow, cpu.decimal, cpu.interrupt_disable, cpu.zero, cpu.carry = (
+        not flag for flag in expected_flags
+    )
+    machine.write_byte(0x0567, 0x28)  # PLP opcode
+    machine.write_byte(stack_address, status)
+
+    # PLP restores hardware flags while preserving software B and wrapping SP within page 1.
+    cpu.step()
+    actual_flags = (
+        cpu.negative, cpu.overflow, cpu.decimal, cpu.interrupt_disable, cpu.zero, cpu.carry,
+    )
+    assert actual_flags == expected_flags
+    assert cpu.p == expected_p
+    assert cpu.break_flag is software_break
+    assert cpu.sp == final_sp
+    assert cpu.pc == 0x0568
+    assert cpu.cycles == 4

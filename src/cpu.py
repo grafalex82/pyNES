@@ -301,6 +301,53 @@ class CPU:
         self.log_instruction(address, (opcode,), "RTS")
 
 
+    def _pha(self, address, opcode):
+        # Push A to the current stack position before decrementing SP.
+        self._machine.write_byte(0x0100 | self._sp, self._a)
+        self._sp = (self._sp - 1) & 0xFF
+
+        # The implied push takes three nominal cycles without changing flags.
+        self._cycles += 3
+        self.log_instruction(address, (opcode,), "PHA")
+
+
+    def _pla(self, address, opcode):
+        # Increment SP before reading the selected byte from the stack page.
+        self._sp = (self._sp + 1) & 0xFF
+        self._a = self._machine.read_byte(0x0100 | self._sp)
+
+        # N and Z follow the pulled accumulator value.
+        self._negative = bool(self._a & 0x80)
+        self._zero = self._a == 0
+
+        # PLA takes four nominal cycles without the discarded hardware reads.
+        self._cycles += 4
+        self.log_instruction(address, (opcode,), "PLA")
+
+
+    def _php(self, address, opcode):
+        # Hardware pushes reserved bit 5 and B as set, independent of software B.
+        self._machine.write_byte(0x0100 | self._sp, self.p | 0x30)
+        self._sp = (self._sp - 1) & 0xFF
+
+        # PHP leaves the inspected status fields unchanged.
+        self._cycles += 3
+        self.log_instruction(address, (opcode,), "PHP")
+
+
+    def _plp(self, address, opcode):
+        # Increment SP before reading the selected status byte from the stack page.
+        self._sp = (self._sp + 1) & 0xFF
+        status = self._machine.read_byte(0x0100 | self._sp)
+
+        # Preserve software B while the property setter restores the six hardware flags.
+        self.p = (status & 0xEF) | (self._break_flag << 4)
+
+        # PLP takes four nominal cycles without the discarded hardware reads.
+        self._cycles += 4
+        self.log_instruction(address, (opcode,), "PLP")
+
+
     def _jmp_absolute(self, address, opcode):
         # The operand itself is the destination, not a pointer to another address.
         destination = self._fetch_word()
@@ -1437,7 +1484,7 @@ class CPU:
         _ora_zero_page,  # $05
         _asl_zero_page,  # $06
         None,  # $07
-        None,  # $08
+        _php,  # $08
         _ora_immediate,  # $09
         _asl_accumulator,  # $0A
         None,  # $0B
@@ -1473,7 +1520,7 @@ class CPU:
         _and_zero_page,  # $25
         _rol_zero_page,  # $26
         None,  # $27
-        None,  # $28
+        _plp,  # $28
         _and_immediate,  # $29
         _rol_accumulator,  # $2A
         None,  # $2B
@@ -1509,7 +1556,7 @@ class CPU:
         _eor_zero_page,  # $45
         _lsr_zero_page,  # $46
         None,  # $47
-        None,  # $48
+        _pha,  # $48
         _eor_immediate,  # $49
         _lsr_accumulator,  # $4A
         None,  # $4B
@@ -1545,7 +1592,7 @@ class CPU:
         _adc_zero_page,  # $65
         _ror_zero_page,  # $66
         None,  # $67
-        None,  # $68
+        _pla,  # $68
         _adc_immediate,  # $69
         _ror_accumulator,  # $6A
         None,  # $6B
