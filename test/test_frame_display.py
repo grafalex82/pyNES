@@ -41,3 +41,28 @@ def test_present_reuses_window_and_replaces_previous_frame(display):
     display.present(second_color * (256 * 240))
     assert pygame.display.get_surface() is screen
     assert pygame.image.tobytes(screen, "RGB") == second_color * (768 * 720)
+
+
+def test_fps_uses_presentations_and_elapsed_time(display, monkeypatch):
+    # A controllable clock tests the measurement without waiting for real time to pass.
+    now = [10.0]
+    monkeypatch.setattr("frame_display.monotonic", lambda: now[0])
+    display = FrameDisplay()
+    frame = bytes((0, 0, 0)) * (256 * 240)
+    assert pygame.display.get_caption()[0] == "pyNES - 0.0 FPS"
+    display.present(frame)
+    display.present(frame)
+    display.present(frame)
+
+    # Three presentations over 1.5 seconds yield 2 FPS; shorter intervals retain the previous title.
+    now[0] = 10.9
+    display.update_fps()
+    assert pygame.display.get_caption()[0] == "pyNES - 0.0 FPS"
+    now[0] = 11.5
+    display.update_fps()
+    assert pygame.display.get_caption()[0] == "pyNES - 2.0 FPS"
+
+    # A later interval without a presentation reports zero instead of retaining the old rate.
+    now[0] = 12.5
+    display.update_fps()
+    assert pygame.display.get_caption()[0] == "pyNES - 0.0 FPS"

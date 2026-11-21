@@ -31,7 +31,6 @@ def main():
     # Present the initial PPU state and enable completed-frame capture before execution starts.
     try:
         display = FrameDisplay()
-        pygame.display.set_caption("pyNES")
         display.present(machine.ppu.render_frame())
         machine.ppu.enable_frame_output()
         last_frame_number = 0
@@ -46,6 +45,7 @@ def main():
             if completed_frame is not None and completed_frame[0] != last_frame_number:
                 last_frame_number, frame = completed_frame
                 display.present(frame)
+            display.update_fps()
     finally:
         # Release the display on both window close and propagated execution errors.
         pygame.display.quit()

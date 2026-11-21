@@ -25,6 +25,8 @@ This model covers fixed NROM video wiring and whole-frame rendering at instructi
 3. **Keep the window open across presentations.** Initialize the pygame display subsystem when creating the
    presenter and reuse the display surface across frames. The caller owns the event loop and display shutdown.
    A Python usage example can pump events and close the display after showing a synthetic frame.
+   Show actual presentations per elapsed wall-clock second in the title, updating about once per second even when
+   no frame was presented. Count the initial preview and do not pace emulation or count skipped PPU frames.
 4. **Attach memory to the PPU.** Machine supplies an 8 KiB CHR ROM and 2 KiB nametable RAM using the existing
    ROM and RAM components. The PPU selects CHR, mirrored nametable RAM, or internal palette RAM from a 14-bit
    address. Keep OAM separate from that address space. Resolve unsupported video configurations only on the

@@ -18,6 +18,10 @@ the newest frame only when its sequence number changes. Closing the window stops
 before the host checks, it presents the most recent one. This is not paced in real time. Background and sprites are
 not yet rendered, so the displayed frame currently contains only the backdrop color.
 
+The title shows presented frames per elapsed wall-clock second, refreshed between blocks after at least one second.
+The initial preview counts as a presentation; captured frames skipped by the host do not. A whole interval without
+presentations reports zero. The counter measures host output speed and does not control emulation speed.
+
 The console enables DEBUG logging before CPU startup and prints message-only reset and completed-instruction traces.
 Execution errors close the display and propagate with their ordinary traceback. Help does not initialize a display.
 For a synthetic mapper-0 ROM whose reset vector points to SEI ($78)

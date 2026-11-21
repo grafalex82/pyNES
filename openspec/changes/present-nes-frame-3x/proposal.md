@@ -28,7 +28,7 @@ Sprite attributes live in the PPU's separate OAM. pygame presents the finished f
 3. **Open the emulator window and synchronize frames.** Open pygame at cartridge startup and initially display
    the current PPU frame between CPU blocks. Then derive the `$2002` vblank flag from emulated CPU cycles and
    switch the window to completed frames captured at vblank. A synthetic ROM can verify backdrop changes
-   with NMI disabled.
+   with NMI disabled. Show the host's measured presentation rate in the window title.
 4. **Draw the background and advance game startup.** Add stationary background tiles using the CHR table selected
    by `$2000`, then select palettes using attributes. Add CPU NMI entry and connect the PPU's NMI request to
    the enable bit in `$2000` as separately verified steps.

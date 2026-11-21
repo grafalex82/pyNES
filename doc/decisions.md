@@ -5,6 +5,13 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Window presentation rate (2026-11-22)
+
+The window title reports actual frame presentations divided by elapsed monotonic wall-clock time, refreshed between
+CPU blocks after at least one second. It includes the initial preview but excludes captured frames skipped by the
+host, and reports zero for an interval without presentations. This measures visible output without changing emulated
+timing or pacing execution. Synthetic tests verify the calculation and host-loop updates without waiting in real time.
+
 ### Vblank frame capture and presentation (2026-11-21)
 
 Task 3.3 of `present-nes-frame-3x` captures a native RGB frame at each vblank entry when the host enables frame

@@ -26,3 +26,19 @@ Presenting a subsequent frame SHALL update the existing window with the complete
 
 - **WHEN** a second frame changes one or more source pixel colors
 - **THEN** the same window displays the new colors in their corresponding blocks
+
+### Requirement: Show the presentation rate
+
+The window title SHALL show the number of frames actually presented per elapsed wall-clock second, refreshed at
+least once per host update after one second has elapsed. The initial preview counts as a presentation. The rate
+SHALL be zero when no frames are presented during the measurement interval and SHALL NOT limit emulation speed.
+
+#### Scenario: Present frames during a measurement interval
+
+- **WHEN** the window presents three frames during a 1.5 second interval
+- **THEN** the next rate update shows `2.0 FPS` in the title
+
+#### Scenario: No new presentation
+
+- **WHEN** one second passes without presenting any frames
+- **THEN** the next rate update shows `0.0 FPS` in the title
