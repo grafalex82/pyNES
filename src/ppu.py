@@ -14,6 +14,7 @@ class PPU:
         self._nametable_ram = nametable_ram
         self._mirroring = mirroring
         self._palette_ram = bytearray(32)
+        self._vram_read_buffer = 0
         self._vram_address = 0
         self._temporary_address = 0
         self._awaiting_second_write = False
@@ -30,6 +31,10 @@ class PPU:
         # PPUSTATUS ($2002) reports status and resets the address write pair.
         if offset == 2:
             return self._read_ppustatus()
+
+        # PPUDATA ($2007) reads video memory and advances the selected address.
+        if offset == 7:
+            return self._read_ppudata()
 
         # Other PPU register reads remain explicit missing behavior.
         raise NotImplementedError(f"PPU read at register offset 0x{offset:02X} is not implemented")
@@ -82,11 +87,33 @@ class PPU:
         self._awaiting_second_write = not self._awaiting_second_write
 
 
+    def _read_ppudata(self):
+        # CHR and nametable reads return the previous buffered byte while loading the addressed byte for the next read.
+        # Palette reads return the color immediately, but refill the buffer from the nametable address $1000 below.
+        # Changing PPUADDR does not clear this buffer, so a program normally discards its first non-palette read.
+        address = self._vram_address & 0x3FFF
+        if address < 0x3F00:
+            result = self._vram_read_buffer
+            self._vram_read_buffer = self.read_vram(address)
+        else:
+            result = self.read_vram(address)
+            self._vram_read_buffer = self.read_vram(address - 0x1000)
+
+        # Failed reads propagate without advancing the video address.
+        self._advance_vram_address()
+        return result
+
+
     def _write_ppudata(self, value):
         # PPU memory sees the low 14 bits of the internal 15-bit video address.
         self.write_vram(self._vram_address & 0x3FFF, value)
 
-        # The PPUCTRL increment setting selects the step; rejected writes do not advance the address.
+        # Rejected writes propagate without advancing the video address.
+        self._advance_vram_address()
+
+
+    def _advance_vram_address(self):
+        # PPUCTRL selects the step for both reads and writes; the internal address is 15 bits wide.
         increment = 32 if self._increment_32 else 1
         self._vram_address = (self._vram_address + increment) & 0x7FFF
 

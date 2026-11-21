@@ -258,7 +258,7 @@ def test_status_writes_through_mirrors_only_retain_the_last_byte(make_cartridge,
     assert machine.ppu.last_writes[2] == 0xFF
 
 
-@pytest.mark.parametrize("offset", [0, 1, 3, 4, 5, 6, 7])
+@pytest.mark.parametrize("offset", [0, 1, 3, 4, 5, 6])
 def test_ppu_register_reads_remain_explicitly_unsupported(make_cartridge, offset):
     machine = Machine(make_cartridge(bytes(16384)))
     with pytest.raises(NotImplementedError, match=rf"PPU read at register offset 0x{offset:02X}"):

@@ -24,7 +24,7 @@ class Machine:
     CPU memory map, with inclusive hexadecimal address ranges:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
         $0800-$1FFF  Three mirrors of the same internal RAM.
-        $2000-$3FFF  PPU registers and mirrors; status reads, video address and data writes.
+        $2000-$3FFF  PPU registers and mirrors; status, video address, and data access.
         $4000-$400F  APU registers; not connected yet.
         $4010-$4013  DMC registers; dummy writes and zero reads.
         $4014        Sprite DMA; not connected yet.
@@ -49,8 +49,9 @@ class Machine:
     trap: hardware NROM writes do not change ROM or select banks.
 
     Reads and writes in $2000-$3FFF are routed to PPU register offsets. PPU status
-    reads alternate between $00 and $80; other PPU reads raise NotImplementedError
-    identifying the register offset. Reads and writes at $4010-$4013 and $4015
+    reads alternate between $00 and $80, and PPUDATA reads use a video read buffer.
+    Other PPU reads raise NotImplementedError identifying the register offset.
+    Reads and writes at $4010-$4013 and $4015
     route to a dummy APU; writes have no effects and reads return $00. Writes at
     $4017 are also ignored by the APU, while reads remain unsupported. Other reads
     and writes in $4000-$7FFF raise NotImplementedError identifying the CPU address.

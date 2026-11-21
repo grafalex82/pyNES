@@ -24,7 +24,7 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | --- | --- | --- |
 | $0000-$07FF | Internal RAM | Read/write one 2048-byte buffer. |
 | $0800-$1FFF | Three mirrors of internal RAM | Read/write the same buffer. |
-| $2000-$3FFF | PPU video registers and their mirrors | Retain writes; status reads alternate $00/$80. |
+| $2000-$3FFF | PPU video registers and their mirrors | Retain writes; status and data reads have effects. |
 | $4000-$400F | Other APU audio registers | Not connected. |
 | $4010-$4013 | DMC control, output, address, and length | Accept writes without effects; reads return $00. |
 | $4014 | Sprite DMA | Not connected. |
@@ -38,7 +38,7 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | $C000-$FFFF | PRG ROM | Read the second 16 KiB, or mirror the first for a 16 KiB image. |
 
 The hardware ranges follow the [NESdev CPU memory map][cpu-map]; the PRG layout follows [NROM][nrom].
-PPU reads other than status raise `NotImplementedError` with the device-relative register offset. For example,
+PPU reads other than status or data raise `NotImplementedError` with the device-relative register offset. For example,
 reading $2001 reports `PPU read at register offset 0x01 is not implemented`. Unsupported reads and writes in
 $4000-$7FFF raise `NotImplementedError`, with the operation and CPU address. Sprite DMA, controllers, expansion
 hardware, and cartridge RAM have no behavior yet. No open-bus response is modeled.
@@ -100,7 +100,7 @@ not reset the pair. The current address and temporary address start at zero for 
 
 This functional model copies the address immediately after the second write and does not model PPU timing, the
 hardware warmup interval, or rendering-time interactions. $2005 still only retains writes and does not yet share
-the toggle; $2007 reads are unimplemented.
+the toggle.
 See [the decision record](decisions.md#ppu-address-latch-2026-11-21).
 
 ## PPU data writes
@@ -109,10 +109,22 @@ Writing to $2007 or a mirror stores a byte at the current video address. The PPU
 decoded bit 2 of $2000: 1 when clear or 32 when set; the initial increment is 1. Each successful write
 advances the 15-bit internal address modulo $8000; PPU memory uses its low 14 bits. Normal nametable and palette
 mirrors apply. A rejected CHR write propagates its error without advancing the address; the attempted register byte
-is still retained for inspection. $2007 reads remain unimplemented.
+is still retained for inspection.
 
 The functional increment is applied without modeling rendering-time access restrictions or changes to the hardware's
 scroll increment behavior during rendering. See [the decision record](decisions.md#ppu-data-writes-2026-11-21).
+
+## PPU data reads
+
+Reading $2007 or a mirror at a non-palette address returns the previous read buffer and refills it from the current
+video address. The buffer starts at $00 and persists when the address is changed. At $3F00-$3FFF, the read instead
+returns the six-bit palette code immediately and fills the buffer from the address $1000 lower, in $2F00-$2FFF.
+The next non-palette read returns that buffered nametable byte. Successful reads advance the same 15-bit address by
+1 or 32 as writes do; errors leave the address and previous buffer unchanged. CPU reset preserves the existing PPU.
+
+Palette reads return raw six-bit codes: their upper two bits are zero instead of hardware open bus, and grayscale is
+not applied. Rendering-time access effects and palette-read reliability differences between PPU revisions are not
+modeled. See [the decision record](decisions.md#ppu-data-reads-2026-11-21).
 
 ## PPU status reads
 
@@ -170,8 +182,8 @@ occupy $0000-$0FFF and $1000-$1FFF. `write_vram(address, value)` routes writes t
 raises `PermissionError` without changing data. This is a diagnostic departure from physical ROM behavior.
 
 CHR RAM and CHR ROM of other sizes raise `NotImplementedError` when pattern memory is accessed. Machine construction
-and CPU execution can still use a supported PRG configuration without CHR ROM. CPU-facing $2007 reads remain
-unimplemented; `PPU.render_frame()` currently renders only a solid backdrop from palette memory.
+and CPU execution can still use a supported PRG configuration without CHR ROM. `PPU.render_frame()` currently renders
+only a solid backdrop from palette memory.
 See [the CHR decision](decisions.md#fixed-chr-rom-for-the-ppu-2026-11-21).
 
 ## PPU nametable memory
@@ -195,7 +207,7 @@ PPU addresses $3F00-$3FFF access internal palette RAM. The 32-byte range $3F00-$
 $3F10, $3F14, $3F18, and $3F1C also share storage with $3F00, $3F04, $3F08, and $3F0C, respectively.
 Writes retain only the low six bits, and internal reads return those raw color codes. For example, a write of $E1
 to $3F30 makes $3F00, $3F10, and $3F20 read as $21. Each PPU has independent zero-initialized palette storage.
-These memory accesses do not implement CPU-facing $2007 reads, background or sprite layers, or grayscale.
+These memory accesses do not implement background or sprite layers or grayscale.
 See [the palette decision](decisions.md#ppu-palette-ram-2026-11-21).
 
 ## Supported configuration

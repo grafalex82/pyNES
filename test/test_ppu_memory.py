@@ -173,3 +173,114 @@ def test_palette_is_independent_of_other_memory_and_machines(make_machine):
     # Independent writes to another PPU cannot change the first palette.
     second.ppu.write_vram(0x3F10, 0x12)
     assert first.ppu.read_vram(0x3F00) == 0x3F
+
+
+@pytest.mark.parametrize("address,control,step", [
+    (0x0123, 0x00, 1),
+    (0x0123, 0x04, 32),
+    (0x2123, 0x00, 1),
+    (0x2123, 0x04, 32),
+], ids=["chr-step-1", "chr-step-32", "nametable-step-1", "nametable-step-32"])
+def test_ppudata_reads_chr_and_nametable_through_buffer(make_machine, address, control, step):
+    # Distinct neighboring bytes expose premature reads and incorrect address increments.
+    chr_rom = bytearray(8192)
+    if address < 0x2000:
+        chr_rom[address] = 0xA5
+        chr_rom[address + step] = 0x5A
+    machine = make_machine(chr_rom)
+    if address >= 0x2000:
+        machine.ppu.write_vram(address, 0xA5)
+        machine.ppu.write_vram(address + step, 0x5A)
+
+    # The first PPUDATA read returns the initial buffer; each following read returns the preceding byte.
+    machine.write_byte(0x2008, control)       # PPUCTRL mirror: select increment
+    machine.write_byte(0x200E, address >> 8)  # PPUADDR mirror: high byte
+    machine.write_byte(0x3FFE, address & 0xFF)  # PPUADDR mirror: low byte
+    assert machine.read_byte(0x2007) == 0x00  # PPUDATA: prime buffer
+    assert machine.read_byte(0x200F) == 0xA5  # PPUDATA mirror: first source byte
+    assert machine.read_byte(0x3FFF) == 0x5A  # PPUDATA mirror: second source byte
+    assert machine.ppu._vram_address == address + 3 * step
+
+
+@pytest.mark.parametrize("address", [0x3F00, 0x3F10, 0x3F20, 0x3FFF])
+@pytest.mark.parametrize("control,step", [(0x00, 1), (0x04, 32)])
+def test_ppudata_palette_reads_bypass_buffer_and_refill_from_nametable(make_machine, address, control, step):
+    # Seed the previous buffer, palette entry, underlying nametable byte, and later CHR reads distinctly.
+    chr_rom = bytearray(8192)
+    chr_rom[0] = 0x77
+    machine = make_machine(chr_rom)
+    machine.ppu.write_vram(0x2100, 0x55)
+    machine.ppu.write_vram(address - 0x1000, 0xA7)
+    machine.ppu.write_vram(address, 0xE1)
+    machine.write_byte(0x2006, 0x21)  # PPUADDR: high byte of $2100
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: low byte of $2100
+    assert machine.read_byte(0x2007) == 0  # PPUDATA: prime with $55
+
+    # Palette data is returned immediately while the buffer receives the byte under the palette.
+    machine.write_byte(0x2008, control)          # PPUCTRL mirror: select increment
+    machine.write_byte(0x200E, address >> 8)     # PPUADDR mirror: high byte
+    machine.write_byte(0x3FFE, address & 0xFF)   # PPUADDR mirror: low byte
+    assert machine.read_byte(0x3FFF) == 0x21    # PPUDATA mirror: palette code, not old buffer
+    assert machine.ppu._vram_address == address + step
+
+    # The next buffered CHR read returns the nametable byte loaded by the palette read.
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: high byte of $0000
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: low byte of $0000
+    assert machine.read_byte(0x200F) == 0xA7  # PPUDATA mirror: palette read's buffer refill
+    assert machine.read_byte(0x2007) == 0x77  # PPUDATA: first CHR byte
+
+
+def test_ppudata_write_does_not_replace_the_read_buffer(make_machine):
+    # Prime the buffer from nametable RAM, then write a different byte through PPUDATA.
+    machine = make_machine(bytes(8192))
+    machine.ppu.write_vram(0x2100, 0x55)
+    machine.write_byte(0x2006, 0x21)  # PPUADDR: high byte of $2100
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: low byte of $2100
+    assert machine.read_byte(0x2007) == 0  # PPUDATA: prime buffer
+    machine.write_byte(0x2007, 0xAB)  # PPUDATA: write $2101
+    assert machine.read_byte(0x2007) == 0x55  # PPUDATA: return the buffer, not the written byte
+    assert machine.ppu.read_vram(0x2101) == 0xAB
+
+
+def test_ppudata_read_does_not_reset_an_incomplete_address_pair(make_machine):
+    machine = make_machine(bytes(8192))
+    machine.write_byte(0x2006, 0x21)  # PPUADDR: high byte of $2134
+    assert machine.read_byte(0x3FFF) == 0  # PPUDATA mirror: read at the previous address
+    machine.write_byte(0x200E, 0x34)  # PPUADDR mirror: low byte of $2134
+    assert machine.ppu._vram_address == 0x2134
+
+
+@pytest.mark.parametrize("control,step", [(0x00, 1), (0x04, 32)])
+def test_ppudata_read_masks_video_bus_and_wraps_internal_address(make_machine, control, step):
+    # Internal bit 14 is absent from the video bus; palette reads refill from the nametable mirror.
+    machine = make_machine(bytes(8192))
+    machine.ppu.write_vram(0x3FFF, 0x21)
+    machine.ppu.write_vram(0x2FFF, 0xA5)
+    machine.ppu._vram_address = 0x7FFF
+    machine.write_byte(0x2000, control)  # PPUCTRL: select increment
+    assert machine.read_byte(0x2007) == 0x21  # PPUDATA: read palette immediately
+    assert machine.ppu._vram_address == step - 1
+
+    # Readdressing CHR must not disturb the buffer filled from $2FFF.
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: high byte of $0000
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: low byte of $0000
+    assert machine.read_byte(0x2007) == 0xA5  # PPUDATA: buffered nametable byte
+
+
+def test_failed_ppudata_read_preserves_address_and_buffer(make_machine):
+    # A cartridge with unsupported CHR RAM still allows the nametable buffer to be primed.
+    machine = make_machine(b"")
+    machine.ppu.write_vram(0x2100, 0x55)
+    machine.write_byte(0x2006, 0x21)  # PPUADDR: high byte of $2100
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: low byte of $2100
+    assert machine.read_byte(0x2007) == 0  # PPUDATA: prime buffer
+    machine.write_byte(0x2006, 0x10)  # PPUADDR: high byte of $1000
+    machine.write_byte(0x2006, 0x00)  # PPUADDR: low byte of $1000
+    with pytest.raises(NotImplementedError, match="CHR RAM"):
+        machine.read_byte(0x2007)  # PPUDATA: unsupported CHR read
+    assert machine.ppu._vram_address == 0x1000
+
+    # The rejected access leaves the previous buffered byte available for the next successful read.
+    machine.write_byte(0x2006, 0x21)  # PPUADDR: high byte of $2101
+    machine.write_byte(0x2006, 0x01)  # PPUADDR: low byte of $2101
+    assert machine.read_byte(0x2007) == 0x55  # PPUDATA: original buffered byte

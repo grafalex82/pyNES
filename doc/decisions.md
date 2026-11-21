@@ -5,6 +5,23 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU data reads (2026-11-21)
+
+Task 2.7 of `present-nes-frame-3x` adds PPUDATA reads through $2007 and its mirrors. The read buffer starts at $00.
+CHR and nametable reads return its previous byte before refilling it; palette reads return their six-bit code directly
+and refill the buffer from the nametable address $1000 lower. Both use the same 15-bit address and 1-or-32 increment
+as writes. Rejected reads preserve the address and buffer as an emulator diagnostic. Synthetic tests cover both
+memory regions, palette aliases and buffer refill, increments, address wrapping, and unsupported CHR access.
+
+The model returns zero for the two upper palette-read bits rather than hardware open bus and ignores the grayscale
+mask, rendering-time access effects, and palette-read reliability differences between PPU revisions. These are
+functional approximations for cartridges using PPUDATA, including the target images if they rely on those details;
+no ROM was patched. See [NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen/blob/master/Core/PPU.cpp).
+
+The BattleCity image reached 200,002 cycles at $D8FA with RAM $000B still zero, consistent with the previously
+observed NMI wait. Its recorded SHA-256 matched before and after execution; this does not establish playability.
+
 ### PPU backdrop frame (2026-11-21)
 
 Task 2.6 of `present-nes-frame-3x` adds `PPU.render_frame()`, which fills a 256 × 240 packed RGB frame with the

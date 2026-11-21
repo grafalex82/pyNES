@@ -107,13 +107,14 @@ deliberate hardware departures, and a synthetic byte-access example.
 
 Each Machine also owns a minimal [`PPU`](src/ppu.py). Writes to $2000-$3FFF retain the last byte for each mirrored
 register offset for inspection. A pair of $2006 writes selects a video address; reading $2002 resets the write pair.
-Writes to $2000 decode the PPUCTRL settings; only the video address increment currently has an effect. Writes to
-$2007 store video data and advance the address by 1 or 32. Status reads alternate $00 and $80 as an approximation;
-other PPU register reads remain unimplemented.
+Writes to $2000 decode the PPUCTRL settings; only the video address increment currently has an effect. Reads and
+writes at $2007 access video data and advance the address by 1 or 32. Non-palette reads are buffered; palette reads
+return the color immediately. Status reads alternate $00 and $80 as an approximation; other PPU reads remain
+unimplemented.
 Its separate video address space connects 8 KiB of mapper-0 CHR ROM at $0000-$1FFF. CHR RAM and other CHR sizes
 raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pages map to $2000-$3EFF using the
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color
-codes at $3F00-$3FFF with hardware mirrors. CPU-facing $2007 data reads remain unimplemented.
+codes at $3F00-$3FFF with hardware mirrors.
 `PPU.render_frame()` produces a packed RGB frame filled with the color at $3F00, using a fixed RGB approximation.
 Background and sprite layers, display masks, and the hardware's forced-blank palette override are not yet rendered.
 

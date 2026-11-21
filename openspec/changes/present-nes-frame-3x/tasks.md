@@ -21,7 +21,7 @@
 - [x] 2.5 Implement writes to $2007. Verify successive stores with both increments selected by $2000 bit 2.
 - [x] 2.6 Render the backdrop from $3F00. Run a synthetic CPU program that writes the palette through Machine
       and show the resulting color using the stage 1 presenter. Assert its native and scaled RGB output in pytest.
-- [ ] 2.7 Add buffered reads from $2007. Verify CHR and nametable priming, immediate palette reads, the palette
+- [x] 2.7 Add buffered reads from $2007. Verify CHR and nametable priming, immediate palette reads, the palette
       read's buffer refill, and increment behavior through register mirrors.
 
 ## 3. Display the background
