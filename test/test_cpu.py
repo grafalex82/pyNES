@@ -1295,6 +1295,86 @@ def test_sbc_zero_page(make_cpu, initial, operand, incoming_carry, expected, car
     assert cpu.cycles == 3
 
 
+@pytest.mark.parametrize("opcode, initial, value, expected", [
+    # AND (zp,X)
+    (0x21, 0xF0, 0x0F, 0x00),
+    (0x21, 0xFF, 0x80, 0x80),
+    # ORA (zp,X)
+    (0x01, 0x00, 0x00, 0x00),
+    (0x01, 0x35, 0xCA, 0xFF),
+    # EOR (zp,X)
+    (0x41, 0xFF, 0xFF, 0x00),
+    (0x41, 0x7F, 0xFF, 0x80),
+])
+@pytest.mark.parametrize("operand, index, pointer_low, pointer_high", [
+    (0x20, 0x04, 0x24, 0x25),
+    (0xF0, 0x20, 0x10, 0x11),
+    (0xFC, 0x03, 0xFF, 0x00),
+])
+def test_indexed_indirect_logic_updates_accumulator_and_nz(
+    make_cpu, opcode, initial, value, expected, operand, index, pointer_low, pointer_high,
+):
+    # Place the instruction, wrapping pointer, and source in separate RAM locations.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.x = index
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, operand)
+    machine.write_byte(pointer_low, 0x34)
+    machine.write_byte(pointer_high, 0x02)
+    machine.write_byte(0x0234, value)
+
+    # The selected byte determines A and N/Z in six cycles.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("opcode, initial, value, expected", [
+    # AND (zp),Y
+    (0x31, 0xF0, 0x0F, 0x00),
+    (0x31, 0xFF, 0x80, 0x80),
+    # ORA (zp),Y
+    (0x11, 0x00, 0x00, 0x00),
+    (0x11, 0x35, 0xCA, 0xFF),
+    # EOR (zp),Y
+    (0x51, 0xFF, 0xFF, 0x00),
+    (0x51, 0x7F, 0xFF, 0x80),
+])
+@pytest.mark.parametrize("pointer_low, pointer_high, low, high, index, source, cycles", [
+    (0x20, 0x21, 0x30, 0x02, 0x04, 0x0234, 5),
+    (0xFF, 0x00, 0xFF, 0x02, 0x01, 0x0300, 6),
+    (0x20, 0x21, 0xFF, 0xFF, 0x01, 0x0000, 6),
+])
+def test_indirect_indexed_logic_updates_accumulator_and_nz(
+    make_cpu, opcode, initial, value, expected, pointer_low, pointer_high, low, high, index, source, cycles,
+):
+    # A zero-page pointer supplies the base before indexing with Y.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.a = initial
+    cpu.y = index
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)
+    machine.write_byte(0x0568, pointer_low)
+    machine.write_byte(pointer_low, low)
+    machine.write_byte(pointer_high, high)
+    machine.write_byte(source, value)
+
+    # A and N/Z reflect the byte, with an extra cycle when the page changes.
+    cpu.step()
+    assert cpu.a == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x0569
+    assert cpu.cycles == cycles
+
+
 @pytest.mark.parametrize("opcode, initial, operand, expected", [
     # AND
     (0x29, 0xF0, 0x0F, 0x00),

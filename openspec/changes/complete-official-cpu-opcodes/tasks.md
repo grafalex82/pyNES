@@ -31,17 +31,17 @@ For all indirect encodings, cover pointer high-byte wrapping at `$FF`. For `(zp,
 without zero-page wrap and fixed six cycles. For `(zp),Y`, cover crossing, noncrossing, and wrapped effective
 addresses with the corresponding five or six cycles. Record the omitted zero-page or provisional indexed reads.
 
-- [ ] 2.1 Implement `AND (zp,X) ($21)` and verify addressing and zero/negative AND results in A and N/Z.
+- [x] 2.1 Implement `AND (zp,X) ($21)` and verify addressing and zero/negative AND results in A and N/Z.
   Run `python -m pytest test/test_cpu.py -k test_indexed_indirect_logic_updates_accumulator_and_nz`.
-- [ ] 2.2 Implement `ORA (zp,X) ($01)` and verify addressing and zero/negative OR results in A and N/Z.
+- [x] 2.2 Implement `ORA (zp,X) ($01)` and verify addressing and zero/negative OR results in A and N/Z.
   Run `python -m pytest test/test_cpu.py -k test_indexed_indirect_logic_updates_accumulator_and_nz`.
-- [ ] 2.3 Implement `EOR (zp,X) ($41)` and verify addressing and zero/negative XOR results in A and N/Z.
+- [x] 2.3 Implement `EOR (zp,X) ($41)` and verify addressing and zero/negative XOR results in A and N/Z.
   Run `python -m pytest test/test_cpu.py -k test_indexed_indirect_logic_updates_accumulator_and_nz`.
-- [ ] 2.4 Implement `AND (zp),Y ($31)` and verify addressing and zero/negative AND results in A and N/Z.
+- [x] 2.4 Implement `AND (zp),Y ($31)` and verify addressing and zero/negative AND results in A and N/Z.
   Run `python -m pytest test/test_cpu.py -k test_indirect_indexed_logic_updates_accumulator_and_nz`.
-- [ ] 2.5 Implement `ORA (zp),Y ($11)` and verify addressing and zero/negative OR results in A and N/Z.
+- [x] 2.5 Implement `ORA (zp),Y ($11)` and verify addressing and zero/negative OR results in A and N/Z.
   Run `python -m pytest test/test_cpu.py -k test_indirect_indexed_logic_updates_accumulator_and_nz`.
-- [ ] 2.6 Implement `EOR (zp),Y ($51)` and verify addressing and zero/negative XOR results in A and N/Z.
+- [x] 2.6 Implement `EOR (zp),Y ($51)` and verify addressing and zero/negative XOR results in A and N/Z.
   Run `python -m pytest test/test_cpu.py -k test_indirect_indexed_logic_updates_accumulator_and_nz`.
 
 ## 3. Indirect arithmetic and compare

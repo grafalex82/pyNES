@@ -225,6 +225,21 @@ effects; those and individual bus-cycle and DMA effects are not modeled. This ap
 patch. Synthetic tests verify pointer wrapping and data access, not the omitted read. See section 6.5 of the
 [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html).
 
+### Indirect logic reads (2026-11-21)
+
+Indexed-indirect logic follows the existing functional model and omits the discarded zero-page read, which would read
+RAM. This keeps the implementation at instruction boundaries rather than modeling bus cycles. It applies to any ROM
+using these instructions; no ROM is modified. Synthetic tests cover pointer wrapping, results, flags, and cycles.
+See [the 6502 bus-cycle reference](https://www.nesdev.org/6502_cpu.txt).
+
+Indirect-indexed logic also omits the provisional read on a page crossing, although the nominal extra cycle remains.
+This may skip a mapped-device read side effect. The same functional model applies to any ROM using these instructions;
+no ROM is patched. Synthetic tests cover page crossing, 16-bit wrapping, and the nominal cycle count.
+
+A bounded check of the recorded Super Mario Bros. (Europe) image reached 1,000,000 cycles without an unimplemented
+operation. Its next eight instructions were all `JMP $8057` at $8057. The next unsupported behavior is therefore
+unknown; this observation does not establish playability. The image's recorded SHA-256 was unchanged by the check.
+
 ### Omitted zero-page provisional read (2026-11-19)
 
 Indexed-indirect and zero-page indexed accesses, including read-modify-write, omit the hardware's discarded read at

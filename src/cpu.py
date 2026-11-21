@@ -325,31 +325,35 @@ class CPU:
 
 
     def _lda_indexed_indirect(self, address, opcode):
-        # X selects a wrapping zero-page pointer to the source byte.
-        operand = self._fetch_byte()
-        pointer = (operand + self._x) & 0xFF
-        source = self._read_zero_page_word(pointer)
+        operand, source = self._indexed_indirect_address()
         self._a = self._machine.read_byte(source)
-
-        # Set N/Z and trace the completed instruction without the discarded read.
-        self._negative = bool(self._a & 0x80)
-        self._zero = self._a == 0
-        self._cycles += 6
-        self.log_instruction(address, (opcode, operand), "LDA", f"(${operand:02X},X)")
+        self._finish_indexed_indirect_update(address, opcode, "LDA", operand, self._a)
 
 
     def _lda_indirect_indexed(self, address, opcode):
-        # Y indexes the address stored in a wrapping zero-page pointer.
-        operand = self._fetch_byte()
-        base = self._read_zero_page_word(operand)
-        source = (base + self._y) & 0xFFFF
+        operand, source, crossed = self._indirect_indexed_address()
         self._a = self._machine.read_byte(source)
+        self._finish_indirect_indexed_update(address, opcode, "LDA", operand, self._a, crossed)
+
+
+    def _finish_indexed_indirect_update(self, address, opcode, mnemonic, operand, value):
+        # N and Z reflect the resulting register byte.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
+
+        # Trace the fetched operand and count cycles without the discarded read.
+        self._cycles += 6
+        self.log_instruction(address, (opcode, operand), mnemonic, f"(${operand:02X},X)")
+
+
+    def _finish_indirect_indexed_update(self, address, opcode, mnemonic, operand, value, crossed):
+        # N and Z reflect the resulting register byte.
+        self._negative = bool(value & 0x80)
+        self._zero = value == 0
 
         # Count the page-crossing cost without the provisional hardware read.
-        self._negative = bool(self._a & 0x80)
-        self._zero = self._a == 0
-        self._cycles += 5 + (base >> 8 != source >> 8)
-        self.log_instruction(address, (opcode, operand), "LDA", f"(${operand:02X}),Y")
+        self._cycles += 5 + crossed
+        self.log_instruction(address, (opcode, operand), mnemonic, f"(${operand:02X}),Y")
 
 
     def _lda_zero_page(self, address, opcode):
@@ -641,6 +645,18 @@ class CPU:
         self._zero = (self._a & value) == 0
 
 
+    def _and_indexed_indirect(self, address, opcode):
+        operand, source = self._indexed_indirect_address()
+        self._a &= self._machine.read_byte(source)
+        self._finish_indexed_indirect_update(address, opcode, "AND", operand, self._a)
+
+
+    def _and_indirect_indexed(self, address, opcode):
+        operand, source, crossed = self._indirect_indexed_address()
+        self._a &= self._machine.read_byte(source)
+        self._finish_indirect_indexed_update(address, opcode, "AND", operand, self._a, crossed)
+
+
     def _and_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a &= operand
@@ -677,6 +693,18 @@ class CPU:
         self._finish_indexed_update(address, opcode, "AND", base, "Y", self._a, crossed)
 
 
+    def _ora_indexed_indirect(self, address, opcode):
+        operand, source = self._indexed_indirect_address()
+        self._a |= self._machine.read_byte(source)
+        self._finish_indexed_indirect_update(address, opcode, "ORA", operand, self._a)
+
+
+    def _ora_indirect_indexed(self, address, opcode):
+        operand, source, crossed = self._indirect_indexed_address()
+        self._a |= self._machine.read_byte(source)
+        self._finish_indirect_indexed_update(address, opcode, "ORA", operand, self._a, crossed)
+
+
     def _ora_immediate(self, address, opcode):
         operand = self._fetch_byte()
         self._a |= operand
@@ -711,6 +739,18 @@ class CPU:
         base, operand, crossed = self._read_absolute_indexed(self._y)
         self._a |= operand
         self._finish_indexed_update(address, opcode, "ORA", base, "Y", self._a, crossed)
+
+
+    def _eor_indexed_indirect(self, address, opcode):
+        operand, source = self._indexed_indirect_address()
+        self._a ^= self._machine.read_byte(source)
+        self._finish_indexed_indirect_update(address, opcode, "EOR", operand, self._a)
+
+
+    def _eor_indirect_indexed(self, address, opcode):
+        operand, source, crossed = self._indirect_indexed_address()
+        self._a ^= self._machine.read_byte(source)
+        self._finish_indirect_indexed_update(address, opcode, "EOR", operand, self._a, crossed)
 
 
     def _eor_immediate(self, address, opcode):
@@ -845,9 +885,7 @@ class CPU:
 
     def _sta_indexed_indirect(self, address, opcode):
         # X selects a pointer within zero page, including wrap at $FF.
-        operand = self._fetch_byte()
-        pointer = (operand + self._x) & 0xFF
-        destination = self._read_zero_page_word(pointer)
+        operand, destination = self._indexed_indirect_address()
         self._machine.write_byte(destination, self._a)
 
         # The functional model omits the discarded zero-page read.
@@ -857,14 +895,27 @@ class CPU:
 
     def _sta_indirect_indexed(self, address, opcode):
         # Y indexes the address stored in a wrapping zero-page pointer.
-        operand = self._fetch_byte()
-        base = self._read_zero_page_word(operand)
-        destination = (base + self._y) & 0xFFFF
+        operand, destination, _ = self._indirect_indexed_address()
         self._machine.write_byte(destination, self._a)
 
         # The functional model omits the provisional indexed read.
         self._cycles += 6
         self.log_instruction(address, (opcode, operand), "STA", f"(${operand:02X}),Y")
+
+
+    def _indexed_indirect_address(self):
+        # X selects a pointer whose two bytes wrap within zero page.
+        operand = self._fetch_byte()
+        pointer = (operand + self._x) & 0xFF
+        return operand, self._read_zero_page_word(pointer)
+
+
+    def _indirect_indexed_address(self):
+        # Y indexes the wrapping pointer; reads use the page-crossing result for timing.
+        operand = self._fetch_byte()
+        base = self._read_zero_page_word(operand)
+        address = (base + self._y) & 0xFFFF
+        return operand, address, (base >> 8) != (address >> 8)
 
 
     def _read_zero_page_word(self, address):
@@ -1323,7 +1374,7 @@ class CPU:
     _instruction_handlers = (
         # $00-$0F
         None,  # $00
-        None,  # $01
+        _ora_indexed_indirect,  # $01
         None,  # $02
         None,  # $03
         None,  # $04
@@ -1341,7 +1392,7 @@ class CPU:
 
         # $10-$1F
         _bpl,  # $10
-        None,  # $11
+        _ora_indirect_indexed,  # $11
         None,  # $12
         None,  # $13
         None,  # $14
@@ -1359,7 +1410,7 @@ class CPU:
 
         # $20-$2F
         _jsr_absolute,  # $20
-        None,  # $21
+        _and_indexed_indirect,  # $21
         None,  # $22
         None,  # $23
         _bit_zero_page,  # $24
@@ -1377,7 +1428,7 @@ class CPU:
 
         # $30-$3F
         _bmi,  # $30
-        None,  # $31
+        _and_indirect_indexed,  # $31
         None,  # $32
         None,  # $33
         None,  # $34
@@ -1395,7 +1446,7 @@ class CPU:
 
         # $40-$4F
         None,  # $40
-        None,  # $41
+        _eor_indexed_indirect,  # $41
         None,  # $42
         None,  # $43
         None,  # $44
@@ -1413,7 +1464,7 @@ class CPU:
 
         # $50-$5F
         _bvc,  # $50
-        None,  # $51
+        _eor_indirect_indexed,  # $51
         None,  # $52
         None,  # $53
         None,  # $54
