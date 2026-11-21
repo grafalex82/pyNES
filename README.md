@@ -76,6 +76,9 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 
 ## Current state
 
+[`FrameDisplay`](src/frame_display.py) presents supplied 256 × 240 packed RGB frames in a 768 × 720 pygame window,
+with each pixel enlarged to a 3 × 3 block. It is not yet connected to PPU output or the console entry point.
+
 `misc\chr2png.py` provides `decode_tile(tile)` for converting one 16-byte CHR tile into an 8-by-8 grid of palette
 indices. `render_chr_sheets(chr_rom, palettes, scale)` converts 8 KiB of CHR data into two off-screen pygame surfaces,
 with supplied RGB palettes, one-pixel dotted separators, and 1x through 4x tile-pixel scaling. `parse_options()` parses
@@ -129,6 +132,31 @@ Each completed instruction emits a DEBUG trace with its address, fetched bytes, 
 controls. Whole instructions finish even when they exceed a run budget; see [execution control](doc/execution.md).
 Routine tests use synthetic files.
 Local game files are kept out of version control; see [ROM notes](ROMs/README.md).
+
+To try the frame display without a cartridge, save this example as `frame_example.py` in the repository root and run
+`python frame_example.py`. It shows a synthetic RGB gradient; close its window to exit.
+
+```python
+import sys
+
+import pygame
+
+sys.path.insert(0, "src")
+from frame_display import FrameDisplay
+
+frame = bytes(channel for y in range(240) for x in range(256) for channel in (x, y, (x + y) % 256))
+display = FrameDisplay()
+pygame.display.set_caption("pyNES synthetic frame")
+try:
+    display.present(frame)
+    while pygame.event.wait().type != pygame.QUIT:
+        pass
+finally:
+    pygame.display.quit()
+```
+
+The frame contains RGB triples in row order, from top to bottom and left to right. The caller handles window events
+and display shutdown; the presenter does not generate frames or run the emulator.
 
 Run a supported local cartridge from the repository root:
 

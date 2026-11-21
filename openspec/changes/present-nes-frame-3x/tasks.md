@@ -2,10 +2,10 @@
 
 ## 1. Present supplied frames
 
-- [ ] 1.1 Implement `FrameDisplay` and verify with synthetic pytest frames that the 768 × 720 drawing area
+- [x] 1.1 Implement `FrameDisplay` and verify with synthetic pytest frames that the 768 × 720 drawing area
       contains exact 3 × 3 copies of differing pixels in adjacent rows and columns and at the bottom-right corner.
-- [ ] 1.2 Verify in pytest that presenting a second frame reuses the display and replaces its old pixels.
-- [ ] 1.3 Document a runnable synthetic-frame example in README.md and record the host-side scaling and window
+- [x] 1.2 Verify in pytest that presenting a second frame reuses the display and replaces its old pixels.
+- [x] 1.3 Document a runnable synthetic-frame example in README.md and record the host-side scaling and window
       lifecycle decisions in doc/decisions.md. Run the example and confirm that it displays the frame and closes
       through the pygame event loop.
 

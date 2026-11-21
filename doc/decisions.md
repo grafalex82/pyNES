@@ -5,6 +5,19 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Presentation of supplied frames (2026-11-21)
+
+Task 1.1 of `present-nes-frame-3x` adds `FrameDisplay` for packed RGB bytes in 256 × 240 row order. The presenter
+initializes a 768 × 720 pygame display and uses integer scaling to replicate each source pixel in a 3 × 3 block,
+preserving colors without interpolation. The host owns event processing and display shutdown. A synthetic frame
+checks every output pixel using SDL's dummy driver. The presenter is not yet connected to PPU output or game startup.
+See [pygame's scale documentation](https://www.pygame.org/docs/ref/transform.html#pygame.transform.scale).
+
+Task 1.2 verifies that presenting a second frame reuses the display surface and replaces every pixel. Task 1.3
+provides a standalone synthetic-frame example: the caller waits for the pygame close event and shuts down the
+display subsystem. Keeping this lifecycle outside `FrameDisplay` lets a future emulator loop handle its own events.
+The documented example displayed its gradient in a desktop window and exited successfully after its close button.
+
 ### Indexed-indirect ADC (2026-11-21)
 
 Task 3.1 of `complete-official-cpu-opcodes` adds `ADC (zp,X)` ($61). X wraps the operand within zero page before
