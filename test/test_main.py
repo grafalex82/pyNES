@@ -1,11 +1,47 @@
 """Verify the console entry point using a synthetic cartridge."""
 
 from pathlib import Path
+import importlib.util
 import subprocess
 import sys
 
+import pygame
+import pytest
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "main.py"
+
+
+@pytest.fixture(autouse=True)
+def dummy_display(monkeypatch):
+    # A dummy window lets both direct and subprocess checks run without a desktop.
+    monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
+    pygame.display.quit()
+    yield
+    pygame.display.quit()
+
+
+@pytest.fixture
+def main_module():
+    spec = importlib.util.spec_from_file_location("pynes_main", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture
+def make_cartridge(tmp_path):
+    def create_cartridge(program):
+        # A fixed PRG bank starts the synthetic program at $8000.
+        header = b"NES\x1a" + bytes([1, 0]) + bytes(10)
+        prg = bytearray(16384)
+        prg[:len(program)] = program
+        prg[-4:-2] = b"\x00\x80"
+        path = tmp_path / "synthetic.nes"
+        path.write_bytes(header + prg)
+        return path
+
+    return create_cartridge
 
 
 def test_help_without_cartridge(tmp_path):
@@ -17,6 +53,107 @@ def test_help_without_cartridge(tmp_path):
     assert "usage:" in result.stdout
     assert "rom" in result.stdout
     assert result.stderr == ""
+
+
+def test_help_does_not_initialize_display(main_module, monkeypatch, capsys):
+    # Argument parsing exits before the display initializer can be called.
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), "--help"])
+    monkeypatch.setattr(pygame.display, "init", lambda: pytest.fail("Help must not initialize the display"))
+    with pytest.raises(SystemExit) as error:
+        main_module.main()
+    assert error.value.code == 0
+    assert "usage:" in capsys.readouterr().out
+    assert not pygame.display.get_init()
+
+
+def test_synthetic_cartridge_updates_the_existing_window(main_module, make_cartridge, monkeypatch):
+    # The program writes palette color $21 through PPUADDR and PPUDATA, then loops within the first block.
+    program = bytes([
+        0xA9,  # LDA #$3F: Load the high byte of palette address $3F00.
+        0x3F,
+        0x8D,  # STA $2006: Write the high byte through PPUADDR.
+        0x06,
+        0x20,
+        0xA9,  # LDA #$00: Load the low byte of palette address $3F00.
+        0x00,
+        0x8D,  # STA $2006: Select the backdrop address.
+        0x06,
+        0x20,
+        0xA9,  # LDA #$21: Load a visible blue color.
+        0x21,
+        0x8D,  # STA $2007: Write the backdrop color through PPUDATA.
+        0x07,
+        0x20,
+        0x4C,  # JMP $800F: Stay in this loop until the host regains control.
+        0x0F,
+        0x80,
+    ])
+    cartridge = make_cartridge(program)
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
+    presentations = []
+    original_present = main_module.FrameDisplay.present
+    original_run = main_module.Emulator.run
+
+    def record_present(display, frame):
+        original_present(display, frame)
+        surface = pygame.display.get_surface()
+        presentations.append((surface, surface.get_at((0, 0))[:3], surface.get_at((767, 719))[:3]))
+
+    def run_one_block(emulator, cycles):
+        # The initial frame and window must exist before the first instruction.
+        assert emulator.cpu.pc == 0x8000
+        assert pygame.display.get_surface().get_size() == (768, 720)
+        assert len(presentations) == 1
+        original_run(emulator, cycles)
+        pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    # The real CPU, PPU and display run once before the posted close event ends the loop.
+    monkeypatch.setattr(main_module.FrameDisplay, "present", record_present)
+    monkeypatch.setattr(main_module.Emulator, "run", run_one_block)
+    main_module.main()
+    assert len(presentations) == 2
+    assert presentations[0][0] is presentations[1][0]
+    assert presentations[0][1:] == ((102, 102, 102), (102, 102, 102))
+    assert presentations[1][1:] == ((100, 176, 255), (100, 176, 255))
+    assert not pygame.display.get_init()
+
+
+def test_close_event_before_first_block_releases_display(main_module, make_cartridge, monkeypatch):
+    cartridge = make_cartridge(bytes([0xEA]))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
+    original_present = main_module.FrameDisplay.present
+
+    def close_after_initial_frame(display, frame):
+        original_present(display, frame)
+        pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    # A close event stops execution before the first CPU block.
+    monkeypatch.setattr(main_module.FrameDisplay, "present", close_after_initial_frame)
+    monkeypatch.setattr(main_module.Emulator, "run", lambda *args: pytest.fail("CPU must not run after close"))
+    main_module.main()
+    assert not pygame.display.get_init()
+
+
+def test_execution_error_releases_display_and_propagates(main_module, make_cartridge, monkeypatch):
+    cartridge = make_cartridge(bytes([0x02]))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
+    with pytest.raises(NotImplementedError, match="CPU opcode 0x02 at address 0x8000"):
+        main_module.main()
+    assert not pygame.display.get_init()
+
+
+def test_display_initialization_error_releases_display(main_module, make_cartridge, monkeypatch):
+    cartridge = make_cartridge(bytes([0xEA]))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
+
+    def fail_set_mode(size):
+        raise RuntimeError("display initialization failed")
+
+    # Even a failure after display.init() must release the partially initialized subsystem.
+    monkeypatch.setattr(pygame.display, "set_mode", fail_set_mode)
+    with pytest.raises(RuntimeError, match="display initialization failed"):
+        main_module.main()
+    assert not pygame.display.get_init()
 
 
 def test_runs_relative_cartridge_path_from_another_directory(tmp_path):

@@ -77,7 +77,7 @@ Use clear component boundaries and explain hardware behavior. See [AGENTS.md](AG
 ## Current state
 
 [`FrameDisplay`](src/frame_display.py) presents supplied 256 × 240 packed RGB frames in a 768 × 720 pygame window,
-with each pixel enlarged to a 3 × 3 block. The console entry point does not yet present PPU frames automatically.
+with each pixel enlarged to a 3 × 3 block. The cartridge entry point opens this window and presents PPU frames.
 
 `misc\chr2png.py` provides `decode_tile(tile)` for converting one 16-byte CHR tile into an 8-by-8 grid of palette
 indices. `render_chr_sheets(chr_rom, palettes, scale)` converts 8 KiB of CHR data into two off-screen pygame surfaces,
@@ -174,7 +174,10 @@ python main.py "ROMs/your game.nes"
 python main.py --help
 ```
 
-The console shows reset and instruction traces, then stops with a traceback at the first unimplemented behavior.
+The command opens a window before the first CPU block, shows the initial backdrop, and refreshes it after every
+1000-cycle block. Close the window to stop. This temporary sampling is not synchronized with emulated frames or
+real time; currently only the backdrop is drawn. The console shows reset and instruction traces, and an execution
+error closes the window and propagates with its traceback.
 The CPU has dispatch handlers for all 151 official NES CPU opcode encodings. Unofficial opcodes and some device
 behavior remain unsupported, so a ROM may still stop at a missing behavior. See
 [execution control](doc/execution.md#console-startup) for the execution loop and a synthetic example.

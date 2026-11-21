@@ -5,6 +5,19 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Early cartridge window and frame sampling (2026-11-21)
+
+Task 3.1 of `present-nes-frame-3x` opens one 768 × 720 pygame window after cartridge loading and before the first
+CPU block. It presents the initial PPU frame and refreshes it after each 1000-cycle block. The host handles close
+events between blocks and releases the display on close or an execution error; help does not initialize a display.
+
+Sampling at host execution boundaries is temporary: updates may appear between emulated vblanks, and execution is not
+paced in real time. This affects all cartridges until frame delivery is tied to PPU timing. The PPU still renders only
+the backdrop, and no ROM is patched. Synthetic tests verify startup order, palette-driven color changes in the same
+window, close events, help, and error cleanup. A desktop check showed the synthetic color and closed normally.
+BattleCity reached 200,002 cycles at $D8FA with RAM $000B still zero, consistent with the existing NMI wait. Its
+recorded SHA-256 matched before and after the bounded check; this does not establish playability.
+
 ### PPU data reads (2026-11-21)
 
 Task 2.7 of `present-nes-frame-3x` adds PPUDATA reads through $2007 and its mirrors. The read buffer starts at $00.

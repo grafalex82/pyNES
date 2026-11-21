@@ -5,10 +5,13 @@ import logging
 from pathlib import Path
 import sys
 
+import pygame
+
 # Resolve components relative to this script, independently of the caller's working directory.
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 from emulator import Emulator
+from frame_display import FrameDisplay
 from machine import Machine
 from nesfile import NESFile
 
@@ -25,9 +28,22 @@ def main():
     machine = Machine(cartridge)
     emulator = Emulator(machine)
 
-    # Each block returns at an instruction boundary without resetting the machine.
-    while True:
-        emulator.run(1000)
+    # Present the initial PPU state and reuse the window for each subsequent sampled frame.
+    try:
+        display = FrameDisplay()
+        pygame.display.set_caption("pyNES")
+        display.present(machine.ppu.render_frame())
+
+        # Sample between bounded blocks until the host receives a close event.
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return
+            emulator.run(1000)
+            display.present(machine.ppu.render_frame())
+    finally:
+        # Release the display on both window close and propagated execution errors.
+        pygame.display.quit()
 
 
 if __name__ == "__main__":

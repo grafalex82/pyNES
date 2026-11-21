@@ -26,7 +26,7 @@
 
 ## 3. Open the emulator window and synchronize frames with vblank
 
-- [ ] 3.1 Open the 768 × 720 window before the first CPU block when running `python main.py ROM`.
+- [x] 3.1 Open the 768 × 720 window before the first CPU block when running `python main.py ROM`.
       Show the initial PPU frame and refresh it from `PPU.render_frame()` between bounded execution blocks.
       Verify that a synthetic cartridge's palette writes update the visible color in the same window.
       Verify startup order, close events, failure cleanup with traceback propagation, and `--help` without display

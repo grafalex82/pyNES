@@ -11,11 +11,15 @@ python main.py --help
 
 Replace the example path with the file to inspect and quote paths containing spaces. From another directory, use the
 absolute path to `main.py`; a relative cartridge path is resolved from the caller's working directory. The console
-loads the cartridge, connects Machine, constructs Emulator once, and repeatedly requests blocks of 1000 CPU cycles.
-This budget does not provide frame scheduling, peripheral progression, or real-time pacing.
+loads the cartridge, connects Machine, and constructs Emulator once. It opens a 768 × 720 window and presents the
+initial PPU backdrop before requesting the first block of 1000 CPU cycles. It processes window events between blocks
+and presents the current PPU frame after each block; closing the window stops execution. This temporary sampling does
+not provide emulated frame scheduling, peripheral progression, or real-time pacing. Background and sprites are not
+yet rendered, so the displayed frame currently contains only the backdrop color.
 
 The console enables DEBUG logging before CPU startup and prints message-only reset and completed-instruction traces.
-Errors propagate with their ordinary traceback. For a synthetic mapper-0 ROM whose reset vector points to SEI ($78)
+Execution errors close the display and propagate with their ordinary traceback. Help does not initialize a display.
+For a synthetic mapper-0 ROM whose reset vector points to SEI ($78)
 at $8000 followed by unsupported $02 at $8001, SEI completes at CYC=2 and the process stops with `NotImplementedError`
 identifying $02 at $8001. This is an early diagnostic stop, not a playable game.
 
