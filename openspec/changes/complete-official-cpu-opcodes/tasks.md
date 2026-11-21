@@ -12,16 +12,16 @@ can cover multiple encodings when the same decision applies.
 For each case check the destination, N/Z, and the two ordered writes (original, then modified). Record the visible
 two-write sequence and the omitted indexed provisional read.
 
-- [ ] 1.1 Implement `INC absolute ($EE)` in `src/cpu.py`. Verify little-endian addressing, `$FF` to `$00`,
+- [x] 1.1 Implement `INC absolute ($EE)` in `src/cpu.py`. Verify little-endian addressing, `$FF` to `$00`,
   the negative-result case, and six cycles.
   Run `python -m pytest test/test_cpu.py -k test_absolute_increment_and_decrement`.
-- [ ] 1.2 Implement `DEC absolute ($CE)` in `src/cpu.py`. Verify little-endian addressing, `$00` to `$FF`,
+- [x] 1.2 Implement `DEC absolute ($CE)` in `src/cpu.py`. Verify little-endian addressing, `$00` to `$FF`,
   the zero-result case, and six cycles.
   Run `python -m pytest test/test_cpu.py -k test_absolute_increment_and_decrement`.
-- [ ] 1.3 Implement `INC absolute,X ($FE)` in `src/cpu.py`. Verify crossing, noncrossing, and wrapped destinations,
+- [x] 1.3 Implement `INC absolute,X ($FE)` in `src/cpu.py`. Verify crossing, noncrossing, and wrapped destinations,
   `$FF` to `$00`, the negative-result case, and fixed seven cycles.
   Run `python -m pytest test/test_cpu.py -k test_indexed_absolute_increment_and_decrement`.
-- [ ] 1.4 Implement `DEC absolute,X ($DE)` in `src/cpu.py`. Verify crossing, noncrossing, and wrapped destinations,
+- [x] 1.4 Implement `DEC absolute,X ($DE)` in `src/cpu.py`. Verify crossing, noncrossing, and wrapped destinations,
   `$00` to `$FF`, the zero-result case, and fixed seven cycles.
   Run `python -m pytest test/test_cpu.py -k test_indexed_absolute_increment_and_decrement`.
 

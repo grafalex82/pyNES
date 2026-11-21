@@ -5,6 +5,26 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Absolute INC and DEC read-modify-write (2026-11-21)
+
+Tasks 1.1 and 1.2 of `complete-official-cpu-opcodes` implement `INC absolute` ($EE) and `DEC absolute` ($CE) through
+the shared read-modify-write path. Each reads the addressed byte and exposes two ordered Machine writes: the original
+byte, then the modified byte. The final byte determines N/Z; each instruction takes six nominal cycles. Synthetic
+tests verify little-endian addressing, the visible write sequence, both N/Z outcomes, PC, and cycles.
+
+Task 1.3 adds `INC absolute,X` ($FE). It wraps the effective address at 16 bits and takes seven nominal cycles whether
+or not indexing crosses a page. As in other indexed read-modify-write instructions, the functional model omits the
+provisional indexed read; memory-mapped side effects at that address are therefore absent. Synthetic cases cover
+crossing, noncrossing, and address-space wrap, as well as both N/Z outcomes and the ordered writes. Task 1.4 adds
+`DEC absolute,X` ($DE) with the same addressing, timing, write order, and omitted-read behavior; its cases also cover
+both N/Z outcomes.
+
+The [MCS6500 programming manual](https://syncopate.us/books/Synertek6502ProgrammingManual.html),
+[py65 6502 implementation](https://github.com/mnaberez/py65/blob/main/py65/devices/mpu6502.py), and
+[Mesen 2 CPU](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp) were consulted for comparison;
+the implementation reuses this project's functional memory path. The indexed read omission follows the existing
+functional bus model described in the manual's indexed-addressing discussion. No game ROM is modified.
+
 ### Dummy APU frame-counter write (2026-11-20)
 
 Machine routes writes at $4017 to the APU, which logs and ignores every byte. Reads at $4017 address controller 2

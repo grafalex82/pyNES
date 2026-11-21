@@ -248,6 +248,87 @@ def test_ror_accumulator(make_cpu, initial, incoming_carry, expected, carry):
 
 @pytest.mark.parametrize("opcode, initial, expected", [
     # INC
+    (0xEE, 0xFF, 0x00),
+    (0xEE, 0x7F, 0x80),
+    # DEC
+    (0xCE, 0x00, 0xFF),
+    (0xCE, 0x01, 0x00),
+])
+def test_absolute_increment_and_decrement(make_cpu, monkeypatch, opcode, initial, expected):
+    # Distinct operand bytes expose little-endian addressing.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)  # INC or DEC opcode
+    machine.write_byte(0x0568, 0x34)
+    machine.write_byte(0x0569, 0x12)
+    machine.write_byte(0x1234, initial)
+
+    # Observe the original and modified writes while preserving real Machine behavior.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # The instruction writes the original byte before the incremented value.
+    cpu.step()
+    assert writes == [(0x1234, initial), (0x1234, expected)]
+    assert machine.read_byte(0x1234) == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x056A
+    assert cpu.cycles == 6
+
+
+@pytest.mark.parametrize("opcode, initial, expected, base, index, destination", [
+    # INC
+    (0xFE, 0xFF, 0x00, 0x00FF, 0x01, 0x0100),
+    (0xFE, 0x7F, 0x80, 0x1234, 0x02, 0x1236),
+    (0xFE, 0xFE, 0xFF, 0xFFFF, 0x01, 0x0000),
+    # DEC
+    (0xDE, 0x00, 0xFF, 0x00FF, 0x01, 0x0100),
+    (0xDE, 0x01, 0x00, 0x1234, 0x02, 0x1236),
+    (0xDE, 0x02, 0x01, 0xFFFF, 0x01, 0x0000),
+])
+def test_indexed_absolute_increment_and_decrement(
+    make_cpu, monkeypatch, opcode, initial, expected, base, index, destination,
+):
+    # Set X and N/Z before selecting the effective address.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.x = index
+    cpu.negative = not bool(expected & 0x80)
+    cpu.zero = expected != 0
+    machine.write_byte(0x0567, opcode)  # INC or DEC opcode
+    machine.write_byte(0x0568, base & 0xFF)
+    machine.write_byte(0x0569, base >> 8)
+    machine.write_byte(destination, initial)
+
+    # Observe the two writes while preserving real Machine behavior.
+    writes = []
+    write_byte = machine.write_byte
+
+    def record_write(address, value):
+        writes.append((address, value))
+        write_byte(address, value)
+
+    monkeypatch.setattr(machine, "write_byte", record_write)
+
+    # The effective address wraps at 16 bits and the instruction always takes seven cycles.
+    cpu.step()
+    assert writes == [(destination, initial), (destination, expected)]
+    assert machine.read_byte(destination) == expected
+    assert cpu.negative is bool(expected & 0x80)
+    assert cpu.zero is (expected == 0)
+    assert cpu.pc == 0x056A
+    assert cpu.cycles == 7
+
+
+@pytest.mark.parametrize("opcode, initial, expected", [
+    # INC
     (0xE6, 0x00, 0x01),
     (0xE6, 0x7F, 0x80),
     (0xE6, 0xFE, 0xFF),

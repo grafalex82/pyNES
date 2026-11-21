@@ -985,6 +985,14 @@ class CPU:
         self._modify_zero_page(address, opcode, "INC", self._increment_byte, indexed=True)
 
 
+    def _inc_absolute(self, address, opcode):
+        self._modify_absolute(address, opcode, "INC", self._increment_byte)
+
+
+    def _inc_absolute_x(self, address, opcode):
+        self._modify_absolute(address, opcode, "INC", self._increment_byte, indexed=True)
+
+
     def _increment_byte(self, value):
         return (value + 1) & 0xFF
 
@@ -995,6 +1003,14 @@ class CPU:
 
     def _dec_zero_page_x(self, address, opcode):
         self._modify_zero_page(address, opcode, "DEC", self._decrement_byte, indexed=True)
+
+
+    def _dec_absolute(self, address, opcode):
+        self._modify_absolute(address, opcode, "DEC", self._decrement_byte)
+
+
+    def _dec_absolute_x(self, address, opcode):
+        self._modify_absolute(address, opcode, "DEC", self._decrement_byte, indexed=True)
 
 
     def _decrement_byte(self, value):
@@ -1536,7 +1552,7 @@ class CPU:
         None,  # $CB
         _cpy_absolute,  # $CC
         _cmp_absolute,  # $CD
-        None,  # $CE
+        _dec_absolute,  # $CE
         None,  # $CF
 
         # $D0-$DF
@@ -1554,7 +1570,7 @@ class CPU:
         None,  # $DB
         None,  # $DC
         _cmp_absolute_x,  # $DD
-        None,  # $DE
+        _dec_absolute_x,  # $DE
         None,  # $DF
 
         # $E0-$EF
@@ -1572,7 +1588,7 @@ class CPU:
         None,  # $EB
         _cpx_absolute,  # $EC
         _sbc_absolute,  # $ED
-        None,  # $EE
+        _inc_absolute,  # $EE
         None,  # $EF
 
         # $F0-$FF
@@ -1590,6 +1606,6 @@ class CPU:
         None,  # $FB
         None,  # $FC
         _sbc_absolute_x,  # $FD
-        None,  # $FE
+        _inc_absolute_x,  # $FE
         None,  # $FF
     )
