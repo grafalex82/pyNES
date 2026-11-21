@@ -65,7 +65,7 @@ Each Machine owns a PPU. Addresses $2000-$3FFF select a register offset using th
 $200A, and $3FFA all select offset 2. `machine.ppu.last_writes` provides an inspection tuple with the last written
 byte for each offset; an unwritten offset is `None`. For example, writing $80 to $200A makes element 2 equal $80.
 
-These writes only retain bytes: they do not implement rendering, interrupts, video memory, or other register effects.
+These writes only retain bytes: they do not implement rendering, interrupts, video memory ports, or other register effects.
 They are accepted even at $2002, although hardware PPUSTATUS is read-only. This model also records writes immediately;
 hardware ignores writes to $2000, $2001, $2005, and $2006 during an initial warmup period. See the
 [decision record](decisions.md#ppu-register-write-retention-2026-11-19) for the rationale and affected ROMs.
@@ -111,12 +111,24 @@ The supported sizes are powers of two, so the mask selects an offset within the 
 
 The 16 KiB image appears twice in the CPU window. A 32 KiB image occupies the whole window in file order.
 These banks are fixed; there are no bank-selection registers or bank-switching state in this implementation.
-CHR bytes remain in NESFile for later video work and are not mapped into CPU memory.
+CHR bytes are not mapped into CPU memory; the PPU accesses them in its separate video address space.
 
 Writes at $8000-$FFFF reach `ROM.write_byte`, which raises `PermissionError` with the translated device offset.
 Machine propagates that exception unchanged, leaving ROM and RAM intact. This diagnostic trap is a deliberate
 departure: writes to hardware NROM do not change ROM or select banks. Bus conflicts are not modeled.
 See [the ROM-write decision](decisions.md#standalone-rom-and-diagnostic-write-errors-2026-11-18) for the rationale.
+
+## PPU pattern memory
+
+Machine supplies a separate ROM device with the cartridge's CHR bytes to the PPU. For exactly 8192 bytes,
+`machine.ppu.read_memory(address)` reads PPU addresses $0000-$1FFF in file order. The two 4 KiB pattern tables
+occupy $0000-$0FFF and $1000-$1FFF. `write_memory(address, value)` routes writes to the ROM diagnostic trap and
+raises `PermissionError` without changing data. This is a diagnostic departure from physical ROM behavior.
+
+CHR RAM and CHR ROM of other sizes raise `NotImplementedError` when pattern memory is accessed. Machine construction
+and CPU execution can still use a supported PRG configuration without CHR ROM. Other video addresses and CPU-facing
+video memory ports remain unimplemented; this internal access alone does not produce an image.
+See [the CHR decision](decisions.md#fixed-chr-rom-for-the-ppu-2026-11-21).
 
 ## Supported configuration
 

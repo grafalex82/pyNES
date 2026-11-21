@@ -11,7 +11,7 @@
 
 ## 2. Connect PPU memory and display the first PPU-generated color
 
-- [ ] 2.1 Connect mapper-0 CHR ROM to the PPU. Verify reads at both pattern-table boundaries, immutable bytes,
+- [x] 2.1 Connect mapper-0 CHR ROM to the PPU. Verify reads at both pattern-table boundaries, immutable bytes,
       and an explicit error for unsupported CHR access. Check that PRG-only fixtures still execute.
 - [ ] 2.2 Connect the two physical nametable VRAM pages. Verify both cartridge mirroring arrangements,
       the $3000-$3EFF mirror, and separation from CPU RAM.

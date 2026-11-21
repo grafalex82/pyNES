@@ -5,6 +5,19 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Fixed CHR ROM for the PPU (2026-11-21)
+
+Task 2.1 of `present-nes-frame-3x` connects an 8 KiB mapper-0 CHR ROM to the PPU's $0000-$1FFF video addresses.
+The two 4 KiB pattern tables use consecutive bytes in file order; they are distinct from the CPU address space.
+Machine supplies a ROM device, while the PPU selects it for pattern memory. CHR RAM and other CHR sizes remain
+unsupported, with errors deferred until video access so existing PRG-only synthetic programs can still run.
+
+The ROM device raises `PermissionError` on writes as a diagnostic; physical CHR ROM does not become writable or
+raise a software exception. This applies to cartridges using this mapping, including the local target images, and
+does not patch either ROM. Synthetic tests cover both table boundaries, unchanged ROM, and unsupported accesses.
+See [NESdev NROM](https://www.nesdev.org/wiki/NROM) and
+[Mesen's PPU mapping interface](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/BaseMapper.h).
+
 ### Presentation of supplied frames (2026-11-21)
 
 Task 1.1 of `present-nes-frame-3x` adds `FrameDisplay` for packed RGB bytes in 256 × 240 row order. The presenter

@@ -18,8 +18,8 @@ class Machine:
     Construction takes an already parsed NESFile and uses its getters without
     reopening the file. The current configuration supports mapper 0 (fixed NROM
     wiring), submapper 0, no trainer, and exactly 16 KiB or 32 KiB of PRG ROM.
-    Other configurations raise NotImplementedError. CHR data and video metadata
-    remain in NESFile and are not connected to this CPU memory interface.
+    Other configurations raise NotImplementedError. CHR ROM is connected to the
+    PPU's separate video address space, not to this CPU memory interface.
 
     CPU memory map, with inclusive hexadecimal address ranges:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
@@ -81,7 +81,8 @@ class Machine:
         # Devices own their storage; Machine converts CPU addresses to device-relative offsets.
         self._ram = RAM(2048)
         self._rom = ROM(prg_rom)
-        self.ppu = PPU()
+        chr_rom = cartridge.get_chr_rom()
+        self.ppu = PPU(ROM(chr_rom), len(chr_rom))
         self.apu = APU()
         self._prg_mask = len(prg_rom) - 1
 
