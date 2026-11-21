@@ -78,8 +78,9 @@ through the `cpu` logger, followed by cumulative instruction cycles. The helper 
 the failing PC. Completed instructions emit aligned DEBUG traces with resulting state.
 `Emulator(machine)` provides single-step, cycle-budgeted execution, and repeated reset through one host-facing
 boundary. See [execution control](execution.md) for cycle budgets, overshoot, and state preservation.
-The root `main.py` accepts a ROM path, opens a window, and runs repeated 1000-cycle blocks with DEBUG traces until
-the window closes or an exception stops execution. See [console startup](execution.md#console-startup) for details.
+The root `main.py` accepts a ROM path, opens a window, and runs repeated 1000-cycle blocks until the window closes
+or an exception stops execution. Logging is disabled by default; `--debug` enables DEBUG traces. See
+[console startup](execution.md#console-startup) for details.
 PPU register writes are retained for inspection. Two $2006 writes select a video address; reading $2002 resets the
 address write pair. $2007 accesses video data and advances the address by 1 or 32 according to $2000 bit 2;
 non-palette reads are buffered, while palette reads return the color immediately. PPUSTATUS reports and clears a

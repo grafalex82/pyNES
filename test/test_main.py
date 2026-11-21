@@ -54,6 +54,7 @@ def test_help_without_cartridge(tmp_path):
     assert result.returncode == 0
     assert "usage:" in result.stdout
     assert "rom" in result.stdout
+    assert "--debug" in result.stdout
     assert result.stderr == ""
 
 
@@ -202,6 +203,23 @@ def test_execution_error_releases_display_and_propagates(main_module, make_cartr
     with pytest.raises(NotImplementedError, match="CPU opcode 0x02 at address 0x8000"):
         main_module.main()
     assert not pygame.display.get_init()
+
+
+@pytest.mark.parametrize("options, logging_enabled", [([], False), (["--debug"], True)])
+def test_cli_logging_is_opt_in(make_cartridge, options, logging_enabled):
+    # SEI and CLD complete before an unsupported opcode ends both runs with a traceback.
+    cartridge = make_cartridge(bytes([0x78, 0xD8, 0x02]))
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), *options, str(cartridge)], capture_output=True, text=True, timeout=10,
+    )
+
+    # The flag controls reset and instruction logs, while the execution error remains visible in both modes.
+    assert result.returncode != 0
+    assert "NotImplementedError: CPU opcode 0x02 at address 0x8002" in result.stderr
+    assert ("Reset completed:" in result.stderr) is logging_enabled
+    assert ("8000   78" in result.stderr) is logging_enabled
+    assert ("CYC=2" in result.stderr) is logging_enabled
+    assert ("CYC=4" in result.stderr) is logging_enabled
 
 
 def test_display_initialization_error_releases_display(main_module, make_cartridge, monkeypatch):

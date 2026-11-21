@@ -20,10 +20,11 @@ def main():
     # Leave relative cartridge paths relative to the caller's working directory.
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("rom", help="path to a valid iNES or NES 2.0 cartridge file")
+    parser.add_argument("--debug", action="store_true", help="enable detailed CPU and device logging")
     args = parser.parse_args()
 
-    # Configure logging before CPU construction so the startup reset is visible.
-    logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+    # Opt in before CPU construction so the startup reset is included in a detailed log.
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.CRITICAL + 1, format="%(message)s")
     cartridge = NESFile(args.rom)
     machine = Machine(cartridge)
     emulator = Emulator(machine)

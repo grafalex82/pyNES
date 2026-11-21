@@ -39,6 +39,7 @@
       changes the next presented frame. Update the frame scheduling notes in doc/decisions.md.
 - [x] 3.4 Show actual presentation FPS in the window title. Verify elapsed-time calculation, intervals longer than
       one second, and host-loop integration; document the measurement without adding frame pacing.
+- [x] 3.5 Disable logging by default and enable DEBUG output with `--debug`. Verify both modes and document the option.
 
 ## 4. Display the background and support the game startup wait
 

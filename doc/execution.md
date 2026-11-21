@@ -6,6 +6,7 @@ From the repository root, pass a valid local cartridge path to the console entry
 
 ```text
 python main.py "ROMs/your game.nes"
+python main.py --debug "ROMs/your game.nes"
 python main.py --help
 ```
 
@@ -23,8 +24,9 @@ captured frames skipped by the host do not count. Between blocks, the title upda
 new presentation have elapsed. Until then it retains the last measured value, initially zero; this allows rates below
 one FPS to be measured. The counter measures host output speed and does not control emulation speed.
 
-The console enables DEBUG logging before CPU startup and prints message-only reset and completed-instruction traces.
-Execution errors close the display and propagate with their ordinary traceback. Help does not initialize a display.
+Logging is disabled by default. `--debug` enables DEBUG logging before CPU startup, including message-only reset,
+completed-instruction, and device traces. Execution errors close the display and propagate with their ordinary
+traceback in either mode. Help does not initialize a display.
 For a synthetic mapper-0 ROM whose reset vector points to SEI ($78)
 at $8000 followed by unsupported $02 at $8001, SEI completes at CYC=2 and the process stops with `NotImplementedError`
 identifying $02 at $8001. This is an early diagnostic stop, not a playable game.

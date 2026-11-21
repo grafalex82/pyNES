@@ -5,6 +5,12 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Opt-in execution logging (2026-11-22)
+
+The cartridge entry point disables logging by default to avoid slowing ordinary execution with instruction traces.
+The `--debug` option enables DEBUG logging before CPU construction, preserving reset, instruction, and device messages.
+Ordinary exceptions and tracebacks remain visible in both modes. Subprocess tests verify both command-line paths.
+
 ### Window presentation rate (2026-11-22)
 
 The window title reports completed presentation intervals divided by elapsed monotonic wall-clock time, refreshed

@@ -42,7 +42,8 @@ This model covers fixed NROM video wiring and whole-frame rendering at instructi
    Present the first backdrop frame, then sample `PPU.render_frame()` between bounded execution blocks.
    This makes current palette and VRAM changes visible before video timing is available. The host processes
    pygame events between blocks and releases the display on close or on a propagated execution error. Handle
-   command-line help before display initialization.
+   command-line help before display initialization. Disable logging by default; `--debug` enables DEBUG output before
+   CPU initialization so the reset remains visible. Execution exceptions still propagate normally in either mode.
 7. **Advance video at instruction boundaries.** Use a fixed NTSC-derived period of 29,781 nominal CPU cycles,
    starting vblank at cycle 27,394 and clearing it at 29,667. Advance the phase by the elapsed cycles of
    each completed instruction. Set PPUSTATUS bit 7 at vblank entry regardless of NMI enable. A status read
