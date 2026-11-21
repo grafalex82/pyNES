@@ -9,7 +9,7 @@ the first image appears early and each new register effect or rendering behavior
 
 Implement the graphics sequence below within this change. Each task introduces one hardware behavior or
 one host prerequisite with its own verification. The [tasks](tasks.md) proceed from supplied frames to a
-cartridge window with vblank-driven PPU output, then add background tiles and sprites.
+cartridge window with vblank-driven PPU output, then add NMI delivery, background tiles, and sprites.
 
 ## PPU Graphics Roadmap
 
@@ -29,9 +29,9 @@ Sprite attributes live in the PPU's separate OAM. pygame presents the finished f
    the current PPU frame between CPU blocks. Then derive the `$2002` vblank flag from emulated CPU cycles and
    switch the window to completed frames captured at vblank. A synthetic ROM can verify backdrop changes
    with NMI disabled. Show the host's measured presentation rate in the window title and make logging opt-in.
-4. **Draw the background and advance game startup.** Add stationary background tiles using the CHR table selected
-   by `$2000`, then select palettes using attributes. Add CPU NMI entry and connect the PPU's NMI request to
-   the enable bit in `$2000` as separately verified steps.
+4. **Enable the game handler, then draw the background.** Add CPU NMI entry and connect the PPU's NMI request to
+   the enable bit in `$2000` as separately verified steps. Check that writes by an NMI handler show up in the
+   next frame. Then draw stationary background tiles using the selected CHR table and add attribute palettes.
 5. **Draw sprites and combine layers.** Add OAM access (`$2003/$2004`) and DMA (`$4014`) as separate behaviors.
    Draw 8 × 8 and 8 × 16 sprites from OAM and CHR, then verify transparency and priority. Exercise all four
    `$2001` layer combinations: backdrop only, background only, sprites only, and both layers. Add the left

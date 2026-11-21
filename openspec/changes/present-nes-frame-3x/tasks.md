@@ -41,18 +41,18 @@
       one second, and host-loop integration; document the measurement without adding frame pacing.
 - [x] 3.5 Disable logging by default and enable DEBUG output with `--debug`. Verify both modes and document the option.
 
-## 4. Display the background and support the game startup wait
+## 4. Enable the game's NMI handler and display the background
 
-- [ ] 4.1 Draw a stationary nametable using the $2000 background pattern table and the $2001 background
-      enable bit. Verify asymmetric tiles, both pattern tables, and transparent pattern index zero.
-      Run a synthetic cartridge that writes a nametable and confirm that its tiles appear in the startup window.
-- [ ] 4.2 Apply attribute quadrants. Verify different subpalettes across 16 × 16 regions in a synthetic scene.
-- [ ] 4.3 Add CPU NMI entry at an instruction boundary. Verify the exact saved PC, status bits, vector read
+- [ ] 4.1 Add CPU NMI entry at an instruction boundary. Verify the exact saved PC, status bits, vector read
       order, cycle charge, entry with I set, and return through RTI.
-- [ ] 4.4 Connect the $2000 NMI enable bit and service pending requests from the facade. Verify enable during
+- [ ] 4.2 Connect the $2000 NMI enable bit and service pending requests from the facade. Verify enable during
       vblank, one request per rising condition, and that a handler's palette write affects the following frame.
       Run a synthetic NMI wait and a bounded Battle City check. Record the observed stop before choosing
       the next game-facing behavior.
+- [ ] 4.3 Draw a stationary nametable using the $2000 background pattern table and the $2001 background
+      enable bit. Verify asymmetric tiles, both pattern tables, and transparent pattern index zero.
+      Run a synthetic cartridge that writes a nametable and confirm that its tiles appear in the startup window.
+- [ ] 4.4 Apply attribute quadrants. Verify different subpalettes across 16 × 16 regions in a synthetic scene.
 
 ## 5. Display sprites and apply rendering modes
 

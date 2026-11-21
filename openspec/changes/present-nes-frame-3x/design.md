@@ -51,16 +51,16 @@ This model covers fixed NROM video wiring and whole-frame rendering at instructi
 8. **Present completed frames in the existing window.** When frame output is enabled, capture one frame at
    each vblank entry. The host presents new completed frames in place of sampling between blocks. A synthetic
    ROM can verify this transition by changing the backdrop with NMI disabled.
-9. **Build the image in layers.** A backdrop frame is sufficient to verify the first palette write from a
-   synthetic CPU program. Decode background tiles from CHR and obtain palette selection from the attribute
-   quadrants. Retain each background pixel's opacity when composing sprites so the sprite's priority applies
-   even if its RGB color equals the backdrop. Select the first nontransparent sprite candidate in OAM order
-   before resolving its background priority. Use a fixed RGB palette for output and apply the mask bits during
-   composition. For the first NTSC profile, approximate each emphasis bit by reducing the other two RGB
-   channels to three quarters of their previous value, using integer arithmetic.
-10. **Deliver NMI after frame capture.** Service a pending NMI at the completed instruction's boundary and
-    charge its seven nominal cycles to CPU and PPU progress without fetching a handler opcode as part of entry.
-    Capturing at vblank entry places an NMI handler's video writes in the following frame.
+9. **Deliver NMI after frame capture.** Service a pending NMI at the completed instruction's boundary and
+   charge its seven nominal cycles to CPU and PPU progress without fetching a handler opcode as part of entry.
+   Verify the handler's palette write with the existing backdrop renderer. Capturing at vblank entry makes
+   that write visible in the following frame.
+10. **Build the image in layers.** Decode background tiles from CHR and select palettes using the attribute
+    quadrants. Retain each background pixel's opacity when composing sprites so the sprite's priority applies
+    even if its RGB color equals the backdrop. Select the first nontransparent sprite candidate in OAM order
+    before resolving its background priority. Use a fixed RGB palette for output and apply the mask bits during
+    composition. For the first NTSC profile, approximate each emphasis bit by reducing the other two RGB
+    channels to three quarters of their previous value, using integer arithmetic.
 
 ## Risks / Trade-offs
 
