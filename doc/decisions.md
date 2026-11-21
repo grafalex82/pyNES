@@ -5,6 +5,25 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Vblank frame capture and presentation (2026-11-21)
+
+Task 3.3 of `present-nes-frame-3x` captures a native RGB frame at each vblank entry when the host enables frame
+output, regardless of NMI or PPUSTATUS reads. PPU keeps the latest frame and a monotonically increasing capture
+number. The window still shows an initial preview before execution; thereafter the host presents a completed frame
+only when that number changes. If multiple frames are produced before a host check, the most recent replaces earlier
+ones. Output is opt-in so CPU-only callers do not require rendering.
+
+This replaces sampling the current palette after every CPU block. Capturing one whole frame from the PPU state at an
+instruction boundary remains an approximation: mid-frame video changes are not reconstructed, and no real-time
+pacing is applied. The policy applies to all cartridges using frame output; no ROM was patched. NMI entry and delivery
+remain future work. A synthetic CPU program with NMI disabled changes the backdrop after its first vblank; tests verify
+that the original frame stays visible until the second vblank and both frames reuse the same window. Other focused
+tests cover disabled output and multiple captures without host polling.
+
+A desktop smoke check displayed the synthetic program's second backdrop color and closed normally. A bounded
+Battle City run published 33 backdrop frames in 1,000,001 CPU cycles and remained in its NMI wait; the ROM was
+unchanged. This does not demonstrate a game picture or successful game startup.
+
 ### CPU-driven PPU vblank (2026-11-21)
 
 Task 3.2 of `present-nes-frame-3x` replaces read-driven status alternation with a vblank flag and a repeating video

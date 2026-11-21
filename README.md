@@ -174,10 +174,10 @@ python main.py "ROMs/your game.nes"
 python main.py --help
 ```
 
-The command opens a window before the first CPU block, shows the initial backdrop, and refreshes it after every
-1000-cycle block. Close the window to stop. This temporary sampling is not synchronized with emulated frames or
-real time; currently only the backdrop is drawn. The console shows reset and instruction traces, and an execution
-error closes the window and propagates with its traceback.
+The command opens a window before the first CPU block and shows the initial backdrop. It captures a completed frame
+at each emulated vblank and presents the newest one between 1000-cycle blocks. Close the window to stop. Execution
+is not paced in real time; currently only the backdrop is drawn. The console shows reset and instruction traces,
+and an execution error closes the window and propagates with its traceback.
 The CPU has dispatch handlers for all 151 official NES CPU opcode encodings. Unofficial opcodes and some device
 behavior remain unsupported, so a ROM may still stop at a missing behavior. See
 [execution control](doc/execution.md#console-startup) for the execution loop and a synthetic example.

@@ -67,8 +67,13 @@ def test_help_does_not_initialize_display(main_module, monkeypatch, capsys):
 
 
 def test_synthetic_cartridge_updates_the_existing_window(main_module, make_cartridge, monkeypatch):
-    # The program writes palette color $21 through PPUADDR and PPUDATA, then loops within the first block.
+    # The program writes a first color, waits for vblank without NMI, then writes a second color.
     program = bytes([
+        0xA9,  # LDA #$00: Leave PPUCTRL NMI disabled.
+        0x00,
+        0x8D,  # STA $2000: Apply PPUCTRL.
+        0x00,
+        0x20,
         0xA9,  # LDA #$3F: Load the high byte of palette address $3F00.
         0x3F,
         0x8D,  # STA $2006: Write the high byte through PPUADDR.
@@ -79,18 +84,39 @@ def test_synthetic_cartridge_updates_the_existing_window(main_module, make_cartr
         0x8D,  # STA $2006: Select the backdrop address.
         0x06,
         0x20,
-        0xA9,  # LDA #$21: Load a visible blue color.
-        0x21,
-        0x8D,  # STA $2007: Write the backdrop color through PPUDATA.
+        0xA9,  # LDA #$01: Load the first backdrop color.
+        0x01,
+        0x8D,  # STA $2007: Write the first backdrop color.
         0x07,
         0x20,
-        0x4C,  # JMP $800F: Stay in this loop until the host regains control.
-        0x0F,
+        0xAD,  # LDA $2002: Wait until PPUSTATUS reports vblank.
+        0x02,
+        0x20,
+        0x10,  # BPL $8014: Keep polling while bit 7 is clear.
+        0xFB,
+        0xA9,  # LDA #$3F: Reload the high byte of palette address $3F00.
+        0x3F,
+        0x8D,  # STA $2006: Write the high byte through PPUADDR.
+        0x06,
+        0x20,
+        0xA9,  # LDA #$00: Reload the low byte of palette address $3F00.
+        0x00,
+        0x8D,  # STA $2006: Select the backdrop address again.
+        0x06,
+        0x20,
+        0xA9,  # LDA #$21: Load the second backdrop color.
+        0x21,
+        0x8D,  # STA $2007: Write the second backdrop color.
+        0x07,
+        0x20,
+        0x4C,  # JMP $8028: Wait for the host to display the next frame.
+        0x28,
         0x80,
     ])
     cartridge = make_cartridge(program)
     monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
     presentations = []
+    observed_between_vblanks = []
     original_present = main_module.FrameDisplay.present
     original_run = main_module.Emulator.run
 
@@ -99,22 +125,34 @@ def test_synthetic_cartridge_updates_the_existing_window(main_module, make_cartr
         surface = pygame.display.get_surface()
         presentations.append((surface, surface.get_at((0, 0))[:3], surface.get_at((767, 719))[:3]))
 
-    def run_one_block(emulator, cycles):
+    def run_block(emulator, cycles):
         # The initial frame and window must exist before the first instruction.
-        assert emulator.cpu.pc == 0x8000
-        assert pygame.display.get_surface().get_size() == (768, 720)
-        assert len(presentations) == 1
+        if emulator.cpu.cycles == 0:
+            assert emulator.cpu.pc == 0x8000
+            assert pygame.display.get_surface().get_size() == (768, 720)
+            assert len(presentations) == 1
+        if emulator.cpu.cycles > 100000:
+            pytest.fail("The second vblank did not arrive within the expected budget")
         original_run(emulator, cycles)
-        pygame.event.post(pygame.event.Event(pygame.QUIT))
+        ppu = emulator._machine.ppu
+        assert not ppu._nmi_enabled
+        if ppu.completed_frame and ppu.completed_frame[0] == 1 and len(presentations) == 2:
+            if ppu.read_vram(0x3F00) == 0x21:
+                assert pygame.display.get_surface().get_at((0, 0))[:3] == (0, 42, 136)
+                observed_between_vblanks.append(True)
+        if ppu.completed_frame and ppu.completed_frame[0] == 2:
+            pygame.event.post(pygame.event.Event(pygame.QUIT))
 
-    # The real CPU, PPU and display run once before the posted close event ends the loop.
+    # The real CPU, PPU, and window run until the second completed frame is presented.
     monkeypatch.setattr(main_module.FrameDisplay, "present", record_present)
-    monkeypatch.setattr(main_module.Emulator, "run", run_one_block)
+    monkeypatch.setattr(main_module.Emulator, "run", run_block)
     main_module.main()
-    assert len(presentations) == 2
-    assert presentations[0][0] is presentations[1][0]
+    assert observed_between_vblanks
+    assert len(presentations) == 3
+    assert presentations[0][0] is presentations[1][0] is presentations[2][0]
     assert presentations[0][1:] == ((102, 102, 102), (102, 102, 102))
-    assert presentations[1][1:] == ((100, 176, 255), (100, 176, 255))
+    assert presentations[1][1:] == ((0, 42, 136), (0, 42, 136))
+    assert presentations[2][1:] == ((100, 176, 255), (100, 176, 255))
     assert not pygame.display.get_init()
 
 

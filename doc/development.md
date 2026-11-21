@@ -84,7 +84,8 @@ PPU register writes are retained for inspection. Two $2006 writes select a video
 address write pair. $2007 accesses video data and advances the address by 1 or 32 according to $2000 bit 2;
 non-palette reads are buffered, while palette reads return the color immediately. PPUSTATUS reports and clears a
 vblank flag driven by approximate frame timing; other PPU register reads and breakpoints remain future work.
-`PPU.render_frame()` currently supplies a solid RGB backdrop frame; the host samples it between CPU blocks.
+`PPU.render_frame()` currently supplies a solid RGB backdrop frame; enabled output captures it at vblank.
+The host presents new completed frames between CPU blocks.
 The dummy APU accepts writes to $4010-$4013 and $4015 without effects and returns $00 when those addresses are read.
 It also ignores frame-counter writes at $4017; controller 2 reads at that address remain unimplemented. It models
 neither open bus, sample fetching, frame sequencing, audio output, nor audio interrupts; sprite DMA is unimplemented.

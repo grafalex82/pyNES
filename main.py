@@ -28,19 +28,24 @@ def main():
     machine = Machine(cartridge)
     emulator = Emulator(machine)
 
-    # Present the initial PPU state and reuse the window for each subsequent sampled frame.
+    # Present the initial PPU state and enable completed-frame capture before execution starts.
     try:
         display = FrameDisplay()
         pygame.display.set_caption("pyNES")
         display.present(machine.ppu.render_frame())
+        machine.ppu.enable_frame_output()
+        last_frame_number = 0
 
-        # Sample between bounded blocks until the host receives a close event.
+        # Process events between bounded blocks and present only newly completed frames.
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
             emulator.run(1000)
-            display.present(machine.ppu.render_frame())
+            completed_frame = machine.ppu.completed_frame
+            if completed_frame is not None and completed_frame[0] != last_frame_number:
+                last_frame_number, frame = completed_frame
+                display.present(frame)
     finally:
         # Release the display on both window close and propagated execution errors.
         pygame.display.quit()

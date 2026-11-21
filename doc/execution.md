@@ -12,10 +12,11 @@ python main.py --help
 Replace the example path with the file to inspect and quote paths containing spaces. From another directory, use the
 absolute path to `main.py`; a relative cartridge path is resolved from the caller's working directory. The console
 loads the cartridge, connects Machine, and constructs Emulator once. It opens a 768 × 720 window and presents the
-initial PPU backdrop before requesting the first block of 1000 CPU cycles. It processes window events between blocks
-and presents the current PPU frame after each block; closing the window stops execution. This temporary sampling is
-not synchronized to emulated frame boundaries and is not paced in real time. Background and sprites are not yet
-rendered, so the displayed frame currently contains only the backdrop color.
+initial PPU backdrop before requesting the first block of 1000 CPU cycles. Frame output is enabled before execution;
+the PPU captures a completed frame at each vblank entry. Between blocks, the host processes window events and presents
+the newest frame only when its sequence number changes. Closing the window stops execution. If multiple frames arrive
+before the host checks, it presents the most recent one. This is not paced in real time. Background and sprites are
+not yet rendered, so the displayed frame currently contains only the backdrop color.
 
 The console enables DEBUG logging before CPU startup and prints message-only reset and completed-instruction traces.
 Execution errors close the display and propagate with their ordinary traceback. Help does not initialize a display.
@@ -60,3 +61,8 @@ The detailed CPU reset behavior is described in [the CPU guide](cpu.md).
 
 Both single steps and bounded runs pass through the facade's `step()` boundary. This is the intended location for
 future internal breakpoint checks and callbacks; breakpoint registration and callback behavior are not implemented.
+
+For another host, `machine.ppu.enable_frame_output()` enables capture at subsequent vblank entries.
+`machine.ppu.completed_frame` is `None` before the first capture, then holds `(sequence_number, rgb_bytes)` for the
+latest frame. Each completed frame gets a new sequence number even when its pixels match the previous frame. Frame
+output is disabled by default, so CPU-only callers can advance video timing without requesting rendered frames.

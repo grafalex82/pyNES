@@ -34,7 +34,7 @@
 - [x] 3.2 Advance the PPU by completed CPU cycles and derive $2002 bit 7 from the frame phase. Remove the temporary
       `_next_status` alternation and update its tests. Test status clearing, recurring vblank without polling, and
       zero-cycle runs. Document the timing and status approximation.
-- [ ] 3.3 Publish completed frames at each vblank entry and present them in the existing window.
+- [x] 3.3 Publish completed frames at each vblank entry and present them in the existing window.
       Replace between-block sampling. With NMI disabled, verify that a palette write between two vblanks
       changes the next presented frame. Update the frame scheduling notes in doc/decisions.md.
 

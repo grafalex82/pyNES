@@ -19,6 +19,9 @@ class PPU:
         self._last_writes = [None] * 8
         self._frame_cycle = 0
         self._vblank = False
+        self._frame_output_enabled = False
+        self._completed_frame = None
+        self._published_frames = 0
         self._chr_rom = chr_rom
         self._chr_size = chr_size
         self._nametable_ram = nametable_ram
@@ -35,6 +38,17 @@ class PPU:
     def last_writes(self):
         """Return the last byte per offset, or None where no write has occurred."""
         return tuple(self._last_writes)
+
+
+    @property
+    def completed_frame(self):
+        """Return the latest (sequence number, RGB frame), or None before the first capture."""
+        return self._completed_frame
+
+
+    def enable_frame_output(self):
+        """Capture completed frames at subsequent vblank entries."""
+        self._frame_output_enabled = True
 
 
     def read_byte(self, offset):
@@ -171,6 +185,10 @@ class PPU:
             if previous < VBLANK_START_CPU_CYCLE <= self._frame_cycle:
                 self._vblank = True
                 logger.debug("Vblank started")
+                if self._frame_output_enabled:
+                    frame = self.render_frame()
+                    self._published_frames += 1
+                    self._completed_frame = (self._published_frames, frame)
             if previous < VBLANK_END_CPU_CYCLE <= self._frame_cycle:
                 self._vblank = False
                 logger.debug("Vblank ended")
