@@ -5,6 +5,26 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### CPU-driven PPU vblank (2026-11-21)
+
+Task 3.2 of `present-nes-frame-3x` replaces read-driven status alternation with a vblank flag and a repeating video
+phase. `Emulator.step()` advances the PPU by each completed CPU instruction's nominal cycles; failed instructions,
+zero-budget runs, and CPU reset add no video progress. The phase starts at zero, repeats every 29,781 CPU cycles,
+sets vblank at 27,394 and clears it at 29,667. Status reads return and clear the flag and reset the address latch
+without changing phase. Vblank transitions are logged through the `ppu` logger.
+
+This NTSC-derived whole-instruction approximation omits CPU/PPU sub-cycle alignment, odd-frame timing variation,
+and status-read races around vblank. Reads during an instruction observe the phase before that instruction's cycles
+are applied. It applies to all cartridges using PPU timing, including the target images; no ROM was patched. NMI
+delivery and vblank-synchronized presentation remain unimplemented.
+See [NESdev frame timing](https://www.nesdev.org/wiki/PPU_frame_timing) and
+[Mesen's PPU](https://github.com/SourMesen/Mesen/blob/master/Core/PPU.cpp).
+
+Synthetic tests cover phase boundaries, repeated reads, unread vblank clearing, multi-frame advances, completed and
+failed instructions, zero budgets, reset, and recurring vblank without NMI. BattleCity reached 1,000,001 cycles at
+$D8F8; the following 20 instructions repeated $D8F8/$D8FA with RAM $000B unchanged at zero, consistent with the
+previously identified wait for NMI. Its recorded SHA-256 matched before and after; playability is not established.
+
 ### Early cartridge window and frame sampling (2026-11-21)
 
 Task 3.1 of `present-nes-frame-3x` opens one 768 × 720 pygame window after cartridge loading and before the first

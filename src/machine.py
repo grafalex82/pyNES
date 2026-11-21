@@ -49,7 +49,7 @@ class Machine:
     trap: hardware NROM writes do not change ROM or select banks.
 
     Reads and writes in $2000-$3FFF are routed to PPU register offsets. PPU status
-    reads alternate between $00 and $80, and PPUDATA reads use a video read buffer.
+    reports and clears timed vblank, and PPUDATA reads use a video read buffer.
     Other PPU reads raise NotImplementedError identifying the register offset.
     Reads and writes at $4010-$4013 and $4015
     route to a dummy APU; writes have no effects and reads return $00. Writes at

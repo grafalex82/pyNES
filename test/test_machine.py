@@ -280,39 +280,40 @@ def test_ppu_read_error_reports_register_offset(make_cartridge):
         machine.read_byte(0x3FF9)
 
 
-def test_ppu_status_alternates_across_register_mirrors(make_cartridge):
-    # All status aliases share one sequence, beginning with a clear vblank bit.
+def test_ppu_status_clears_vblank_across_register_mirrors(make_cartridge):
+    # Every alias observes and clears the same timed vblank flag.
     machine = Machine(make_cartridge(bytes(16384)))
-    assert [machine.read_byte(address) for address in (0x2002, 0x200A, 0x3FFA, 0x2002, 0x3FFA)] == [
-        0x00, 0x80, 0x00, 0x80, 0x00,
-    ]
+    assert machine.read_byte(0x2002) == 0x00
+    machine.ppu.advance(27394)
+    assert machine.read_byte(0x200A) == 0x80
+    assert machine.read_byte(0x3FFA) == 0x00
 
 
-def test_ppu_status_sequences_are_independent(make_cartridge):
-    # Advancing one PPU cannot change the initial or subsequent values of another.
+def test_ppu_status_flags_are_independent(make_cartridge):
+    # Advancing one PPU cannot change the other machine's video phase or status.
     cartridge = make_cartridge(bytes(16384))
     first = Machine(cartridge)
     second = Machine(cartridge)
-    assert first.read_byte(0x2002) == 0x00
+    first.ppu.advance(27394)
     assert first.read_byte(0x2002) == 0x80
     assert first.read_byte(0x2002) == 0x00
     assert second.read_byte(0x2002) == 0x00
-    assert first.read_byte(0x2002) == 0x80
-    assert second.read_byte(0x2002) == 0x80
 
 
-def test_ppu_writes_do_not_advance_status_sequence(make_cartridge, monkeypatch):
-    # Writes to every register, including PPUSTATUS, leave the first status read unchanged.
+def test_ppu_writes_do_not_change_vblank_status(make_cartridge, monkeypatch):
+    # Writes to every register do not create vblank before its scheduled boundary.
     machine = Machine(make_cartridge(bytes(16384)))
     monkeypatch.setattr(machine.ppu, "write_vram", lambda address, value: None)
     for offset in range(8):
         machine.write_byte(0x2000 + offset, offset + 0x10)
     assert machine.read_byte(0x2002) == 0x00
 
-    # A second round of writes cannot consume the next status value either.
+    # A second round of writes, including PPUSTATUS, cannot clear an existing vblank flag.
+    machine.ppu.advance(27394)
     for offset in range(8):
         machine.write_byte(0x3FF8 + offset, offset + 0x80)
     assert machine.read_byte(0x200A) == 0x80
+    assert machine.read_byte(0x2002) == 0x00
     assert machine.ppu.last_writes == tuple(range(0x80, 0x88))
 
 

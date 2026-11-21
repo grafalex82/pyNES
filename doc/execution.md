@@ -13,9 +13,9 @@ Replace the example path with the file to inspect and quote paths containing spa
 absolute path to `main.py`; a relative cartridge path is resolved from the caller's working directory. The console
 loads the cartridge, connects Machine, and constructs Emulator once. It opens a 768 × 720 window and presents the
 initial PPU backdrop before requesting the first block of 1000 CPU cycles. It processes window events between blocks
-and presents the current PPU frame after each block; closing the window stops execution. This temporary sampling does
-not provide emulated frame scheduling, peripheral progression, or real-time pacing. Background and sprites are not
-yet rendered, so the displayed frame currently contains only the backdrop color.
+and presents the current PPU frame after each block; closing the window stops execution. This temporary sampling is
+not synchronized to emulated frame boundaries and is not paced in real time. Background and sprites are not yet
+rendered, so the displayed frame currently contains only the backdrop color.
 
 The console enables DEBUG logging before CPU startup and prints message-only reset and completed-instruction traces.
 Execution errors close the display and propagate with their ordinary traceback. Help does not initialize a display.
@@ -48,11 +48,14 @@ does not fetch an instruction. Each instruction completes even if it crosses the
 the second budget. Exceptions propagate, retaining completed instructions and their cycles.
 
 `cpu.cycles` is the cumulative nominal cost of completed instructions. Construction starts it at zero, and repeated
-reset preserves it without adding cycles. It does not advance peripherals or represent real-time pacing or bus phases;
-functional reset also omits its hardware cycles. See [the decision record](decisions.md) for the timing simplification.
+reset preserves it without adding cycles. After each completed instruction, `Emulator.step()` advances PPU timing by
+the increase in this count. A direct `CPU.step()` does not advance the PPU; failed instructions add no video progress.
+The count does not represent real-time pacing or bus phases, and functional reset omits its hardware cycles.
+See [the decision record](decisions.md) for the timing simplification.
 
 `reset()` keeps the same CPU, Machine, and RAM. It reloads PC from the reset vector, subtracts three from SP modulo
-256, and sets I while preserving A/X/Y, the other stored flags, and cycles. It does not execute an instruction.
+256, and sets I while preserving A/X/Y, the other stored flags, cycles, and PPU state. It does not execute an
+instruction.
 The detailed CPU reset behavior is described in [the CPU guide](cpu.md).
 
 Both single steps and bounded runs pass through the facade's `step()` boundary. This is the intended location for

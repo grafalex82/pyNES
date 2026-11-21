@@ -82,8 +82,8 @@ The root `main.py` accepts a ROM path, opens a window, and runs repeated 1000-cy
 the window closes or an exception stops execution. See [console startup](execution.md#console-startup) for details.
 PPU register writes are retained for inspection. Two $2006 writes select a video address; reading $2002 resets the
 address write pair. $2007 accesses video data and advances the address by 1 or 32 according to $2000 bit 2;
-non-palette reads are buffered, while palette reads return the color immediately. Status reads alternate $00 and
-$80 without video timing; other PPU register reads and breakpoints remain future work.
+non-palette reads are buffered, while palette reads return the color immediately. PPUSTATUS reports and clears a
+vblank flag driven by approximate frame timing; other PPU register reads and breakpoints remain future work.
 `PPU.render_frame()` currently supplies a solid RGB backdrop frame; the host samples it between CPU blocks.
 The dummy APU accepts writes to $4010-$4013 and $4015 without effects and returns $00 when those addresses are read.
 It also ignores frame-counter writes at $4017; controller 2 reads at that address remain unimplemented. It models
@@ -109,7 +109,7 @@ neither open bus, sample fetching, frame sequencing, audio output, nor audio int
 - Confirm exact Super Mario Bros. and Battle City revisions; local hashes and header metadata are in `ROMs/README.md`.
 - Clarify the eventual scope of unofficial 6502 opcodes without reducing the documented instruction-set goal.
 - Define instruction/reset/interrupt behavior for the NES CPU variant as those features are introduced.
-- Choose the simplest approximate PPU progression that satisfies the first observed status loop or interrupt need.
+- Investigate any game-observed need for different PPU progression without implementing exact device timing.
 - Define the audio interface responses required by observed software, without adding audio output.
 - Define breakpoint callback semantics when that capability is needed.
 

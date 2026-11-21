@@ -19,7 +19,10 @@ class Emulator:
 
     def step(self):
         """Execute one instruction on the connected CPU."""
+        # Only a completed instruction contributes its nominal cycles to video progress.
+        previous_cycles = self._cpu.cycles
         self._cpu.step()
+        self._machine.ppu.advance(self._cpu.cycles - previous_cycles)
 
 
     def run(self, cycles):

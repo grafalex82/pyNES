@@ -1,6 +1,15 @@
-"""Provide minimal PPU registers, pattern data, nametable memory, and palette RAM."""
+"""Provide minimal PPU registers, video memory, and approximate frame timing."""
+
+import logging
 
 from nes_palette import NES_COLORS
+
+
+logger = logging.getLogger("ppu")
+
+FRAME_CPU_CYCLES = 29781
+VBLANK_START_CPU_CYCLE = 27394
+VBLANK_END_CPU_CYCLE = 29667
 
 
 class PPU:
@@ -8,7 +17,8 @@ class PPU:
 
     def __init__(self, chr_rom, chr_size, nametable_ram, mirroring):
         self._last_writes = [None] * 8
-        self._next_status = 0x00
+        self._frame_cycle = 0
+        self._vblank = False
         self._chr_rom = chr_rom
         self._chr_size = chr_size
         self._nametable_ram = nametable_ram
@@ -70,10 +80,10 @@ class PPU:
 
 
     def _read_ppustatus(self):
-        # Reset the address write pair and alternate vblank until video timing is implemented.
+        # PPUSTATUS reports and clears vblank without changing the running frame phase.
         self._awaiting_second_write = False
-        status = self._next_status
-        self._next_status ^= 0x80
+        status = 0x80 if self._vblank else 0x00
+        self._vblank = False
         return status
 
 
@@ -146,6 +156,26 @@ class PPU:
         if offset in (0x10, 0x14, 0x18, 0x1C):
             offset -= 0x10
         return offset
+
+
+    def advance(self, cycles):
+        """Advance the approximate video phase by completed CPU instruction cycles."""
+        # Process each crossed frame separately so a large advance cannot skip vblank transitions.
+        while cycles:
+            elapsed = min(cycles, FRAME_CPU_CYCLES - self._frame_cycle)
+            previous = self._frame_cycle
+            self._frame_cycle += elapsed
+            cycles -= elapsed
+
+            # Vblank starts and clears at fixed CPU-cycle boundaries, independently of status reads.
+            if previous < VBLANK_START_CPU_CYCLE <= self._frame_cycle:
+                self._vblank = True
+                logger.debug("Vblank started")
+            if previous < VBLANK_END_CPU_CYCLE <= self._frame_cycle:
+                self._vblank = False
+                logger.debug("Vblank ended")
+            if self._frame_cycle == FRAME_CPU_CYCLES:
+                self._frame_cycle = 0
 
 
     def render_frame(self):

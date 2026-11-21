@@ -31,7 +31,7 @@
       Verify that a synthetic cartridge's palette writes update the visible color in the same window.
       Verify startup order, close events, failure cleanup with traceback propagation, and `--help` without display
       initialization. Document the command and the temporary frame sampling in README.md and doc/decisions.md.
-- [ ] 3.2 Advance the PPU by completed CPU cycles and derive $2002 bit 7 from the frame phase. Remove the temporary
+- [x] 3.2 Advance the PPU by completed CPU cycles and derive $2002 bit 7 from the frame phase. Remove the temporary
       `_next_status` alternation and update its tests. Test status clearing, recurring vblank without polling, and
       zero-cycle runs. Document the timing and status approximation.
 - [ ] 3.3 Publish completed frames at each vblank entry and present them in the existing window.

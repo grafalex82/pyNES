@@ -98,8 +98,8 @@ supplies the low byte. The first write changes a temporary address only; the sec
 Reading $2002 or a mirror resets the write pair so the next $2006 write starts with the upper bits. Status writes do
 not reset the pair. The current address and temporary address start at zero for reproducibility.
 
-This functional model copies the address immediately after the second write and does not model PPU timing, the
-hardware warmup interval, or rendering-time interactions. $2005 still only retains writes and does not yet share
+This functional model copies the address immediately after the second write and does not model sub-instruction
+timing, the hardware warmup interval, or rendering-time interactions. $2005 still only retains writes and does not share
 the toggle.
 See [the decision record](decisions.md#ppu-address-latch-2026-11-21).
 
@@ -128,15 +128,14 @@ modeled. See [the decision record](decisions.md#ppu-data-reads-2026-11-21).
 
 ## PPU status reads
 
-Reads of $2002 and its mirrors return $00, then $80, repeatedly. Every alias advances the same per-PPU sequence;
-each new PPU starts at $00. Writes do not advance the sequence, and CPU reset preserves the PPU and its state.
-The retained byte for offset 2 is separate from the returned status and is unchanged by reads.
+Reads of $2002 and its mirrors return the current vblank flag in bit 7, with all other bits zero. Every read clears
+vblank and resets the address write pair without advancing the frame phase. A second read returns $00 until a later
+frame sets vblank again. The retained byte for offset 2 is separate from the returned status and is unchanged by reads.
 
-This read-driven alternation is an approximation intended to let software polling the vblank bit progress.
-Hardware vblank follows video timing, and reading PPUSTATUS clears its vblank flag; this model implements neither
-timing nor vblank clearing. Status reads do reset the address write pair. Other status bits, open bus, rendering,
-and interrupts are not modeled.
-See [the decision record](decisions.md#read-driven-ppu-status-2026-11-19) for the reason and affected ROMs.
+Each new PPU starts at frame cycle 0 with vblank clear. The approximate frame lasts 29,781 nominal CPU cycles;
+vblank starts at cycle 27,394 and clears at cycle 29,667 even if it was never read. `Emulator` advances the PPU after
+each completed CPU instruction. CPU reset preserves the PPU and its phase. This model omits sub-instruction races,
+sprite status, open bus, and NMI delivery. See [the decision record](decisions.md#cpu-driven-ppu-vblank-2026-11-21).
 
 ## Internal RAM and its mirrors
 

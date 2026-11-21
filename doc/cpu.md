@@ -60,7 +60,8 @@ This resets CPU state only. It does not reconstruct Machine, reset peripherals, 
 ## Instruction cycles
 
 `cpu.cycles` is a read-only cumulative integer, initially zero, used for execution budgets. Reset preserves the count;
-it does not wrap. The total excludes hardware reset time, individual bus activity, and peripheral progression.
+it does not wrap. The total excludes hardware reset time and individual bus activity. `Emulator` uses the increase
+after each completed instruction to advance PPU timing; a direct `CPU.step()` does not advance peripherals.
 See [the decision record](decisions.md#nominal-instruction-cycle-counter-2026-11-19) for the timing simplification.
 
 ## Instruction trace

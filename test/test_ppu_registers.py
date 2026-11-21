@@ -72,7 +72,7 @@ def test_status_read_restarts_an_interrupted_address_pair(make_cpu, status_port)
     assert machine.ppu._vram_address == 0x2055
     machine.write_byte(0x2006, 0xAB)
     assert machine.ppu._vram_address == 0x12AB
-    assert machine.read_byte(status_port) == 0x80
+    assert machine.read_byte(status_port) == 0x00
 
 
 def test_status_write_and_other_register_writes_do_not_reset_the_address_pair(make_cpu):
