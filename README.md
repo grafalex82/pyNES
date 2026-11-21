@@ -138,7 +138,8 @@ python main.py --help
 ```
 
 The console shows reset and instruction traces, then stops with a traceback at the first unimplemented behavior.
-Only a small set of instructions is supported, so this does not yet run games to completion. See
+The CPU has dispatch handlers for all 151 official NES CPU opcode encodings. Unofficial opcodes and some device
+behavior remain unsupported, so a ROM may still stop at a missing behavior. See
 [execution control](doc/execution.md#console-startup) for the execution loop and a synthetic example.
 
 Inspect a valid local cartridge from the repository root (replace the example path with your file):
