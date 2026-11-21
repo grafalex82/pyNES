@@ -62,6 +62,24 @@ current stack position, so any read side effects there are absent. This applies 
 unchanged. Synthetic frames test all six flags, both saved/current B mismatches, stack wrap, PC, and cycles. See the
 [NESdev instruction reference](https://www.nesdev.org/wiki/Instruction_reference).
 
+### Software interrupt entry (2026-11-21)
+
+Task 5.1 adds `BRK` ($00). After the opcode fetch it skips the padding byte, pushes PC+2 high then low, and pushes the
+pre-instruction status with bits 5 and 4 set. It then sets I without clearing D and reads `$FFFE` before `$FFFF`
+through Machine. BRK executes even if I was already set and takes seven nominal cycles. The functional model does not
+read the padding byte, so any read side effect there is absent even though PC advances past it. This applies to all
+cartridges using BRK and does not modify ROM data. A synthetic test checks push order, SP wrap, pre-I status, PC+2,
+I=1, and the default vector PC; see [NESdev](https://www.nesdev.org/wiki/Instruction_reference).
+The behavior was compared with [Mesen 2](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp).
+
+Task 5.2 adds `RTI` ($40), pulling status, PC low, then PC high through Machine while incrementing SP within page 1.
+It restores the six hardware flags, preserves software `break_flag`, and resumes at the exact saved PC without
+adjustment. RTI takes six nominal cycles. The functional model omits the implied next-byte read and the discarded
+read at the current stack position before pulling status; side effects at those addresses are absent. This applies to
+cartridges using RTI and does not modify ROM data. One synthetic frame tests status restoration, pull order, ordinary SP
+advance, exact PC, and cycles. See [NESdev](https://www.nesdev.org/wiki/Instruction_reference)
+and [Mesen 2 CPU](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesCpu.cpp).
+
 Task 3.4 adds `SBC (zp),Y` ($F1) with the same binary subtraction and flag behavior. It takes five nominal cycles
 without a page crossing and six with one, including a wrap past $FFFF. The functional path omits the provisional
 read on a page crossing, so mapped-device read effects at that address are skipped. Synthetic cases cover pointer

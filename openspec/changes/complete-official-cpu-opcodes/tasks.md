@@ -79,10 +79,10 @@ the omitted reads and explain why saved B differs from the software inspection f
 
 ## 5. Software interrupt and return
 
-- [ ] 5.1 Implement `BRK ($00)`; verify the frame order, SP wrap, saved PC and status, setting I, execution with I set,
+- [x] 5.1 Implement `BRK ($00)`; verify the frame order, SP wrap, saved PC and status, setting I, execution with I set,
   vector PC, and seven cycles. Record the omitted padding read.
   Run `python -m pytest test/test_cpu.py -k test_brk_pushes_interrupt_frame_and_loads_vector`.
-- [ ] 5.2 Implement `RTI ($40)`; verify flags and both saved/current B mismatches, pull order, SP wrap, exact saved PC,
+- [x] 5.2 Implement `RTI ($40)`; verify restored flags, pull order, SP advance, exact saved PC,
   and six cycles. Record the omitted reads.
   Run `python -m pytest test/test_cpu.py -k test_rti_restores_status_and_program_counter`.
 

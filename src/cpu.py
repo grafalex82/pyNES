@@ -348,6 +348,47 @@ class CPU:
         self.log_instruction(address, (opcode,), "PLP")
 
 
+    def _brk(self, address, opcode):
+        # Compute the resume address, skipping the padding byte without reading it.
+        return_address = (self._pc + 1) & 0xFFFF
+
+        # Push PC high, PC low, then the pre-interrupt status with B and bit 5 set.
+        self._machine.write_byte(0x0100 | self._sp, return_address >> 8)
+        self._sp = (self._sp - 1) & 0xFF
+        self._machine.write_byte(0x0100 | self._sp, return_address & 0xFF)
+        self._sp = (self._sp - 1) & 0xFF
+        self._machine.write_byte(0x0100 | self._sp, self.p | 0x30)
+        self._sp = (self._sp - 1) & 0xFF
+
+        # Set I after saving status and load the little-endian IRQ vector through Machine.
+        self._interrupt_disable = True
+        low = self._machine.read_byte(0xFFFE)
+        high = self._machine.read_byte(0xFFFF)
+        self._pc = low | (high << 8)
+
+        # BRK takes seven nominal cycles and traces only its opcode byte.
+        self._cycles += 7
+        self.log_instruction(address, (opcode,), "BRK")
+
+
+    def _rti(self, address, opcode):
+        # Pull status first while preserving the software-only B inspection field.
+        self._sp = (self._sp + 1) & 0xFF
+        status = self._machine.read_byte(0x0100 | self._sp)
+        self.p = (status & 0xEF) | (self._break_flag << 4)
+
+        # Pull PC low then high and resume at the exact saved address.
+        self._sp = (self._sp + 1) & 0xFF
+        low = self._machine.read_byte(0x0100 | self._sp)
+        self._sp = (self._sp + 1) & 0xFF
+        high = self._machine.read_byte(0x0100 | self._sp)
+        self._pc = low | (high << 8)
+
+        # RTI takes six nominal cycles and traces only its opcode byte.
+        self._cycles += 6
+        self.log_instruction(address, (opcode,), "RTI")
+
+
     def _jmp_absolute(self, address, opcode):
         # The operand itself is the destination, not a pointer to another address.
         destination = self._fetch_word()
@@ -1476,7 +1517,7 @@ class CPU:
     # The opcode is the tuple index. None marks an unimplemented instruction.
     _instruction_handlers = (
         # $00-$0F
-        None,  # $00
+        _brk,  # $00
         _ora_indexed_indirect,  # $01
         None,  # $02
         None,  # $03
@@ -1548,7 +1589,7 @@ class CPU:
         None,  # $3F
 
         # $40-$4F
-        None,  # $40
+        _rti,  # $40
         _eor_indexed_indirect,  # $41
         None,  # $42
         None,  # $43

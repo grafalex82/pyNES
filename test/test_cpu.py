@@ -2949,3 +2949,49 @@ def test_plp_restores_status(
     assert cpu.sp == final_sp
     assert cpu.pc == 0x0568
     assert cpu.cycles == 4
+
+
+def test_brk_pushes_interrupt_frame_and_loads_vector(make_cpu):
+    # Start with I clear and SP at zero so one case covers a normal PC and stack wrap.
+    cpu, machine = make_cpu(start_address=0x0234)
+    cpu.sp = 0x00
+    cpu.p = 0x29
+    machine.write_byte(0x0234, 0x00)  # BRK opcode
+
+    # BRK saves PC+2 and pre-I status high-to-low, then follows the default zero IRQ vector.
+    cpu.step()
+    assert machine.read_byte(0x0100) == 0x02
+    assert machine.read_byte(0x01FF) == 0x36
+    assert machine.read_byte(0x01FE) == 0x39
+    assert cpu.sp == 0xFD
+    assert cpu.pc == 0x0000
+    assert cpu.p == 0x2D
+    assert cpu.interrupt_disable is True
+    assert cpu.cycles == 7
+
+
+def test_rti_restores_status_and_program_counter(make_cpu):
+    # Seed an ordinary RTI frame through Machine with all hardware flags opposite to their saved values.
+    cpu, machine = make_cpu(start_address=0x0567)
+    cpu.sp = 0xFC
+    cpu.break_flag = False
+    expected_flags = (False, False, True, False, False, True)
+    cpu.negative, cpu.overflow, cpu.decimal, cpu.interrupt_disable, cpu.zero, cpu.carry = (
+        not flag for flag in expected_flags
+    )
+    machine.write_byte(0x0567, 0x40)  # RTI opcode
+    machine.write_byte(0x01FD, 0x29)  # Status
+    machine.write_byte(0x01FE, 0x34)  # Return PC low
+    machine.write_byte(0x01FF, 0xC2)  # Return PC high
+
+    # RTI pulls status, PC low, then PC high and preserves the software B field.
+    cpu.step()
+    actual_flags = (
+        cpu.negative, cpu.overflow, cpu.decimal, cpu.interrupt_disable, cpu.zero, cpu.carry,
+    )
+    assert actual_flags == expected_flags
+    assert cpu.p == 0x29
+    assert cpu.break_flag is False
+    assert cpu.sp == 0xFF
+    assert cpu.pc == 0xC234
+    assert cpu.cycles == 6
