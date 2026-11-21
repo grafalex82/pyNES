@@ -51,18 +51,51 @@ def test_fps_uses_presentations_and_elapsed_time(display, monkeypatch):
     frame = bytes((0, 0, 0)) * (256 * 240)
     assert pygame.display.get_caption()[0] == "pyNES - 0.0 FPS"
     display.present(frame)
-    display.present(frame)
-    display.present(frame)
 
-    # Three presentations over 1.5 seconds yield 2 FPS; shorter intervals retain the previous title.
+    # Two frame intervals over 1.5 seconds are averaged; shorter measurements keep the previous title.
+    now[0] = 10.5
+    display.present(frame)
     now[0] = 10.9
     display.update_fps()
     assert pygame.display.get_caption()[0] == "pyNES - 0.0 FPS"
     now[0] = 11.5
+    display.present(frame)
     display.update_fps()
-    assert pygame.display.get_caption()[0] == "pyNES - 2.0 FPS"
+    assert pygame.display.get_caption()[0] == "pyNES - 1.3 FPS"
 
-    # A later interval without a presentation reports zero instead of retaining the old rate.
+    # Empty seconds do not reset the measurement, so a frame after five seconds gives 0.2 FPS.
     now[0] = 12.5
     display.update_fps()
+    now[0] = 15.5
+    display.update_fps()
+    assert pygame.display.get_caption()[0] == "pyNES - 1.3 FPS"
+    now[0] = 16.5
+    display.present(frame)
+    display.update_fps()
+    assert pygame.display.get_caption()[0] == "pyNES - 0.2 FPS"
+
+    # The same low rate remains correct across the next five-second frame interval.
+    now[0] = 21.5
+    display.present(frame)
+    display.update_fps()
+    assert pygame.display.get_caption()[0] == "pyNES - 0.2 FPS"
+
+
+def test_fps_waits_for_a_presentation_after_a_short_frame_interval(display, monkeypatch):
+    # A quick frame alone must not end the measurement when the host subsequently waits several seconds.
+    now = [0.0]
+    monkeypatch.setattr("frame_display.monotonic", lambda: now[0])
+    display = FrameDisplay()
+    frame = bytes((0, 0, 0)) * (256 * 240)
+    display.present(frame)
+    now[0] = 0.1
+    display.present(frame)
+    now[0] = 4.0
+    display.update_fps()
     assert pygame.display.get_caption()[0] == "pyNES - 0.0 FPS"
+
+    # Both frame intervals span five seconds, even though the host checked the title in between.
+    now[0] = 5.0
+    display.present(frame)
+    display.update_fps()
+    assert pygame.display.get_caption()[0] == "pyNES - 0.4 FPS"

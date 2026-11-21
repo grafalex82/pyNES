@@ -29,16 +29,17 @@ Presenting a subsequent frame SHALL update the existing window with the complete
 
 ### Requirement: Show the presentation rate
 
-The window title SHALL show the number of frames actually presented per elapsed wall-clock second, refreshed at
-least once per host update after one second has elapsed. The initial preview counts as a presentation. The rate
-SHALL be zero when no frames are presented during the measurement interval and SHALL NOT limit emulation speed.
+The window title SHALL show completed intervals between actual presentations per elapsed wall-clock second. The
+initial preview starts the measurement. The rate SHALL be refreshed after at least one second and one subsequent
+presentation, and retain its previous value while waiting. The measurement SHALL NOT limit emulation speed.
 
 #### Scenario: Present frames during a measurement interval
 
-- **WHEN** the window presents three frames during a 1.5 second interval
-- **THEN** the next rate update shows `2.0 FPS` in the title
+- **WHEN** the window presents three frames spanning a 1.5 second interval
+- **THEN** the next rate update shows `1.3 FPS` in the title
 
-#### Scenario: No new presentation
+#### Scenario: A slow presentation
 
-- **WHEN** one second passes without presenting any frames
-- **THEN** the next rate update shows `0.0 FPS` in the title
+- **WHEN** a new frame is presented five seconds after the previous measurement began
+- **THEN** the next rate update shows `0.2 FPS` in the title
+- **AND** time spent waiting without another frame does not reset the measurement

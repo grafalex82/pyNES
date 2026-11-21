@@ -37,8 +37,8 @@
 - [x] 3.3 Publish completed frames at each vblank entry and present them in the existing window.
       Replace between-block sampling. With NMI disabled, verify that a palette write between two vblanks
       changes the next presented frame. Update the frame scheduling notes in doc/decisions.md.
-- [x] 3.4 Show the actual presentation FPS in the window title. Verify elapsed-time calculation, updates with no
-      frames, and host-loop integration; document the measurement without adding frame pacing.
+- [x] 3.4 Show actual presentation FPS in the window title. Verify elapsed-time calculation, intervals longer than
+      one second, and host-loop integration; document the measurement without adding frame pacing.
 
 ## 4. Display the background and support the game startup wait
 

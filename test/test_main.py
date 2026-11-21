@@ -174,24 +174,23 @@ def test_close_event_before_first_block_releases_display(main_module, make_cartr
     assert not pygame.display.get_init()
 
 
-def test_fps_title_updates_during_blocks_without_new_frames(main_module, make_cartridge, monkeypatch):
-    # Advance wall-clock time without producing PPU frames; the initial preview is still presented once.
+def test_fps_title_tracks_slow_frames_between_cpu_blocks(main_module, make_cartridge, monkeypatch):
+    # Advance wall-clock time between PPU frames, starting with the initial preview at time zero.
     cartridge = make_cartridge(bytes([0xEA]))
     monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
     now = [0.0]
     monkeypatch.setattr(frame_display, "monotonic", lambda: now[0])
 
     def run_block(emulator, cycles):
-        if now[0] == 0:
-            now[0] = 2.0
-        elif now[0] == 2.0:
-            assert pygame.display.get_caption()[0] == "pyNES - 0.5 FPS"
-            now[0] = 3.0
-        else:
-            assert pygame.display.get_caption()[0] == "pyNES - 0.0 FPS"
+        if now[0] == 6:
+            assert pygame.display.get_caption()[0] == "pyNES - 0.2 FPS"
             pygame.event.post(pygame.event.Event(pygame.QUIT))
+            return
+        now[0] += 1
+        if now[0] == 5:
+            emulator._machine.ppu.advance(27394)
 
-    # The host updates the title between blocks, even when there is no completed frame to present.
+    # The host keeps the measurement through empty blocks and updates after the completed frame.
     monkeypatch.setattr(main_module.Emulator, "run", run_block)
     main_module.main()
     assert not pygame.display.get_init()

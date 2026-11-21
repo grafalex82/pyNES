@@ -7,10 +7,12 @@ software-visible effect, and supporting references where relevant.
 
 ### Window presentation rate (2026-11-22)
 
-The window title reports actual frame presentations divided by elapsed monotonic wall-clock time, refreshed between
-CPU blocks after at least one second. It includes the initial preview but excludes captured frames skipped by the
-host, and reports zero for an interval without presentations. This measures visible output without changing emulated
-timing or pacing execution. Synthetic tests verify the calculation and host-loop updates without waiting in real time.
+The window title reports completed presentation intervals divided by elapsed monotonic wall-clock time, refreshed
+between CPU blocks when at least one second and one new presentation have elapsed. The initial preview starts the
+measurement; captured frames skipped by the host do not count. Keeping the previous value while waiting for the next
+frame preserves rates below one FPS, including when instruction logging makes a frame take several seconds. This
+measures visible output without changing emulated timing or pacing execution. Synthetic tests verify the calculation
+and host-loop updates without waiting in real time.
 
 ### Vblank frame capture and presentation (2026-11-21)
 
