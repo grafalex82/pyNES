@@ -65,7 +65,8 @@ Each Machine owns a PPU. Addresses $2000-$3FFF select a register offset using th
 $200A, and $3FFA all select offset 2. `machine.ppu.last_writes` provides an inspection tuple with the last written
 byte for each offset; an unwritten offset is `None`. For example, writing $80 to $200A makes element 2 equal $80.
 
-These writes only retain bytes: they do not implement rendering, interrupts, video memory ports, or other register effects.
+These writes only retain bytes: they do not implement rendering, interrupts, video memory ports, or other register
+effects.
 They are accepted even at $2002, although hardware PPUSTATUS is read-only. This model also records writes immediately;
 hardware ignores writes to $2000, $2001, $2005, and $2006 during an initial warmup period. See the
 [decision record](decisions.md#ppu-register-write-retention-2026-11-19) for the rationale and affected ROMs.
@@ -126,9 +127,24 @@ occupy $0000-$0FFF and $1000-$1FFF. `write_memory(address, value)` routes writes
 raises `PermissionError` without changing data. This is a diagnostic departure from physical ROM behavior.
 
 CHR RAM and CHR ROM of other sizes raise `NotImplementedError` when pattern memory is accessed. Machine construction
-and CPU execution can still use a supported PRG configuration without CHR ROM. Other video addresses and CPU-facing
-video memory ports remain unimplemented; this internal access alone does not produce an image.
+and CPU execution can still use a supported PRG configuration without CHR ROM. CPU-facing video memory ports remain
+unimplemented; internal video memory access alone does not produce an image.
 See [the CHR decision](decisions.md#fixed-chr-rom-for-the-ppu-2026-11-21).
+
+## PPU nametable memory
+
+Machine supplies the PPU with a separate 2 KiB RAM device for two 1 KiB nametable pages. These pages are independent
+of CPU RAM and each Machine owns its own copy. New RAM starts at zero for reproducibility, not to model hardware
+power-up contents. `machine.ppu.read_memory` and `write_memory` map the four logical tables as follows:
+
+| Header mirroring | $2000 | $2400 | $2800 | $2C00 |
+| --- | --- | --- | --- | --- |
+| Horizontal | Page 0 | Page 0 | Page 1 | Page 1 |
+| Vertical | Page 0 | Page 1 | Page 0 | Page 1 |
+
+Addresses $3000-$3EFF mirror $2000-$2EFF; $3F00 begins the unimplemented palette range. Four-screen mirroring raises
+`NotImplementedError` on nametable access, while CPU execution and supported CHR access remain available.
+See [the nametable decision](decisions.md#ppu-nametable-ram-2026-11-21).
 
 ## Supported configuration
 
@@ -139,8 +155,8 @@ Machine accepts parsed iNES or NES 2.0 cartridge data with all of the following 
 - No trainer data.
 
 Unsupported mapper, submapper, PRG-size, or trainer values raise `NotImplementedError` naming the missing support.
-The loader can inspect a wider set of cartridge files than Machine can connect. Header mirroring and battery flags
-remain metadata; they do not enable video behavior, cartridge RAM, or persistence.
+The loader can inspect a wider set of cartridge files than Machine can connect. Header mirroring selects supported
+nametable wiring; the battery flag does not enable cartridge RAM or persistence.
 
 CPU addresses in $0000-$FFFF and structurally valid cartridge files are assumed. RAM explicitly rejects integer write
 values outside 0..255 with `ValueError` before changing storage. No address validation, corruption checks,

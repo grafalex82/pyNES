@@ -5,6 +5,20 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU nametable RAM (2026-11-21)
+
+Task 2.2 of `present-nes-frame-3x` gives the PPU separate 2 KiB nametable RAM, supplied by Machine. The cartridge's
+horizontal setting maps the four logical tables to pages 0, 0, 1, 1; vertical maps them to 0, 1, 0, 1. The upper
+$3000-$3EFF range mirrors $2000-$2EFF. Four-screen wiring is unsupported and raises `NotImplementedError` only on
+nametable access, so supported CPU execution and CHR accesses remain available.
+
+As with CPU RAM, the RAM device starts at zero to make tests and runs reproducible; hardware power-up contents are
+not guaranteed. This convention applies to cartridges using the nametable RAM and does not modify either target ROM.
+Synthetic tests cover page aliases, mirrored ranges, independent CPU/video and per-Machine storage, and four-screen
+errors. See [NESdev's nametable reference](https://www.nesdev.org/wiki/PPU_nametables),
+[PPU memory map](https://www.nesdev.org/wiki/PPU_programmer_reference), and
+[Mesen's mapper interface](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/BaseMapper.h).
+
 ### Fixed CHR ROM for the PPU (2026-11-21)
 
 Task 2.1 of `present-nes-frame-3x` connects an 8 KiB mapper-0 CHR ROM to the PPU's $0000-$1FFF video addresses.

@@ -82,7 +82,7 @@ class Machine:
         self._ram = RAM(2048)
         self._rom = ROM(prg_rom)
         chr_rom = cartridge.get_chr_rom()
-        self.ppu = PPU(ROM(chr_rom), len(chr_rom))
+        self.ppu = PPU(ROM(chr_rom), len(chr_rom), RAM(2048), cartridge.get_mirroring())
         self.apu = APU()
         self._prg_mask = len(prg_rom) - 1
 
