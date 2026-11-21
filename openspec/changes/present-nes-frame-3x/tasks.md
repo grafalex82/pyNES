@@ -34,8 +34,9 @@
 
 ## 4. Advance video and present emulated frames
 
-- [ ] 4.1 Advance the PPU by completed CPU cycles and derive $2002 bit 7 from the frame phase. Test status
-      clearing, recurring vblank without polling, and zero-cycle runs. Document the timing and status approximation.
+- [ ] 4.1 Advance the PPU by completed CPU cycles and derive $2002 bit 7 from the frame phase. Remove the temporary
+      `_next_status` alternation and update its tests. Test status clearing, recurring vblank without polling, and
+      zero-cycle runs. Document the timing and status approximation.
 - [ ] 4.2 Add CPU NMI entry at an instruction boundary. Verify the exact saved PC, status bits, vector read
       order, cycle charge, entry with I set, and return through RTI.
 - [ ] 4.3 Connect the $2000 NMI enable bit and service pending requests from the facade. Verify enable during
@@ -61,3 +62,7 @@
 - [ ] 5.7 Apply grayscale. Verify that rendering uses the palette code masked with $30.
 - [ ] 5.8 Apply the NTSC RGB color emphasis approximation. Verify the three channel selections and document
       the mapping. Run the focused video tests and record the first observed frame or remaining game obstacle.
+- [ ] 5.9 Replace remaining uses of temporary register-write retention with the corresponding register state, then
+      remove `_last_writes` and `last_writes`. Preserve implemented register effects and accept status writes without
+      changing vblank or the shared write toggle. Update focused tests and documentation, including the unmodeled
+      status-write open-bus effect.

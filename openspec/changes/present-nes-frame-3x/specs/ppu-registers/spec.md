@@ -4,19 +4,19 @@
 
 ### Requirement: Accept PPU register writes
 
-The PPU SHALL retain the last byte written independently for each of eight register offsets. CPU addresses
-$2000-$3FFF SHALL select offset (address - $2000) modulo 8. Supported writes SHALL apply the addressed register's
-effects. Writes to the status offset SHALL record the byte for inspection.
+CPU addresses $2000-$3FFF SHALL select register offset (address - $2000) modulo 8. Supported writes SHALL apply
+the addressed register's effects. The PPU SHALL NOT retain every last-written byte for inspection. Writes to the
+status offset SHALL be accepted without changing the vblank flag or shared address and scroll write toggle.
 
 #### Scenario: Write through register mirrors
 
-- **WHEN** distinct values are written to a register and its mirrors
-- **THEN** the register's retained byte equals the last written value without changing the other seven retained bytes
+- **WHEN** the high and low bytes of a PPUADDR value are written through different register mirrors
+- **THEN** the same address write pair selects the requested PPU address
 
 #### Scenario: Write the status offset
 
 - **WHEN** a byte is written to $2002 or its mirrors
-- **THEN** the write is accepted and retained like other offsets
+- **THEN** the write is accepted without retaining it for inspection
 - **AND** the vblank flag and shared address and scroll write toggle do not change
 
 ## REMOVED Requirements
