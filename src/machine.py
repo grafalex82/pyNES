@@ -24,7 +24,7 @@ class Machine:
     CPU memory map, with inclusive hexadecimal address ranges:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
         $0800-$1FFF  Three mirrors of the same internal RAM.
-        $2000-$3FFF  PPU registers and mirrors; status reads, address latch, and retained writes.
+        $2000-$3FFF  PPU registers and mirrors; status reads, video address and data writes.
         $4000-$400F  APU registers; not connected yet.
         $4010-$4013  DMC registers; dummy writes and zero reads.
         $4014        Sprite DMA; not connected yet.

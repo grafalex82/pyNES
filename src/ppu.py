@@ -15,6 +15,7 @@ class PPU:
         self._vram_address = 0
         self._temporary_address = 0
         self._awaiting_second_write = False
+        self._write_ppuctrl(0)
 
 
     @property
@@ -36,9 +37,29 @@ class PPU:
         # Retain all writes for inspection, including writes to the read-only hardware status register.
         self._last_writes[offset] = value
 
+        # PPUCTRL ($2000) selects video addressing and rendering settings.
+        if offset == 0:
+            self._write_ppuctrl(value)
+
         # PPUADDR ($2006) selects the PPU video address in two writes.
         if offset == 6:
             self._write_ppuaddr(value)
+
+        # PPUDATA ($2007) writes video memory and advances the selected address.
+        if offset == 7:
+            self._write_ppudata(value)
+
+
+    def _write_ppuctrl(self, value):
+        # Decode VPHB SINN into independent settings; NN selects the base nametable coordinates.
+        self._base_nametable_x = bool(value & 0x01)
+        self._base_nametable_y = bool(value & 0x02)
+        self._increment_32 = bool(value & 0x04)
+        self._sprite_pattern_table_high = bool(value & 0x08)
+        self._background_pattern_table_high = bool(value & 0x10)
+        self._sprite_height_16 = bool(value & 0x20)
+        self._ext_output_enabled = bool(value & 0x40)
+        self._nmi_enabled = bool(value & 0x80)
 
 
     def _read_ppustatus(self):
@@ -57,6 +78,15 @@ class PPU:
             self._temporary_address = (self._temporary_address & 0x7F00) | value
             self._vram_address = self._temporary_address
         self._awaiting_second_write = not self._awaiting_second_write
+
+
+    def _write_ppudata(self, value):
+        # PPU memory sees the low 14 bits of the internal 15-bit video address.
+        self.write_vram(self._vram_address & 0x3FFF, value)
+
+        # The PPUCTRL increment setting selects the step; rejected writes do not advance the address.
+        increment = 32 if self._increment_32 else 1
+        self._vram_address = (self._vram_address + increment) & 0x7FFF
 
 
     def _pattern_rom(self):
@@ -89,7 +119,7 @@ class PPU:
         return offset
 
 
-    def read_memory(self, address):
+    def read_vram(self, address):
         # NROM maps its two consecutive 4 KiB pattern tables directly to CHR ROM.
         if address < 0x2000:
             return self._pattern_rom().read_byte(address)
@@ -106,7 +136,7 @@ class PPU:
         raise NotImplementedError(f"PPU memory read at address 0x{address:04X} is not implemented")
 
 
-    def write_memory(self, address, value):
+    def write_vram(self, address, value):
         # Writes reach the ROM device's diagnostic trap instead of changing pattern data.
         if address < 0x2000:
             self._pattern_rom().write_byte(address, value)

@@ -221,9 +221,12 @@ def test_apu_rejects_unsupported_device_offsets(make_cartridge, offset, operatio
             machine.apu.write_byte(offset, 0xA5)
 
 
-def test_ppu_writes_route_all_mirrors_and_preserve_other_offsets(make_cartridge):
-    # Every CPU address in the window must select exactly one of the eight offsets.
+def test_ppu_writes_route_all_mirrors_and_preserve_other_offsets(make_cartridge, monkeypatch):
+    # Isolate register routing from PPUDATA's video-memory side effects.
     machine = Machine(make_cartridge(bytes(16384)))
+    monkeypatch.setattr(machine.ppu, "write_vram", lambda address, value: None)
+
+    # Every CPU address in the window must select exactly one of the eight offsets.
     expected = [None] * 8
     assert machine.ppu.last_writes == tuple(expected)
     for address in range(0x2000, 0x4000):
@@ -233,10 +236,11 @@ def test_ppu_writes_route_all_mirrors_and_preserve_other_offsets(make_cartridge)
         assert machine.ppu.last_writes == tuple(expected)
 
 
-def test_status_writes_through_mirrors_only_retain_the_last_byte(make_cartridge):
+def test_status_writes_through_mirrors_only_retain_the_last_byte(make_cartridge, monkeypatch):
     # Give all other register offsets and RAM distinct contents before writing PPUSTATUS.
     prg = bytes(range(256)) * 64
     machine = Machine(make_cartridge(prg))
+    monkeypatch.setattr(machine.ppu, "write_vram", lambda address, value: None)
     machine.write_byte(0x123, 0xA5)
     for offset in range(8):
         if offset != 2:
@@ -297,9 +301,10 @@ def test_ppu_status_sequences_are_independent(make_cartridge):
     assert second.read_byte(0x2002) == 0x80
 
 
-def test_ppu_writes_do_not_advance_status_sequence(make_cartridge):
+def test_ppu_writes_do_not_advance_status_sequence(make_cartridge, monkeypatch):
     # Writes to every register, including PPUSTATUS, leave the first status read unchanged.
     machine = Machine(make_cartridge(bytes(16384)))
+    monkeypatch.setattr(machine.ppu, "write_vram", lambda address, value: None)
     for offset in range(8):
         machine.write_byte(0x2000 + offset, offset + 0x10)
     assert machine.read_byte(0x2002) == 0x00

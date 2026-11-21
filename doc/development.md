@@ -81,8 +81,8 @@ boundary. See [execution control](execution.md) for cycle budgets, overshoot, an
 The root `main.py` accepts a ROM path and runs repeated 1000-cycle blocks with DEBUG traces until an exception stops
 execution. See [console startup](execution.md#console-startup) for the command and a synthetic unsupported-opcode stop.
 PPU register writes are retained for inspection. Two $2006 writes select a video address; reading $2002 resets the
-address write pair. Status reads alternate $00 and $80 without video timing; other PPU reads and breakpoints remain
-future work.
+address write pair. $2007 writes store video data and advance the address by 1 or 32 according to $2000 bit 2.
+Status reads alternate $00 and $80 without video timing; other PPU reads and breakpoints remain future work.
 The dummy APU accepts writes to $4010-$4013 and $4015 without effects and returns $00 when those addresses are read.
 It also ignores frame-counter writes at $4017; controller 2 reads at that address remain unimplemented. It models
 neither open bus, sample fetching, frame sequencing, audio output, nor audio interrupts; sprite DMA is unimplemented.

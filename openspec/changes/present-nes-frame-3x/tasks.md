@@ -18,7 +18,7 @@
 - [x] 2.3 Map six-bit palette RAM. Verify repeated mirrors and the four sprite palette aliases.
 - [x] 2.4 Give $2006 its two-write address effect and reset the write toggle on $2002 reads. Test interrupted
       pairs and register aliases. Update doc/memory.md as the register effects replace the retained-write stub.
-- [ ] 2.5 Implement writes to $2007. Verify successive stores with both increments selected by $2000 bit 2.
+- [x] 2.5 Implement writes to $2007. Verify successive stores with both increments selected by $2000 bit 2.
 - [ ] 2.6 Render the backdrop from $3F00. Run a synthetic CPU program that writes the palette through Machine
       and show the resulting color using the stage 1 presenter. Assert its native and scaled RGB output in pytest.
 - [ ] 2.7 Add buffered reads from $2007. Verify CHR and nametable priming, immediate palette reads, the palette

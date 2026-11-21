@@ -65,11 +65,31 @@ Each Machine owns a PPU. Addresses $2000-$3FFF select a register offset using th
 $200A, and $3FFA all select offset 2. `machine.ppu.last_writes` provides an inspection tuple with the last written
 byte for each offset; an unwritten offset is `None`. For example, writing $80 to $200A makes element 2 equal $80.
 
-The $2006 address port also selects a video address as described below; other register writes only retain bytes.
+The $2006 address port selects a video address, and $2007 writes data there using the increment selected by $2000.
+Other register writes only retain bytes.
 They are accepted even at $2002, although hardware PPUSTATUS is read-only. This model also records writes immediately;
 hardware ignores writes to $2000, $2001, $2005, and $2006 during an initial warmup period. See the
 [decision record](decisions.md#ppu-register-write-retention-2026-11-19) for the rationale and affected ROMs.
 Reads use the same offset routing. The PPU's errors for unsupported reads propagate unchanged.
+
+## PPU control settings
+
+A write to $2000 or its mirrors decodes the eight PPUCTRL bits into separate boolean settings. They start clear
+and every write replaces all eight, including bits that are clear in the new value.
+
+| Bit | Setting | Meaning when set |
+| --- | --- | --- |
+| 0 | `_base_nametable_x` | Select the right base nametable. |
+| 1 | `_base_nametable_y` | Select the lower base nametable. |
+| 2 | `_increment_32` | Advance the $2007 address by 32 instead of 1. |
+| 3 | `_sprite_pattern_table_high` | Select the $1000 pattern table for 8 × 8 sprites. |
+| 4 | `_background_pattern_table_high` | Select the $1000 pattern table for the background. |
+| 5 | `_sprite_height_16` | Select 8 × 16 sprites instead of 8 × 8. |
+| 6 | `_ext_output_enabled` | Select output on the PPU EXT pins. |
+| 7 | `_nmi_enabled` | Enable vblank NMI requests. |
+
+Only the address increment currently affects emulation. Nametable selection, rendering, EXT pins, and NMI requests
+are not implemented by storing these settings. The retained `last_writes` inspection interface remains in place.
 
 ## PPU address writes
 
@@ -80,8 +100,19 @@ not reset the pair. The current address and temporary address start at zero for 
 
 This functional model copies the address immediately after the second write and does not model PPU timing, the
 hardware warmup interval, or rendering-time interactions. $2005 still only retains writes and does not yet share
-the toggle; $2007 data access is also unimplemented.
+the toggle; $2007 reads are unimplemented.
 See [the decision record](decisions.md#ppu-address-latch-2026-11-21).
+
+## PPU data writes
+
+Writing to $2007 or a mirror stores a byte at the current video address. The PPU selects the increment from the
+decoded bit 2 of $2000: 1 when clear or 32 when set; the initial increment is 1. Each successful write
+advances the 15-bit internal address modulo $8000; PPU memory uses its low 14 bits. Normal nametable and palette
+mirrors apply. A rejected CHR write propagates its error without advancing the address; the attempted register byte
+is still retained for inspection. $2007 reads remain unimplemented.
+
+The functional increment is applied without modeling rendering-time access restrictions or changes to the hardware's
+scroll increment behavior during rendering. See [the decision record](decisions.md#ppu-data-writes-2026-11-21).
 
 ## PPU status reads
 
@@ -134,20 +165,20 @@ See [the ROM-write decision](decisions.md#standalone-rom-and-diagnostic-write-er
 ## PPU pattern memory
 
 Machine supplies a separate ROM device with the cartridge's CHR bytes to the PPU. For exactly 8192 bytes,
-`machine.ppu.read_memory(address)` reads PPU addresses $0000-$1FFF in file order. The two 4 KiB pattern tables
-occupy $0000-$0FFF and $1000-$1FFF. `write_memory(address, value)` routes writes to the ROM diagnostic trap and
+`machine.ppu.read_vram(address)` reads PPU addresses $0000-$1FFF in file order. The two 4 KiB pattern tables
+occupy $0000-$0FFF and $1000-$1FFF. `write_vram(address, value)` routes writes to the ROM diagnostic trap and
 raises `PermissionError` without changing data. This is a diagnostic departure from physical ROM behavior.
 
 CHR RAM and CHR ROM of other sizes raise `NotImplementedError` when pattern memory is accessed. Machine construction
-and CPU execution can still use a supported PRG configuration without CHR ROM. CPU-facing $2007 data access remains
-unimplemented; internal video memory access alone does not produce an image.
+and CPU execution can still use a supported PRG configuration without CHR ROM. CPU-facing $2007 reads remain
+unimplemented; video memory access alone does not produce an image.
 See [the CHR decision](decisions.md#fixed-chr-rom-for-the-ppu-2026-11-21).
 
 ## PPU nametable memory
 
 Machine supplies the PPU with a separate 2 KiB RAM device for two 1 KiB nametable pages. These pages are independent
 of CPU RAM and each Machine owns its own copy. New RAM starts at zero for reproducibility, not to model hardware
-power-up contents. `machine.ppu.read_memory` and `write_memory` map the four logical tables as follows:
+power-up contents. `machine.ppu.read_vram` and `write_vram` map the four logical tables as follows:
 
 | Header mirroring | $2000 | $2400 | $2800 | $2C00 |
 | --- | --- | --- | --- | --- |
@@ -164,7 +195,7 @@ PPU addresses $3F00-$3FFF access internal palette RAM. The 32-byte range $3F00-$
 $3F10, $3F14, $3F18, and $3F1C also share storage with $3F00, $3F04, $3F08, and $3F0C, respectively.
 Writes retain only the low six bits, and internal reads return those raw color codes. For example, a write of $E1
 to $3F30 makes $3F00, $3F10, and $3F20 read as $21. Each PPU has independent zero-initialized palette storage.
-These internal memory accesses do not implement CPU-facing $2006/$2007 effects, rendering, or grayscale.
+These memory accesses do not implement CPU-facing $2007 reads, rendering, or grayscale.
 See [the palette decision](decisions.md#ppu-palette-ram-2026-11-21).
 
 ## Supported configuration

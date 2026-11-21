@@ -5,6 +5,34 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Named PPU control settings (2026-11-21)
+
+At the user's request, PPUCTRL writes decode all eight bits into named booleans rather than requiring later code to
+extract settings from the last byte retained for inspection. The two nametable bits are separate X/Y selections;
+the other flags represent increment size, pattern tables, sprite height, EXT output, and NMI enable. All start clear,
+and writes through mirrors replace every flag. $2007 now uses the decoded increment flag. The other flags record
+settings only: their rendering, scrolling, EXT pin, and NMI effects remain unimplemented. Synthetic tests cover every
+bit, combined values, clearing, mirrors, and the existing increment behavior.
+See [NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers).
+
+### PPU data writes (2026-11-21)
+
+Task 2.5 of `present-nes-frame-3x` routes $2007 writes and its mirrors to PPU memory at the current address.
+The last $2000 write selects an increment of 1 or 32 through bit 2; before any write it defaults to 1. Memory
+access uses the low 14 address bits, while the internal address advances modulo $8000. Existing palette and
+nametable mirrors and CHR errors apply. Rejected writes do not increment the address; the diagnostic register
+write is retained. Synthetic tests cover successive writes, mode changes, mirrors, address wrapping, and failures.
+
+This functional model always uses the normal 1-or-32 increment and does not model the altered scrolling increment
+or unreliable VRAM writes during rendering. It also omits register warmup as before. The approximation applies to
+cartridges using the PPU, including the target images; no ROM was patched. Reads from $2007 remain unimplemented.
+See [NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers),
+[PPU scrolling](https://www.nesdev.org/wiki/PPU_scrolling), and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+The BattleCity image reached 200,002 cycles at $D8FA, with RAM $000B still zero; its previously observed NMI wait
+remains the obstacle. The recorded SHA-256 matched before and after execution; this does not establish playability.
+
 ### PPU address latch (2026-11-21)
 
 Task 2.4 of `present-nes-frame-3x` adds the $2006 high/low write pair and resets its toggle on $2002 reads, including
