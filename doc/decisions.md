@@ -79,6 +79,25 @@ Controller reads are the next observed obstacles; these bounded runs do not esta
 
 [controller-strobe]: https://www.nesdev.org/wiki/Standard_controller
 
+### Stationary background tiles (2026-11-22)
+
+Task 4.3 of `present-nes-frame-3x` draws the 32 by 30 tiles at $2000 when PPUMASK bit 3 is set. PPUCTRL bit 4
+selects the pattern table; each tile's two bitplanes supply the low and high bits of each pixel, with the most
+significant bit at the left. Pattern index zero shows the $3F00 backdrop, and indices 1 through 3 use $3F01-$3F03.
+See [NESdev pattern tables](https://www.nesdev.org/wiki/PPU_pattern_tables); the rendering design was also informed
+by the [Mesen PPU](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+This whole-frame approximation samples memory and registers at capture instead of fetching per scanline. It uses
+nametable $2000 and the first subpalette for every tile, ignoring base selection, scrolling, attributes, left-edge
+masking, and mid-frame changes until their separate tasks. These limitations affect all cartridges; no ROM is patched.
+Synthetic tests cover both pattern tables, asymmetric bitplanes, transparent pixels, the enable bit, and a CPU-written
+nametable displayed in the startup window with SDL's dummy driver.
+
+The local Battle City image reached a 1,000,000-cycle budget at 1,000,001 cycles, PC $D8FA, with 33 captured frames
+and no `NotImplementedError`. The SHA-256 before and after was
+`166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c`. The existing ignored DMA and controller stubs
+remain limitations; the bounded run does not establish playability or identify a new exception.
+
 ### Ignored sprite DMA writes (2026-11-22)
 
 At the user's request, writes to $4014 are temporarily accepted without reading a CPU source page, copying sprite data,

@@ -175,6 +175,40 @@ def test_close_event_before_first_block_releases_display(main_module, make_cartr
     assert not pygame.display.get_init()
 
 
+def test_synthetic_cartridge_presents_nametable_tile(main_module, tmp_path, monkeypatch):
+    # The program writes a tile and palette through CPU registers, then waits for the first completed frame.
+    program = bytes([
+        0xA9, 0x20, 0x8D, 0x06, 0x20, 0xA9, 0x00, 0x8D, 0x06, 0x20,
+        0xA9, 0x01, 0x8D, 0x07, 0x20,
+        0xA9, 0x3F, 0x8D, 0x06, 0x20, 0xA9, 0x01, 0x8D, 0x06, 0x20,
+        0xA9, 0x21, 0x8D, 0x07, 0x20,
+        0xA9, 0x08, 0x8D, 0x01, 0x20, 0x4C, 0x23, 0x80,
+    ])
+    prg = bytearray(16384)
+    prg[:len(program)] = program
+    prg[-4:-2] = b"\x00\x80"
+    chr_rom = bytearray(8192)
+    chr_rom[16] = 0x80
+    cartridge = tmp_path / "tile.nes"
+    cartridge.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + prg + chr_rom)
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
+    original_present = main_module.FrameDisplay.present
+    presentations = []
+
+    def record_present(display, frame):
+        original_present(display, frame)
+        surface = pygame.display.get_surface()
+        presentations.append((surface.get_at((0, 0))[:3], surface.get_at((3, 0))[:3]))
+        if len(presentations) == 2:
+            pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    # The startup window displays the tile at scale 3 after vblank captures the changed nametable.
+    monkeypatch.setattr(main_module.FrameDisplay, "present", record_present)
+    main_module.main()
+    assert presentations == [((102, 102, 102), (102, 102, 102)), ((100, 176, 255), (102, 102, 102))]
+    assert not pygame.display.get_init()
+
+
 def test_fps_title_tracks_slow_frames_between_cpu_blocks(main_module, make_cartridge, monkeypatch):
     # Advance wall-clock time between PPU frames, starting with the initial preview at time zero.
     cartridge = make_cartridge(bytes([0xEA]))

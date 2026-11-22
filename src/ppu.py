@@ -21,6 +21,7 @@ class PPU:
         self._vblank = False
         self._nmi_pending = False
         self._nmi_enabled = False
+        self._background_enabled = False
         self._frame_output_enabled = False
         self._completed_frame = None
         self._published_frames = 0
@@ -80,6 +81,10 @@ class PPU:
         # PPUCTRL ($2000) selects video addressing and rendering settings.
         if offset == 0:
             self._write_ppuctrl(value)
+
+        # PPUMASK ($2001) controls whether the background layer is visible.
+        if offset == 1:
+            self._background_enabled = bool(value & 0x08)
 
         # PPUADDR ($2006) selects the PPU video address in two writes.
         if offset == 6:
@@ -212,10 +217,40 @@ class PPU:
 
 
     def render_frame(self):
-        """Render the backdrop as a native-size frame of packed RGB bytes."""
-        # Until layers are implemented, every pixel uses the universal backdrop color.
-        color = NES_COLORS[self.read_vram(0x3F00)].to_bytes(3, "big")
-        return color * (256 * 240)
+        """Render a stationary background as a native-size frame of packed RGB bytes."""
+        # Start with the backdrop, including transparent background pattern pixels.
+        colors = []
+        for color_index in range(4):
+            color_code = self.read_vram(0x3F00 + color_index)
+            rgb = NES_COLORS[color_code]
+            colors.append(rgb.to_bytes(3, "big"))
+
+        # Fill the frame with backdrop color
+        frame = bytearray(colors[0] * (256 * 240))
+        if not self._background_enabled:
+            return bytes(frame)
+
+        # The visible nametable contains 30 rows of 32 tiles, each covering 8x8 pixels.
+        pattern_base = 0x1000 if self._background_pattern_table_high else 0
+        for tile_y in range(30):
+            for tile_x in range(32):
+                # Each nametable byte selects one 16-byte tile in the chosen pattern table.
+                tile = self.read_vram(0x2000 + tile_y * 32 + tile_x)
+                for row in range(8):
+                    # The first eight bytes hold the low bitplane; the next eight hold the high bitplane.
+                    address = pattern_base + tile * 16 + row
+                    low = self.read_vram(address)
+                    high = self.read_vram(address + 8)
+                    for column in range(8):
+                        # Bits run from left to right, most significant first; combine them into a 0-3 color index.
+                        shift = 7 - column
+                        color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
+                        if color_index:
+                            # Convert tile and pixel coordinates to a linear pixel number in the 256-pixel-wide frame.
+                            # Multiply by 3 because each pixel occupies three consecutive bytes: red, green, and blue.
+                            offset = ((tile_y * 8 + row) * 256 + tile_x * 8 + column) * 3
+                            frame[offset:offset + 3] = colors[color_index]
+        return bytes(frame)
 
 
     def read_vram(self, address):

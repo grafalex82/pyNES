@@ -116,8 +116,10 @@ Its separate video address space connects 8 KiB of mapper-0 CHR ROM at $0000-$1F
 raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pages map to $2000-$3EFF using the
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color
 codes at $3F00-$3FFF with hardware mirrors.
-`PPU.render_frame()` produces a packed RGB frame filled with the color at $3F00, using a fixed RGB approximation.
-Background and sprite layers, display masks, and the hardware's forced-blank palette override are not yet rendered.
+`PPU.render_frame()` produces a packed RGB frame using a fixed RGB approximation. When $2001 bit 3 is set, it draws
+the stationary $2000 nametable with the background pattern table selected by $2000 bit 4 and the first background
+subpalette. Pattern index zero uses the $3F00 backdrop. Attributes, scrolling, sprites, other display masks, and the
+hardware's forced-blank palette override are not yet rendered.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
 audio effects;
@@ -182,7 +184,7 @@ python main.py --help
 
 The command opens a window before the first CPU block and shows the initial backdrop. It captures a completed frame
 at each emulated vblank and presents the newest one between 1000-cycle blocks. Close the window to stop. Execution
-is not paced in real time; the title shows actual displayed frames per second. Currently only the backdrop is drawn.
+is not paced in real time; the title shows actual displayed frames per second. The stationary background can be drawn.
 Logging is disabled by default; `--debug` enables reset, instruction, and device traces. An execution error closes the
 window and propagates with its traceback in either mode.
 The CPU has dispatch handlers for all 151 official NES CPU opcode encodings. Unofficial opcodes and some device
