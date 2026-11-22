@@ -5,6 +5,19 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Independent left-edge masks (2026-11-22)
+
+PPUMASK bits 1 and 2 independently permit background and sprites in screen columns 0-7 when their layers are enabled.
+Masked pixels are transparent to composition, so a behind-background sprite can appear where the background is
+masked. Column 8 is unaffected. The setting is sampled with the rest of the frame state, so mid-frame mask changes
+are not represented. No ROM is patched. Synthetic tests cover all layer and mask combinations and the boundary.
+See [NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+The local Battle City image reached 1,000,001 cycles at PC $D8FA with 33 captured frames and no `NotImplementedError`.
+Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` before and after. This bounded
+run does not establish playability.
+
 ### Whole-frame sprite and background composition (2026-11-22)
 
 For each pixel, the renderer chooses the first opaque sprite in OAM order, then applies its background-priority bit.

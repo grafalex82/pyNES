@@ -124,8 +124,9 @@ the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. Whe
 sprites use OAM positions and sprite subpalettes. For 8 × 8 sprites $2000 bit 3 selects the pattern table; for 8 × 16
 sprites the tile number selects the table and tile pair. Sprite index zero is transparent. The first opaque sprite in
 OAM order wins, and its priority bit determines whether an opaque background pixel covers it. Sprite flips, scrolling,
-other display masks, and the
+grayscale, color emphasis, and the
 hardware's forced-blank palette override are not yet rendered.
+PPUMASK bits 1 and 2 independently enable background and sprites in the leftmost eight pixels.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
 audio effects;

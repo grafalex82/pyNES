@@ -8,6 +8,38 @@ from machine import Machine
 from nesfile import NESFile
 
 
+@pytest.mark.parametrize("layers", [0x00, 0x08, 0x10, 0x18])
+@pytest.mark.parametrize("edges", [0x00, 0x02, 0x04, 0x06])
+def test_left_edge_masks_independently_clip_layers(tmp_path, layers, edges):
+    # Fill the first two background tiles and two behind-background sprites with opaque pixels.
+    chr_rom = bytearray(8192)
+    chr_rom[16:24] = bytes([0xFF] * 8)
+    path = tmp_path / "left-edge.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    ppu.write_vram(0x2020, 1)
+    ppu.write_vram(0x2021, 1)
+    for address, color in ((0x3F00, 0x0F), (0x3F01, 0x01), (0x3F11, 0x21)):
+        ppu.write_vram(address, color)
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (7, 1, 0x20, 0, 7, 1, 0x20, 8):
+        machine.write_byte(0x2004, value)
+
+    # Test every combination through a mirrored PPUMASK port, including the first unmasked column.
+    machine.write_byte(0x2009, layers | edges)
+    frame = ppu.render_frame()
+    backdrop, background, sprite = (0, 0, 0), (0, 42, 136), (100, 176, 255)
+    left = background if layers & 0x08 and edges & 0x02 else sprite if layers & 0x10 and edges & 0x04 else backdrop
+    right = background if layers & 0x08 else sprite if layers & 0x10 else backdrop
+    pixels = [tuple(frame[(8 * 256 + x) * 3:(8 * 256 + x) * 3 + 3]) for x in range(9)]
+    assert pixels == [left] * 8 + [right]
+
+
 def test_sprite_background_priority_and_layer_combinations(tmp_path):
     # The background has opaque pixels at columns 0 and 2; the first has the same color as the backdrop.
     chr_rom = bytearray(8192)

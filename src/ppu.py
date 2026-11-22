@@ -23,6 +23,8 @@ class PPU:
         self._nmi_enabled = False
         self._background_enabled = False
         self._sprites_enabled = False
+        self._background_left_enabled = False
+        self._sprites_left_enabled = False
         self._frame_output_enabled = False
         self._completed_frame = None
         self._completed_background = None
@@ -138,6 +140,8 @@ class PPU:
 
 
     def _write_ppumask(self, value):
+        self._background_left_enabled = bool(value & 0x02)
+        self._sprites_left_enabled = bool(value & 0x04)
         self._background_enabled = bool(value & 0x08)
         self._sprites_enabled = bool(value & 0x10)
 
@@ -275,6 +279,10 @@ class PPU:
         pattern_base = 0x1000 if self._background_pattern_table_high else 0
         for tile_y in range(30):
             for tile_x in range(32):
+                # The left mask makes the first eight background pixels transparent to composition.
+                if tile_x == 0 and not self._background_left_enabled:
+                    continue
+
                 # Each nametable byte selects one 16-byte tile in the chosen pattern table.
                 tile = self.read_vram(0x2000 + tile_y * 32 + tile_x)
 
@@ -339,6 +347,9 @@ class PPU:
 
                 # Clip columns at the right edge and combine the two bitplanes, most significant bit first.
                 for column in range(min(8, 256 - x)):
+                    # A masked sprite pixel cannot claim a position or obscure another layer.
+                    if x + column < 8 and not self._sprites_left_enabled:
+                        continue
                     shift = 7 - column
                     color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
                     if color_index:
