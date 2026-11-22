@@ -74,7 +74,8 @@ PermissionError without changing ROM or RAM. The CPU-facing interface SHALL prop
 ### Requirement: Report unimplemented CPU address ranges
 
 Reads and writes in $4000-$7FFF SHALL raise NotImplementedError except for the connected APU, sprite DMA and controller
-addresses described below. PPU-window access SHALL route to the PPU. Reads and writes at $4000-$4013 and $4015 SHALL
+addresses described below. PPU-window access SHALL route to the PPU. Reads at $2000-$3FFF except aliases of $2002,
+$2004, and $2007 SHALL raise NotImplementedError. Reads and writes at $4000-$4013 and $4015 SHALL
 route to the audio component. Writes at $4017 SHALL route to the audio component. Writes at $4014 SHALL perform the
 existing OAM transfer; reads at $4014 remain unsupported. Writes at $4016 SHALL be ignored, and reads at $4016 and
 $4017 SHALL return $00. Unimplemented accesses SHALL identify the operation and PPU offset or CPU address and SHALL
@@ -98,7 +99,7 @@ NOT act as RAM.
 #### Scenario: Read a PPU status mirror
 
 - **WHEN** a read targets a PPU address whose low three bits are 2
-- **THEN** it returns the status byte from the connected PPU
+- **THEN** it returns the current status from the connected PPU and applies the status read effects
 
 #### Scenario: Access a selected audio register
 
@@ -156,6 +157,11 @@ NOT act as RAM.
 - **THEN** it reaches the audio component and has no noise-channel effects
 - **AND** CPU reads at $400C return $00
 
+#### Scenario: Read mirrored PPU data ports
+
+- **WHEN** a read targets a PPU address whose low three bits are 4 or 7
+- **THEN** it reaches the corresponding OAMDATA or PPUDATA port with that port's read effects
+
 ### Requirement: Keep unsupported cartridge configurations explicit
 
 Memory construction SHALL support mapper 0, submapper 0, a 16 KiB or 32 KiB PRG section, and no trainer. Other mapper,
@@ -170,3 +176,15 @@ submapper, PRG-size, or trainer configurations SHALL raise NotImplementedError i
 
 - **WHEN** construction encounters another mapper/submapper, an unsupported PRG size, or trainer data
 - **THEN** NotImplementedError names that unsupported configuration rather than silently mapping it as ordinary NROM
+
+### Requirement: Transfer a CPU page to sprite memory
+
+A write of page $XX to $4014 SHALL read 256 bytes from $XX00-$XXFF through Machine in ascending order and
+store them in OAM starting at the current OAM address, wrapping at $FF. The functional transfer completes
+synchronously without a CPU stall.
+
+#### Scenario: Transfer from a CPU RAM mirror
+
+- **WHEN** software writes $0A to $4014 with OAMADDR set to $F0 and a distinguishable page at $0200-$02FF
+- **THEN** the first byte goes to OAM $F0, the seventeenth to $00, and the last to $EF
+- **AND** OAMADDR is $F0 after all 256 writes
