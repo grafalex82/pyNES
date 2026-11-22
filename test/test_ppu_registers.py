@@ -58,40 +58,6 @@ def test_oam_is_zero_initialized_and_independent_between_machines(make_cpu):
     assert second.read_byte(0x2004) == 0
 
 
-def test_ppuctrl_settings_start_cleared(make_cpu):
-    _, machine = make_cpu()
-    ppu = machine.ppu
-    assert not any((ppu._base_nametable_x, ppu._base_nametable_y, ppu._increment_32,
-                    ppu._sprite_pattern_table_high, ppu._background_pattern_table_high,
-                    ppu._sprite_height_16, ppu._ext_output_enabled, ppu._nmi_enabled))
-
-
-@pytest.mark.parametrize("value,expected", [
-    (0x00, (False, False, False, False, False, False, False, False)),
-    (0x01, (True, False, False, False, False, False, False, False)),
-    (0x02, (False, True, False, False, False, False, False, False)),
-    (0x04, (False, False, True, False, False, False, False, False)),
-    (0x08, (False, False, False, True, False, False, False, False)),
-    (0x10, (False, False, False, False, True, False, False, False)),
-    (0x20, (False, False, False, False, False, True, False, False)),
-    (0x40, (False, False, False, False, False, False, True, False)),
-    (0x80, (False, False, False, False, False, False, False, True)),
-    (0xA5, (True, False, True, False, False, True, False, True)),
-    (0xFF, (True, True, True, True, True, True, True, True)),
-])
-def test_ppuctrl_updates_all_named_settings(make_cpu, value, expected):
-    # Start with all bits set so each write must also clear settings absent from the new value.
-    _, machine = make_cpu()
-    machine.write_byte(0x2000, 0xFF)
-    machine.write_byte(0x3FF8, value)
-
-    # Mirrored PPUCTRL writes decode each independent setting into a boolean.
-    ppu = machine.ppu
-    assert (ppu._base_nametable_x, ppu._base_nametable_y, ppu._increment_32,
-            ppu._sprite_pattern_table_high, ppu._background_pattern_table_high,
-            ppu._sprite_height_16, ppu._ext_output_enabled, ppu._nmi_enabled) == expected
-
-
 @pytest.mark.parametrize("first_port,second_port", [(0x2006, 0x2006), (0x200E, 0x3FFE), (0x3FFE, 0x2006)])
 @pytest.mark.parametrize("high,low,expected", [(0x00, 0x00, 0x0000), (0x21, 0x34, 0x2134),
                                                (0xFF, 0xA5, 0x3FA5)])

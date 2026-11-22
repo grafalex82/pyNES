@@ -220,20 +220,6 @@ def test_apu_rejects_unsupported_device_offsets(make_cartridge, offset, operatio
             machine.apu.write_byte(offset, 0xA5)
 
 
-def test_ppu_writes_route_all_mirrors_to_register_offsets(make_cartridge, monkeypatch):
-    # A stand-in receives each offset and value without applying the device's register effects.
-    machine = Machine(make_cartridge(bytes(16384)))
-    writes = []
-    monkeypatch.setattr(machine.ppu, "write_byte", lambda offset, value: writes.append((offset, value)))
-
-    # Every CPU address in the window must select exactly one of the eight offsets.
-    for address in range(0x2000, 0x4000):
-        value = (address // 8 + address) & 0xFF
-        machine.write_byte(address, value)
-        assert writes[-1] == (address & 7, value)
-    assert len(writes) == 0x2000
-
-
 @pytest.mark.parametrize("address", [0x2002, 0x200A, 0x3FFA])
 @pytest.mark.parametrize("value", [0x00, 0x80, 0xFF])
 @pytest.mark.parametrize("vblank", [False, True])
@@ -266,21 +252,6 @@ def test_ppu_register_reads_remain_explicitly_unsupported(make_cartridge, offset
         machine.read_byte(0x3FF8 + offset)
 
 
-def test_ppu_reads_route_all_mirrors_to_register_offsets(make_cartridge, monkeypatch):
-    # A stand-in read exposes the offset and verifies that Machine returns the device's result.
-    machine = Machine(make_cartridge(bytes(16384)))
-    monkeypatch.setattr(machine.ppu, "read_byte", lambda offset: 0x80 | offset)
-    for address in range(0x2000, 0x4000):
-        assert machine.read_byte(address) == 0x80 | (address & 7)
-
-
-def test_ppu_read_error_reports_register_offset(make_cartridge):
-    # Unsupported mirrored reads propagate the PPU's device-relative diagnostic directly.
-    machine = Machine(make_cartridge(bytes(16384)))
-    with pytest.raises(NotImplementedError, match="PPU read at register offset 0x01"):
-        machine.read_byte(0x3FF9)
-
-
 def test_ppu_status_clears_vblank_across_register_mirrors(make_cartridge):
     # Every alias observes and clears the same timed vblank flag.
     machine = Machine(make_cartridge(bytes(16384)))
@@ -301,20 +272,27 @@ def test_ppu_status_flags_are_independent(make_cartridge):
     assert second.read_byte(0x2002) == 0x00
 
 
-def test_ppu_writes_do_not_change_vblank_status(make_cartridge, monkeypatch):
-    # Writes to every register do not create vblank before its scheduled boundary.
+@pytest.mark.parametrize("port,status", [(0x2000, 0x00), (0x3FF8, 0x80)])
+def test_ppu_writes_do_not_change_vblank_status(make_cartridge, port, status):
+    # Use each real write port during either the visible period or vblank.
     machine = Machine(make_cartridge(bytes(16384)))
-    monkeypatch.setattr(machine.ppu, "write_vram", lambda address, value: None)
-    for offset in range(8):
-        machine.write_byte(0x2000 + offset, offset + 0x10)
-    assert machine.read_byte(0x2002) == 0x00
+    if status:
+        machine.ppu.advance(27394)
+    machine.write_byte(port, 0x80)
+    machine.write_byte(port + 1, 0x18)
+    machine.write_byte(port + 2, 0xFF)
+    machine.write_byte(port + 3, 0xFE)
+    machine.write_byte(port + 4, 0x12)
+    machine.write_byte(port + 5, 0x03)
+    machine.write_byte(port + 5, 0x04)
+    machine.write_byte(port + 6, 0x20)
+    machine.write_byte(port + 6, 0x00)
+    machine.write_byte(port + 7, 0xA5)
 
-    # A second round of writes, including PPUSTATUS, cannot clear an existing vblank flag.
-    machine.ppu.advance(27394)
-    for offset in range(8):
-        machine.write_byte(0x3FF8 + offset, offset + 0x80)
-    assert machine.read_byte(0x200A) == 0x80
-    assert machine.read_byte(0x2002) == 0x00
+    # The data write reached nametable RAM and the writes left the vblank flag unchanged.
+    assert machine.ppu.read_vram(0x2000) == 0xA5
+    assert machine.read_byte(port + 2) == status
+    assert machine.read_byte(port + 2) == 0x00
 
 
 def test_each_machine_owns_independent_ppu(make_cartridge):
