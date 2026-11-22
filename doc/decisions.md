@@ -13,6 +13,11 @@ reads leave PPU register and latch state unchanged, and later writes do not alte
 whole-frame approximation as normal rendering; it does not add a visible inspection mode or modify game behavior.
 The first palette entry is the common backdrop for every subpalette. Synthetic tests check timing and isolation.
 
+The inspection renderer now turns a captured snapshot into a native-size RGB frame. Fixed white 3-by-7 hexadecimal
+glyphs on black leave the last row for four two-pixel swatches. Attribute quadrants select the last three colors;
+the first uses the shared backdrop. This host-side visualization neither changes emulated state nor adds F1 input yet.
+Synthetic tests cover all hexadecimal glyphs, frame boundaries, attribute quadrants and disabled background rendering.
+
 ### Ignored noise control writes (2026-11-22)
 
 Machine routes $400C writes to the dummy APU, which logs and ignores them. Hardware controls noise volume, envelope,
