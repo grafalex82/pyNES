@@ -43,7 +43,7 @@
 
 ## 4. Enable the game's NMI handler and display the background
 
-- [ ] 4.1 Add CPU NMI entry at an instruction boundary. Verify the exact saved PC, status bits, vector read
+- [x] 4.1 Add CPU NMI entry at an instruction boundary. Verify the exact saved PC, status bits, vector read
       order, cycle charge, entry with I set, and return through RTI.
 - [ ] 4.2 Connect the $2000 NMI enable bit and service pending requests from the facade. Verify enable during
       vblank, one request per rising condition, and that a handler's palette write affects the following frame.

@@ -5,6 +5,18 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Functional CPU NMI entry (2026-11-22)
+
+Task 4.1 of `present-nes-frame-3x` adds explicit `CPU.enter_nmi()` at an instruction boundary. NMI saves the resume
+address and pre-entry flags with B clear, sets I regardless of its prior value, reads the vector, and charges seven
+nominal cycles. The software-only B field is preserved. RTI restores the hardware flags and the saved address.
+The facade and PPU do not yet request NMI, so games cannot use this entry automatically.
+
+The hardware performs discarded bus reads during the seven-cycle sequence; this functional entry omits those reads
+and their possible device side effects for every cartridge. It also leaves cycle-by-cycle interrupt races outside the
+model. No ROM is patched. Synthetic tests verify the stack frame, vector read order, both I states, cycle charge, and
+RTI. See the [NESdev interrupt sequence](https://www.nesdev.org/wiki/Interrupts).
+
 ### Opt-in execution logging (2026-11-22)
 
 The cartridge entry point disables logging by default to avoid slowing ordinary execution with instruction traces.

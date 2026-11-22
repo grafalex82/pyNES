@@ -2970,6 +2970,47 @@ def test_brk_pushes_interrupt_frame_and_loads_vector(make_cpu):
     assert cpu.cycles == 7
 
 
+@pytest.mark.parametrize("interrupt_disable, software_break", [(False, False), (True, True)])
+def test_nmi_entry_and_rti_restore_interrupted_state(make_cpu, monkeypatch, interrupt_disable, software_break):
+    # Install an RTI handler in RAM and supply an NMI vector with observable read order.
+    cpu, machine = make_cpu(start_address=0x0234)
+    cpu.sp = 0x00
+    cpu.p = 0xC9 | (interrupt_disable << 2) | (software_break << 4)
+    initial_status = cpu.p
+    machine.write_byte(0x0456, 0x40)  # RTI opcode
+    reads = []
+    original_read = machine.read_byte
+
+    def read_byte(address):
+        reads.append(address)
+        if address == 0xFFFA:
+            return 0x56
+        if address == 0xFFFB:
+            return 0x04
+        return original_read(address)
+
+    monkeypatch.setattr(machine, "read_byte", read_byte)
+
+    # Entry saves the exact next PC and pre-entry flags, wrapping within the stack page.
+    cpu.enter_nmi()
+    assert reads == [0xFFFA, 0xFFFB]
+    assert machine.read_byte(0x0100) == 0x02
+    assert machine.read_byte(0x01FF) == 0x34
+    assert machine.read_byte(0x01FE) == (initial_status & 0xEF)
+    assert cpu.sp == 0xFD
+    assert cpu.pc == 0x0456
+    assert cpu.interrupt_disable is True
+    assert cpu.break_flag is software_break
+    assert cpu.cycles == 7
+
+    # RTI restores the saved hardware flags and resumes at the interrupted instruction.
+    cpu.step()
+    assert cpu.pc == 0x0234
+    assert cpu.sp == 0x00
+    assert cpu.p == initial_status
+    assert cpu.cycles == 13
+
+
 def test_rti_restores_status_and_program_counter(make_cpu):
     # Seed an ordinary RTI frame through Machine with all hardware flags opposite to their saved values.
     cpu, machine = make_cpu(start_address=0x0567)

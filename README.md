@@ -135,7 +135,8 @@ Each completed reset calls `log_state(event)` to emit one DEBUG event through th
 A/X/Y/SP/PC, a symbolic NV1BDIZC mask for P, and accumulated instruction cycles.
 `CPU.step()` fetches and executes one instruction through Machine. Missing behavior raises `NotImplementedError`
 with its byte and address. The read-only `CPU.cycles` provides a nominal total for bounded execution and does not
-advance devices.
+advance devices. `CPU.enter_nmi()` performs functional NMI entry at an instruction boundary; PPU requests are not
+yet connected to it.
 Each completed instruction emits a DEBUG trace with its address, fetched bytes, mnemonic, and resulting CPU state.
 [`Emulator`](src/emulator.py) owns the connected CPU and provides single-step, cycle-budgeted run, and repeated reset
 controls. Whole instructions finish even when they exceed a run budget; see [execution control](doc/execution.md).

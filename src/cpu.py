@@ -51,6 +51,31 @@ class CPU:
         self.log_state("Reset completed")
 
 
+    def enter_nmi(self):
+        """Enter NMI at an instruction boundary without executing the handler."""
+        self._enter_interrupt(self._pc, self.p & 0xEF, 0xFFFA)
+        self.log_state("NMI entered")
+
+
+    def _enter_interrupt(self, return_address, status, vector):
+        # Save PC high, PC low, and pre-entry status on the wrapping stack page.
+        self._machine.write_byte(0x0100 | self._sp, return_address >> 8)
+        self._sp = (self._sp - 1) & 0xFF
+        self._machine.write_byte(0x0100 | self._sp, return_address & 0xFF)
+        self._sp = (self._sp - 1) & 0xFF
+        self._machine.write_byte(0x0100 | self._sp, status)
+        self._sp = (self._sp - 1) & 0xFF
+
+        # Set I after saving status and load the little-endian vector through Machine.
+        self._interrupt_disable = True
+        low = self._machine.read_byte(vector)
+        high = self._machine.read_byte(vector + 1)
+        self._pc = low | (high << 8)
+
+        # Charge functional entry without performing the hardware's discarded bus reads.
+        self._cycles += 7
+
+
     def step(self):
         """Execute one instruction at the current program counter."""
         # Save the instruction address before consuming the opcode.
@@ -349,25 +374,11 @@ class CPU:
 
 
     def _brk(self, address, opcode):
-        # Compute the resume address, skipping the padding byte without reading it.
+        # BRK skips its padding byte and saves status with B set at the IRQ vector.
         return_address = (self._pc + 1) & 0xFFFF
+        self._enter_interrupt(return_address, self.p | 0x30, 0xFFFE)
 
-        # Push PC high, PC low, then the pre-interrupt status with B and bit 5 set.
-        self._machine.write_byte(0x0100 | self._sp, return_address >> 8)
-        self._sp = (self._sp - 1) & 0xFF
-        self._machine.write_byte(0x0100 | self._sp, return_address & 0xFF)
-        self._sp = (self._sp - 1) & 0xFF
-        self._machine.write_byte(0x0100 | self._sp, self.p | 0x30)
-        self._sp = (self._sp - 1) & 0xFF
-
-        # Set I after saving status and load the little-endian IRQ vector through Machine.
-        self._interrupt_disable = True
-        low = self._machine.read_byte(0xFFFE)
-        high = self._machine.read_byte(0xFFFF)
-        self._pc = low | (high << 8)
-
-        # BRK takes seven nominal cycles and traces only its opcode byte.
-        self._cycles += 7
+        # Trace BRK as an instruction rather than an external interrupt event.
         self.log_instruction(address, (opcode,), "BRK")
 
 
