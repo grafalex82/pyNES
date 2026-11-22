@@ -357,3 +357,60 @@ def test_continues_after_first_cycle_block(tmp_path):
     # The diagnostic proves execution passed the first block and reached the intended instruction.
     assert result.returncode != 0
     assert "NotImplementedError: CPU opcode 0x02 at address 0x81F5 is not implemented" in result.stderr
+
+
+def test_controller_keys_update_both_players(main_module, make_cartridge, monkeypatch):
+    # The fixed mapping keeps simultaneous inputs and releases independent per player.
+    cartridge = make_cartridge(bytes([0xEA]))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
+    observed = []
+
+    def run_block(emulator, cycles):
+        machine = emulator._machine
+        if observed:
+            pygame.event.post(pygame.event.Event(pygame.QUIT))
+            return
+        events = [
+            (pygame.KEYDOWN, pygame.K_PERIOD, pygame.KSCAN_PERIOD),
+            (pygame.KEYDOWN, pygame.K_COMMA, pygame.KSCAN_COMMA),
+            (pygame.KEYDOWN, pygame.K_UP, None),
+            (pygame.KEYDOWN, pygame.K_g, None),
+            (pygame.KEYUP, pygame.K_g, None),
+        ]
+        for event_type, key, scancode in events:
+            values = {"key": key}
+            if scancode is not None:
+                values["scancode"] = scancode
+            pygame.event.post(pygame.event.Event(event_type, **values))
+        emulator._machine.ppu.advance(27394)
+        original_run(emulator, cycles)
+        observed.append(machine)
+
+    original_run = main_module.Emulator.run
+    monkeypatch.setattr(main_module.Emulator, "run", run_block)
+    main_module.main()
+    first, second = observed[0].controllers
+    assert [first._buttons, second._buttons] == [0b00010011, 0]
+
+
+def test_focus_loss_releases_controller_buttons(main_module, make_cartridge, monkeypatch):
+    # Losing focus clears currently held keys before the next emulation block.
+    cartridge = make_cartridge(bytes([0xEA]))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(cartridge)])
+    observed = []
+    original_run = main_module.Emulator.run
+
+    def run_block(emulator, cycles):
+        if observed:
+            pygame.event.post(pygame.event.Event(pygame.QUIT))
+            return
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_UP))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_g))
+        original_run(emulator, cycles)
+        pygame.event.post(pygame.event.Event(pygame.WINDOWFOCUSLOST))
+        original_run(emulator, cycles)
+        observed.append(emulator._machine)
+
+    monkeypatch.setattr(main_module.Emulator, "run", run_block)
+    main_module.main()
+    assert [controller._buttons for controller in observed[0].controllers] == [0, 0]

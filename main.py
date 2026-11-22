@@ -17,6 +17,54 @@ from machine import Machine
 from nesfile import NESFile
 
 
+_CONTROLLER_KEYS = {
+    pygame.K_UP: (0, "Up"),
+    pygame.K_DOWN: (0, "Down"),
+    pygame.K_LEFT: (0, "Left"),
+    pygame.K_RIGHT: (0, "Right"),
+    pygame.K_RETURN: (0, "Start"),
+    pygame.K_RSHIFT: (0, "Select"),
+    pygame.K_w: (1, "Up"),
+    pygame.K_s: (1, "Down"),
+    pygame.K_a: (1, "Left"),
+    pygame.K_d: (1, "Right"),
+    pygame.K_g: (1, "A"),
+    pygame.K_f: (1, "B"),
+    pygame.K_t: (1, "Start"),
+    pygame.K_r: (1, "Select"),
+}
+_CONTROLLER_SCANCODES = {
+    getattr(pygame, "KSCAN_PERIOD", -1): (0, "A"),
+    getattr(pygame, "KSCAN_COMMA", -1): (0, "B"),
+}
+
+
+def _handle_input_event(event, machine):
+    """Apply keyboard button changes and report whether F1 was pressed."""
+    # Releasing all held buttons prevents stuck input after focus leaves the window.
+    if event.type == getattr(pygame, "WINDOWFOCUSLOST", -1):
+        for controller in machine.controllers:
+            for button in ("A", "B", "Select", "Start", "Up", "Down", "Left", "Right"):
+                controller.set_button(button, False)
+        return False
+
+    # F1 keeps its inspection toggle independent from controller button state.
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+        return True
+
+    # Resolve punctuation by physical key position, with key symbols as a fallback.
+    if event.type not in (pygame.KEYDOWN, pygame.KEYUP):
+        return False
+    mapping = _CONTROLLER_KEYS.get(event.key)
+    scancode = getattr(event, "scancode", None)
+    if scancode in _CONTROLLER_SCANCODES:
+        mapping = _CONTROLLER_SCANCODES[scancode]
+    if mapping is not None:
+        player, button = mapping
+        machine.controllers[player].set_button(button, event.type == pygame.KEYDOWN)
+    return False
+
+
 def main():
     # Leave relative cartridge paths relative to the caller's working directory.
     parser = argparse.ArgumentParser(description=__doc__)
@@ -43,7 +91,7 @@ def main():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                if _handle_input_event(event, machine):
                     inspect_background = not inspect_background
             emulator.run(1000)
             completed_frame = machine.ppu.completed_frame
