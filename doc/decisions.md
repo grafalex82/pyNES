@@ -15,8 +15,9 @@ The first palette entry is the common backdrop for every subpalette. Synthetic t
 
 The inspection renderer now turns a captured snapshot into a native-size RGB frame. Fixed white 3-by-7 hexadecimal
 glyphs on black leave the last row for four two-pixel swatches. Attribute quadrants select the last three colors;
-the first uses the shared backdrop. This host-side visualization neither changes emulated state nor adds F1 input yet.
-Synthetic tests cover all hexadecimal glyphs, frame boundaries, attribute quadrants and disabled background rendering.
+the first uses the shared backdrop. This host-side visualization does not change emulated state. F1 selects the view
+for the next completed frame without changing logging or stopping execution; a second press restores normal output.
+Synthetic tests cover the glyphs, frame boundaries, attribute quadrants, disabled background and both F1 transitions.
 
 ### Ignored noise control writes (2026-11-22)
 

@@ -10,6 +10,7 @@ import pygame
 # Resolve components relative to this script, independently of the caller's working directory.
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
+from background_inspection import render_background_inspection
 from emulator import Emulator
 from frame_display import FrameDisplay
 from machine import Machine
@@ -35,16 +36,21 @@ def main():
         display.present(machine.ppu.render_frame())
         machine.ppu.enable_frame_output()
         last_frame_number = 0
+        inspect_background = False
 
         # Process events between bounded blocks and present only newly completed frames.
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                    inspect_background = not inspect_background
             emulator.run(1000)
             completed_frame = machine.ppu.completed_frame
             if completed_frame is not None and completed_frame[0] != last_frame_number:
                 last_frame_number, frame = completed_frame
+                if inspect_background:
+                    frame = render_background_inspection(machine.ppu.completed_background)
                 display.present(frame)
             display.update_fps()
     finally:

@@ -209,6 +209,54 @@ def test_synthetic_cartridge_presents_nametable_tile(main_module, tmp_path, monk
     assert not pygame.display.get_init()
 
 
+@pytest.mark.parametrize("options", [[], ["--debug"]])
+def test_f1_toggles_inspection_on_completed_frames(main_module, make_cartridge, monkeypatch, options):
+    # A looping synthetic program keeps the CPU running with the background layer disabled.
+    cartridge = make_cartridge(bytes([0x4C, 0x00, 0x80]))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), *options, str(cartridge)])
+    original_present = main_module.FrameDisplay.present
+    original_run = main_module.Emulator.run
+    presentations = []
+    cycles_at_presentation = []
+    current_cycles = [0]
+
+    def run_block(emulator, cycles):
+        original_run(emulator, cycles)
+        current_cycles[0] = emulator.cpu.cycles
+        if current_cycles[0] > 90000:
+            pytest.fail("The two completed frames did not arrive")
+
+    def record_present(display, frame):
+        # Record pixels after real scaling in the original display surface.
+        original_present(display, frame)
+        surface = pygame.display.get_surface()
+        samples = [surface.get_at(point)[:3] for point in ((0, 0), (2, 2), (3, 3), (5, 5), (0, 21), (5, 23))]
+        presentations.append((surface, samples))
+        cycles_at_presentation.append(current_cycles[0])
+
+        # Two complete presses switch on and then off; key releases do not toggle the mode.
+        if len(presentations) < 3:
+            pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F1))
+            pygame.event.post(pygame.event.Event(pygame.KEYUP, key=pygame.K_F1))
+        else:
+            pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    # The inspection view appears at the next frame and normal output returns at the following frame.
+    monkeypatch.setattr(main_module.Emulator, "run", run_block)
+    monkeypatch.setattr(main_module.FrameDisplay, "present", record_present)
+    main_module.main()
+    gray = (102, 102, 102)
+    white = (255, 255, 255)
+    black = (0, 0, 0)
+    assert [samples for _, samples in presentations] == [
+        [gray] * 6,
+        [white, white, black, black, gray, gray],
+        [gray] * 6,
+    ]
+    assert presentations[0][0] is presentations[1][0] is presentations[2][0]
+    assert 0 == cycles_at_presentation[0] < cycles_at_presentation[1] < cycles_at_presentation[2]
+
+
 def test_fps_title_tracks_slow_frames_between_cpu_blocks(main_module, make_cartridge, monkeypatch):
     # Advance wall-clock time between PPU frames, starting with the initial preview at time zero.
     cartridge = make_cartridge(bytes([0xEA]))
