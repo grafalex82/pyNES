@@ -5,6 +5,26 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### NTSC RGB color emphasis (2026-11-22)
+
+PPUMASK bits 5, 6, and 7 select red, green, and blue emphasis respectively. After grayscale masking and the fixed
+RGB lookup, each selected bit multiplies the other two RGB channels by 3/4, rounding down after each multiplication.
+Combined bits apply in red, green, blue order. This applies to the backdrop, background, sprites, and captured
+inspector swatches; it leaves palette RAM and PPUDATA reads unchanged. Synthetic tests cover all eight combinations,
+grayscale, each layer, and capture timing.
+
+Real NTSC emphasis attenuates phases of a composite signal, rather than independently scaling RGB channels; the
+chosen approximation can produce different colors for every cartridge using emphasis. PAL swaps the red and green
+emphasis meanings, which this first NTSC profile does not model. Mid-frame changes remain outside the whole-frame
+model. No ROM is patched. See [NESdev color emphasis](https://www.nesdev.org/wiki/Colour_emphasis),
+[NTSC signal details](https://www.nesdev.org/wiki/NTSC_video), and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+The local Battle City image's first completed frame was uniform RGB (102, 102, 102), captured by cycle 27,396.
+A bounded run reached 1,000,001 cycles at PC $D8FA with 33 captured frames and no `NotImplementedError`; this does
+not establish playability. Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c`
+before and after.
+
 ### Grayscale rendering (2026-11-22)
 
 PPUMASK bit 0 masks displayed palette codes with $30 before the fixed RGB lookup. It applies to backdrop, background,

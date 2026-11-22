@@ -26,6 +26,7 @@ class PPU:
         self._background_left_enabled = False
         self._sprites_left_enabled = False
         self._grayscale_enabled = False
+        self._color_emphasis = 0
         self._frame_output_enabled = False
         self._completed_frame = None
         self._completed_background = None
@@ -146,6 +147,7 @@ class PPU:
         self._sprites_left_enabled = bool(value & 0x04)
         self._background_enabled = bool(value & 0x08)
         self._sprites_enabled = bool(value & 0x10)
+        self._color_emphasis = (value >> 5) & 0x07
 
 
     def _read_ppustatus(self):
@@ -373,7 +375,16 @@ class PPU:
         code = self.read_vram(address)
         if self._grayscale_enabled:
             code &= 0x30
-        return NES_COLORS[code]
+        rgb = NES_COLORS[code]
+
+        # NTSC approximation: each emphasis bit attenuates the other two RGB channels by 3/4.
+        channels = [(rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF]
+        for emphasized in range(3):
+            if self._color_emphasis & (1 << emphasized):
+                for channel in range(3):
+                    if channel != emphasized:
+                        channels[channel] = channels[channel] * 3 // 4
+        return (channels[0] << 16) | (channels[1] << 8) | channels[2]
 
 
     def read_vram(self, address):

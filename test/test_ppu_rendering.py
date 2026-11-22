@@ -9,6 +9,47 @@ from nesfile import NESFile
 from nes_palette import NES_COLORS
 
 
+@pytest.mark.parametrize("mask,rgb", [
+    (0x00, (21, 95, 217)), (0x20, (21, 71, 162)), (0x40, (15, 95, 162)), (0x80, (15, 71, 217)),
+    (0x60, (15, 71, 121)), (0xA0, (15, 53, 162)), (0xC0, (11, 71, 162)), (0xE0, (11, 53, 121)),
+])
+def test_ntsc_color_emphasis_combinations_on_backdrop(make_cpu, mask, rgb):
+    # All channels are nonzero and reveal repeated integer attenuation for combined bits.
+    _, machine = make_cpu()
+    machine.ppu.write_vram(0x3F00, 0x11)
+    machine.write_byte(0x2009, mask)
+    assert machine.ppu.render_frame() == bytes(rgb) * (256 * 240)
+    assert machine.ppu.read_vram(0x3F00) == 0x11
+
+
+def test_grayscale_and_emphasis_apply_to_both_layers_and_backdrop(tmp_path):
+    # Distinct non-gray codes supply the backdrop, a background pixel, and a separate sprite pixel.
+    chr_rom = bytearray(8192)
+    chr_rom[16] = 0x80
+    path = tmp_path / "emphasis.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    ppu.write_vram(0x2042, 1)
+    for address, code in ((0x3F00, 0x06), (0x3F01, 0x16), (0x3F11, 0x26)):
+        ppu.write_vram(address, code)
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (15, 1, 0, 32):
+        machine.write_byte(0x2004, value)
+
+    # Grayscale selects $00, $10, and $20 before red emphasis attenuates green and blue.
+    machine.write_byte(0x2001, 0x39)
+    frame = ppu.render_frame()
+    for x, expected in ((16, (173, 129, 129)), (32, (255, 190, 191)), (40, (102, 76, 76))):
+        offset = (16 * 256 + x) * 3
+        assert frame[offset:offset + 3] == bytes(expected)
+    assert [ppu.read_vram(address) for address in (0x3F00, 0x3F01, 0x3F11)] == [0x06, 0x16, 0x26]
+
+
 @pytest.mark.parametrize("code", [0x0F, 0x16, 0x21, 0x3D])
 def test_grayscale_masks_backdrop_color_without_changing_palette(make_cpu, code):
     # Render each brightness range with grayscale off, on, then off again.
@@ -349,7 +390,7 @@ def test_stationary_background_pattern_tables_and_transparency(tmp_path):
     assert pixel(frame, 16, 8) == backdrop
 
     # A later mirrored PPUMASK write can disable the background again.
-    machine.write_byte(0x3FF9, 0xF6)
+    machine.write_byte(0x3FF9, 0x16)
     assert pixel(ppu.render_frame(), 16, 9) == backdrop
 
 

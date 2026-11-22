@@ -241,7 +241,8 @@ $3F10, $3F14, $3F18, and $3F1C also share storage with $3F00, $3F04, $3F08, and 
 Writes retain only the low six bits, and internal reads return those raw color codes. For example, a write of $E1
 to $3F30 makes $3F00, $3F10, and $3F20 read as $21. Each PPU has independent zero-initialized palette storage.
 Rendering uses these colors for the backdrop, stationary background, and sprites. PPUMASK bit 0 masks the displayed
-color codes with $30 without changing stored palette data or the current raw PPUDATA read behavior.
+color codes with $30 without changing stored palette data or the current raw PPUDATA read behavior. Bits 5-7 apply
+the [NTSC RGB emphasis approximation](decisions.md#ntsc-rgb-color-emphasis-2026-11-22) to displayed colors.
 See [the palette decision](decisions.md#ppu-palette-ram-2026-11-21).
 
 ## Supported configuration

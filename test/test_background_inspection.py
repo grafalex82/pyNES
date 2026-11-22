@@ -9,6 +9,26 @@ def pixel(frame, x, y):
     return tuple(frame[offset:offset + 3])
 
 
+def test_swatches_capture_emphasis_at_vblank(make_cpu):
+    # Red emphasis changes both the completed frame and its matching inspection colors.
+    _, machine = make_cpu()
+    ppu = machine.ppu
+    ppu.write_vram(0x3F00, 0x11)
+    machine.write_byte(0x2001, 0x20)
+    ppu.enable_frame_output()
+    ppu.advance(27394)
+    first = ppu.completed_background
+    assert first[3][0] == 0x1547A2
+    assert ppu.completed_frame[1][:3] == bytes((21, 71, 162))
+
+    # A later control change does not mutate the captured swatch.
+    machine.write_byte(0x2001, 0)
+    ppu.advance(29781)
+    assert first[3][0] == 0x1547A2
+    assert ppu.completed_background[3][0] == NES_COLORS[0x11]
+    assert bytes(pixel(render_background_inspection(first), 0, 7)) == bytes((21, 71, 162))
+
+
 def test_swatches_capture_grayscale_colors_at_vblank(make_cpu):
     # Capture grayscale backdrop and palette colors, then disable it before the next frame.
     _, machine = make_cpu()
