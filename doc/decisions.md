@@ -5,6 +5,14 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Background inspection snapshot (2026-11-22)
+
+When frame output is enabled, each vblank capture also records immutable $2000 nametable tile and attribute bytes
+and the 16 background palette entries converted to packed RGB. Its sequence matches the captured frame. Direct VRAM
+reads leave PPU register and latch state unchanged, and later writes do not alter the snapshot. This records the same
+whole-frame approximation as normal rendering; it does not add a visible inspection mode or modify game behavior.
+The first palette entry is the common backdrop for every subpalette. Synthetic tests check timing and isolation.
+
 ### Ignored noise control writes (2026-11-22)
 
 Machine routes $400C writes to the dummy APU, which logs and ignores them. Hardware controls noise volume, envelope,

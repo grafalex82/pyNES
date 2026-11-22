@@ -24,6 +24,7 @@ class PPU:
         self._background_enabled = False
         self._frame_output_enabled = False
         self._completed_frame = None
+        self._completed_background = None
         self._published_frames = 0
         self._chr_rom = chr_rom
         self._chr_size = chr_size
@@ -47,6 +48,15 @@ class PPU:
     def completed_frame(self):
         """Return the latest (sequence number, RGB frame), or None before the first capture."""
         return self._completed_frame
+
+
+    @property
+    def completed_background(self):
+        """Return (sequence, tiles, attributes, 16 packed RGB colors), or None before capture.
+
+        The palette follows $3F00-$3F0F; background pattern index zero uses entry 0 for every subpalette.
+        """
+        return self._completed_background
 
 
     def enable_frame_output(self):
@@ -207,8 +217,12 @@ class PPU:
                 logger.debug("Vblank started")
                 if self._frame_output_enabled:
                     frame = self.render_frame()
+                    tiles = bytes(self.read_vram(address) for address in range(0x2000, 0x23C0))
+                    attributes = bytes(self.read_vram(address) for address in range(0x23C0, 0x2400))
+                    colors = tuple(NES_COLORS[self.read_vram(0x3F00 + index)] for index in range(16))
                     self._published_frames += 1
                     self._completed_frame = (self._published_frames, frame)
+                    self._completed_background = (self._published_frames, tiles, attributes, colors)
             if previous < VBLANK_END_CPU_CYCLE <= self._frame_cycle:
                 self._vblank = False
                 logger.debug("Vblank ended")

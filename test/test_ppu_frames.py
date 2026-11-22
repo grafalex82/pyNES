@@ -43,3 +43,42 @@ def test_palette_write_between_vblanks_appears_in_the_next_frame(make_cpu):
     ppu.advance(1)
     assert ppu.completed_frame == (2, bytes((100, 176, 255)) * (256 * 240))
     assert first == (1, bytes((0, 42, 136)) * (256 * 240))
+
+
+def test_background_snapshot_tracks_vblank_without_changing_ppu_state(make_cpu):
+    # Populate both ends of the nametable and its attributes while the background remains disabled.
+    _, machine = make_cpu()
+    ppu = machine.ppu
+    for address, value in ((0x2000, 0x12), (0x23BF, 0x34), (0x23C0, 0xE4), (0x23FF, 0x1B),
+                           (0x3F00, 0x01), (0x3F05, 0x21)):
+        ppu.write_vram(address, value)
+    machine.write_byte(0x2006, 0x21)
+    machine.write_byte(0x2006, 0x23)
+    machine.write_byte(0x2006, 0x24)
+    state = (ppu._vram_address, ppu._temporary_address, ppu._awaiting_second_write, ppu._vram_read_buffer,
+             ppu.last_writes)
+    ppu.enable_frame_output()
+    ppu.advance(27393)
+    assert ppu.completed_background is None
+
+    # Capturing uses internal VRAM reads, leaving CPU-visible register and latch state untouched.
+    ppu.advance(1)
+    first = ppu.completed_background
+    number, tiles, attributes, colors = first
+    assert number == ppu.completed_frame[0] == 1
+    assert len(tiles) == 960 and (tiles[0], tiles[-1]) == (0x12, 0x34)
+    assert len(attributes) == 64 and (attributes[0], attributes[-1]) == (0xE4, 0x1B)
+    assert len(colors) == 16 and (colors[0], colors[5]) == (0x002A88, 0x64B0FF)
+    assert (ppu._vram_address, ppu._temporary_address, ppu._awaiting_second_write, ppu._vram_read_buffer,
+            ppu.last_writes) == state
+
+    # Later writes cannot alter the published bytes or palette and only appear at the next vblank.
+    ppu.write_vram(0x2000, 0x56)
+    ppu.write_vram(0x23C0, 0x39)
+    ppu.write_vram(0x3F05, 0x30)
+    assert ppu.completed_background is first
+    ppu.advance(29781)
+    second = ppu.completed_background
+    assert second[0] == ppu.completed_frame[0] == 2
+    assert (second[1][0], second[2][0], second[3][5]) == (0x56, 0x39, 0xFFFEFF)
+    assert (first[1][0], first[2][0], first[3][5]) == (0x12, 0xE4, 0x64B0FF)
