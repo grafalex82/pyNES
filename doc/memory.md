@@ -161,14 +161,14 @@ modeled. See [the decision record](decisions.md#ppu-data-reads-2026-11-21).
 
 ## PPU status reads
 
-Reads of $2002 and its mirrors return the current vblank flag in bit 7, with all other bits zero. Every read clears
-vblank and resets the address write pair without advancing the frame phase. A second read returns $00 until a later
-frame sets vblank again.
+Reads of $2002 and its mirrors return vblank in bit 7 and sprite 0 hit in bit 6; bits 0-5 are zero. Every read clears
+vblank and resets the address write pair without advancing the frame phase or clearing sprite 0 hit.
 
 Each new PPU starts at frame cycle 0 with vblank clear. The approximate frame lasts 29,781 nominal CPU cycles;
 vblank starts at cycle 27,394 and clears at cycle 29,667 even if it was never read. `Emulator` advances the PPU after
 each completed CPU instruction. CPU reset preserves the PPU and its phase. An edge of the enabled vblank condition
-latches an NMI request for the execution facade. This model omits sub-instruction races, sprite status, and open bus.
+latches an NMI request for the execution facade. Sprite 0 hit is estimated from frame-start inputs and clears at
+cycle 29,667. This model omits sub-instruction races, sprite overflow, and open bus.
 See [the decision record](decisions.md#cpu-driven-ppu-vblank-2026-11-21).
 
 ## Internal RAM and its mirrors

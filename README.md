@@ -109,7 +109,8 @@ Each Machine also owns a minimal [`PPU`](src/ppu.py). CPU addresses $2000-$3FFF 
 A pair of $2006 writes selects a video address; reading $2002 resets the shared scroll/address write pair.
 Writes to $2000 decode the PPUCTRL settings; the video address increment and NMI enable have effects. Reads and
 writes at $2007 access video data and advance the address by 1 or 32. Non-palette reads are buffered; palette reads
-return the color immediately. Status reads report and clear vblank, whose approximate phase advances with CPU
+return the color immediately. Status reads report and clear vblank and preserve sprite 0 hit in bit 6. The hit uses
+frame-start collision inputs and approximate pixel timing. The PPU phase advances with CPU
 instruction cycles through `Emulator`. A vblank NMI request is serviced after the completed instruction. Writes to
 $2003 select an OAM address; $2004 writes store a byte and advance the address, while reads do not advance it. OAM
 starts zero-filled and accesses use this functional behavior even during rendering. Other PPU register reads remain

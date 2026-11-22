@@ -18,6 +18,9 @@ class PPU:
     def __init__(self, chr_rom, chr_size, nametable_ram, mirroring):
         self._frame_cycle = 0
         self._vblank = False
+        self._sprite_zero_hit = False
+        self._sprite_zero_cycle = None
+        self._sample_collision = True
         self._nmi_pending = False
         self._nmi_enabled = False
         self._background_enabled = False
@@ -154,7 +157,7 @@ class PPU:
     def _read_ppustatus(self):
         # PPUSTATUS reports and clears vblank without changing the running frame phase.
         self._awaiting_second_write = False
-        status = 0x80 if self._vblank else 0x00
+        status = (0x80 if self._vblank else 0) | (0x40 if self._sprite_zero_hit else 0)
         self._vblank = False
         return status
 
@@ -255,10 +258,18 @@ class PPU:
         """Advance the approximate video phase by completed CPU instruction cycles."""
         # Process each crossed frame separately so a large advance cannot skip vblank transitions.
         while cycles:
+            # Sample once at the beginning of each visible frame, independently of frame publication.
+            if self._sample_collision:
+                self._sprite_zero_cycle = self._find_sprite_zero_cycle()
+                self._sample_collision = False
             elapsed = min(cycles, FRAME_CPU_CYCLES - self._frame_cycle)
             previous = self._frame_cycle
             self._frame_cycle += elapsed
             cycles -= elapsed
+
+            # Latch the first overlap when the approximate raster reaches it.
+            if self._sprite_zero_cycle is not None and previous < self._sprite_zero_cycle <= self._frame_cycle:
+                self._sprite_zero_hit = True
 
             # Vblank starts and clears at fixed CPU-cycle boundaries, independently of status reads.
             if previous < VBLANK_START_CPU_CYCLE <= self._frame_cycle:
@@ -276,9 +287,72 @@ class PPU:
                     self._completed_background = (self._published_frames, tiles, attributes, colors)
             if previous < VBLANK_END_CPU_CYCLE <= self._frame_cycle:
                 self._vblank = False
+                self._sprite_zero_hit = False
                 logger.debug("Vblank ended")
             if self._frame_cycle == FRAME_CPU_CYCLES:
                 self._frame_cycle = 0
+                self._sample_collision = True
+
+
+    def _find_sprite_zero_cycle(self):
+        """Estimate the first sprite 0/background overlap using the state at the start of the frame."""
+        # A hit needs both layers enabled, regardless of the sprite's foreground/background priority.
+        if not self._background_enabled or not self._sprites_enabled:
+            return None
+
+        # The first OAM entry describes sprite 0: its stored Y is one line above the displayed top edge.
+        # An 8x8 sprite uses the selected pattern table; an 8x16 sprite uses tile bit 0 as the table and
+        # the remaining bits as an even tile number, followed by the next tile for its lower half.
+        sprite_y, tile, attributes, sprite_x = self._oam[:4]
+        height = 16 if self._sprite_height_16 else 8
+        pattern_base = (tile & 1) * 0x1000 if self._sprite_height_16 else int(self._sprite_pattern_table_high) * 0x1000
+        if self._sprite_height_16:
+            tile &= 0xFE
+
+        # Decode the same origin as the background renderer: nametable bits select a 256x240 region,
+        # coarse coordinates select an 8x8 tile, and fine coordinates select a pixel within the tile.
+        address = self._scroll_address_latch
+        scroll_x = ((address >> 10) & 1) * 256 + (address & 31) * 8 + self._fine_x
+        scroll_y = ((address >> 11) & 1) * 240 + ((address >> 5) & 31) * 8 + ((address >> 12) & 7)
+
+        # Search visible sprite pixels in screen order, so the first overlap is the earliest raster position.
+        # Y does not wrap: OAM Y=$EF-$FF places the sprite entirely below the visible screen.
+        for row in range(min(height, max(0, 239 - sprite_y))):
+            y = sprite_y + 1 + row
+
+            # Flip across the whole sprite before selecting the tile half and row. OR the two CHR planes:
+            # a set bit in either plane means a nonzero, opaque sprite pattern index at that position.
+            source_row = height - 1 - row if attributes & 0x80 else row
+            pattern = pattern_base + (tile + source_row // 8) * 16 + source_row % 8
+            sprite_bits = self.read_vram(pattern) | self.read_vram(pattern + 8)
+
+            # The hardware cannot report a hit at x=255. Both left-edge masks must permit x=0..7.
+            for column in range(min(8, 255 - sprite_x)):
+                x = sprite_x + column
+                if x < 8 and (not self._background_left_enabled or not self._sprites_left_enabled):
+                    continue
+
+                # CHR bit 7 is the leftmost pixel; horizontal flip reverses the selected bit order.
+                bit = column if attributes & 0x40 else 7 - column
+                if not sprite_bits & (1 << bit):
+                    continue
+
+                # Translate the screen position into the scrolled 2x2 nametable grid, wrapping at its edges.
+                # Find the background tile and row, then combine its two planes to test opacity independently
+                # of palette colors and sprite priority. Nametable mirroring is handled by read_vram.
+                world_x, world_y = (scroll_x + x) % 512, (scroll_y + y) % 480
+                nametable = 0x2000 + (world_y // 240 * 2 + world_x // 256) * 0x400
+                background_tile = self.read_vram(nametable + (world_y % 240 // 8) * 32 + world_x % 256 // 8)
+                background_pattern = int(self._background_pattern_table_high) * 0x1000
+                background_pattern += background_tile * 16 + world_y % 8
+                background_bits = self.read_vram(background_pattern) | self.read_vram(background_pattern + 8)
+                if background_bits & (0x80 >> (world_x % 8)):
+                    # Approximate one scanline as 341 PPU dots and one CPU cycle as three PPU dots.
+                    # Round (y * 341 + x + 1) / 3 up to the CPU cycle that reaches this pixel.
+                    return (y * 341 + x + 3) // 3
+
+        # No eligible overlap was found in the sampled frame-start state.
+        return None
 
 
     def render_frame(self):

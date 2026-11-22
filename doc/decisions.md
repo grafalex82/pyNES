@@ -1323,6 +1323,29 @@ at instruction boundaries rather than modeling bus cycles. See the [NESdev instr
 
 [branch-cycles]: https://www.nesdev.org/wiki/Instruction_reference
 
+## Sprite 0 hit timing (2026-11-22)
+
+Task 7.1 samples the background, sprite 0, scroll, pattern tables, and layer masks at the start of each visible
+frame. It searches for the first overlap of nonzero pattern pixels, ignoring sprite priority and excluding x=255
+and masked pixels. The estimated CPU cycle is `ceil((y * 341 + x + 1) / 3)`; completed instructions advance the
+phase, so software observes the flag at an instruction boundary. The flag survives status reads and frame capture
+and clears at the existing pre-render boundary, cycle 29,667. Frame output need not be enabled.
+
+Hardware detects overlap as pixels are rendered and clears the flag at pre-render dot 1. Frame-start sampling and
+instruction-boundary timing are deliberate approximations: changes during the visible frame cannot affect this
+frame's hit. This applies to any ROM using the flag; no ROM is patched. [NESdev sprite 0 hit][sprite-zero] and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp) describe the
+hardware and an independent implementation. Synthetic tests cover timing, masks, transparency, priority, and
+latch lifetime.
+
+The identified Super Mario Bros. (Europe) image reached $8159 at cycle 956,448 after visiting the $8150-$8155
+wait, then reached the 3,000,000-cycle budget at $8057 without a `NotImplementedError`. Its SHA-256 remained
+`ff69421b584ce898b3d4b3ab57202900c079c45cdface84d654d0368ad796ffe`. This does not establish playability. The next
+planned visual limitation is the unimplemented within-frame horizontal scroll split; no further exception was
+observed in this bounded run.
+
+[sprite-zero]: https://www.nesdev.org/wiki/PPU_OAM#Sprite_zero_hits
+
 ## Departures and patches
 
 ### Implied flag instructions and official NOP (2026-11-19)

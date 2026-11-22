@@ -82,7 +82,7 @@
 
 ## 7. Pass the Super Mario Bros. sprite-zero wait and render the scroll split
 
-- [ ] 7.1 Schedule sprite 0 hit at the first eligible pixel overlap in the visible frame and expose it in
+- [x] 7.1 Schedule sprite 0 hit at the first eligible pixel overlap in the visible frame and expose it in
       `$2002` bit 6. Verify timing, latch lifetime, transparency, layer and left-edge masks, x=255, and sprite
       priority with synthetic scenes. Run the identified Super Mario Bros. (Europe) ROM with a cycle budget
       and verify that execution leaves `$8150–$8155`. Document the timing approximation and any next obstacle.
