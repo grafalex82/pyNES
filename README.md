@@ -127,8 +127,8 @@ Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $400
 audio effects;
 reads return $00, including inactive channel and interrupt status. Writes to the APU frame counter at $4017 are also
 ignored; reads at $4017 (controller 2) return $00. This approximates rather than models open bus, DMC playback,
-frame timing, or frame IRQs. Writes to sprite DMA at $4014 are temporarily ignored; no sprites are transferred and
-no DMA stall occurs. Controller strobe writes to $4016 are ignored, and reads at $4016 and $4017 always return $00;
+frame timing, or frame IRQs. Writes to $4014 copy a CPU page into OAM without a DMA stall. Controller strobe writes
+to $4016 are ignored, and reads at $4016 and $4017 always return $00;
 button input is not implemented. Reads at $4014 and other unconnected registers remain unsupported.
 
 [`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and seven boolean status fields as read/write properties.

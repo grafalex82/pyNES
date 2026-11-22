@@ -5,6 +5,21 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Functional OAM DMA (2026-11-22)
+
+A $4014 write synchronously reads the selected CPU page in ascending order through Machine and writes each byte to
+OAMDATA. This respects CPU mirrors, register read effects, the current OAM address, and destination wrap. An
+unsupported source read propagates its error after any preceding writes. Reads of $4014 remain unsupported.
+Hardware DMA stalls the CPU for 513 or 514 cycles; this functional transfer adds no stall or corresponding PPU
+time, simplifying instruction-boundary execution while changing timing for any game using DMA. It also inherits the
+functional OAM behavior during rendering. No ROM is patched. See [NESdev DMA](https://www.nesdev.org/wiki/DMA)
+and [Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+Synthetic tests verify the mirrored source, ordered reads, destination wrap, unsupported reads, and omitted stall.
+
+The local Battle City image reached 1,000,001 cycles at PC $D8FA with 12 DMA writes and no `NotImplementedError`.
+Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` before and after. This bounded
+run does not establish playability; sprite rendering remains unimplemented.
+
 ### Functional OAM register access (2026-11-22)
 
 OAM is a separate 256-byte array initialized to zero for reproducible inspection. $2003 selects its address;

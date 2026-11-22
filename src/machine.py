@@ -31,7 +31,7 @@ class Machine:
         $400C        Noise control; dummy writes, reads unsupported.
         $4001-$4003, $4005-$4007, $4009-$400B, $400D-$400F  Other APU registers; not connected yet.
         $4010-$4013  DMC registers; dummy writes and zero reads.
-        $4014        Sprite DMA; writes ignored, reads unsupported.
+        $4014        Sprite DMA; page transfer without stall, reads unsupported.
         $4015        APU status/control; dummy writes and zero reads.
         $4016        Controller 1; writes ignored and reads return zero.
         $4017        Controller 2 read returns zero; APU frame-counter write ignored.
@@ -54,11 +54,11 @@ class Machine:
 
     Reads and writes in $2000-$3FFF are routed to PPU register offsets. PPU status
     reports and clears timed vblank, and PPUDATA reads use a video read buffer.
-    Other PPU reads raise NotImplementedError identifying the register offset.
+    OAMDATA reads access object memory. Other PPU reads raise NotImplementedError identifying the register offset.
     Reads and writes at $4010-$4013 and $4015
     route to a dummy APU; writes have no effects and reads return $00. Writes at
-    $4017 are also ignored by the APU. Writes to $4014 and $4016 are ignored as
-    temporary DMA and controller stubs; controller reads at $4016/$4017 return zero. Other reads
+    $4017 are also ignored by the APU. Writes to $4014 copy a CPU page into OAM without a stall.
+    Writes to $4016 are ignored; controller reads at $4016/$4017 return zero. Other reads
     and writes in $4000-$7FFF raise NotImplementedError identifying the CPU address.
 
     Addresses are assumed to be valid 16-bit CPU addresses ($0000-$FFFF).
@@ -129,8 +129,10 @@ class Machine:
             self.ppu.write_byte(address & 0x07, value)
             return
 
-        # Sprite DMA is not implemented; temporarily accept its write without a transfer or stall.
+        # DMA reads through the CPU map and writes through OAMDATA, preserving its address wrapping.
         if address == 0x4014:
+            for offset in range(256):
+                self.ppu.write_byte(4, self.read_byte((value << 8) | offset))
             return
 
         # Controller strobing is not implemented; temporarily accept its writes without effects.
