@@ -3,6 +3,37 @@
 import pytest
 
 
+def test_ppuscroll_and_ppuaddr_share_temporary_address_and_toggle(make_cpu):
+    # PPUCTRL supplies nametable bits; a mirrored scroll pair supplies coarse and fine positions.
+    _, machine = make_cpu()
+    ppu = machine.ppu
+    machine.write_byte(0x2000, 0x03)
+    machine.write_byte(0x200D, 0x7D)
+    machine.write_byte(0x3FFD, 0x5E)
+    assert ppu._fine_x == 5
+    assert ppu._scroll_address_latch == 0x6D6F
+    assert not ppu._awaiting_second_write
+
+    # A status read interrupts a partial pair and the next scroll write starts horizontally.
+    machine.write_byte(0x2005, 0xFF)
+    machine.read_byte(0x200A)
+    machine.write_byte(0x2005, 0x12)
+    machine.write_byte(0x2005, 0x34)
+    assert ppu._fine_x == 2
+    assert ppu._scroll_address_latch & 0x001F == 2
+    assert ppu._scroll_address_latch & 0x73E0 == 0x40C0
+
+    # Switching ports within a pair commits the combined temporary address through PPUADDR.
+    machine.write_byte(0x2005, 0x2B)
+    before = ppu._scroll_address_latch
+    machine.write_byte(0x2006, 0xA5)
+    assert ppu._vram_address == (before & 0x7F00) | 0xA5
+    machine.write_byte(0x2006, 0x21)
+    machine.write_byte(0x2005, 0x1B)
+    assert not ppu._awaiting_second_write
+    assert ppu._scroll_address_latch & 0x73E0 == 0x3060
+
+
 def test_oam_ports_write_wrap_and_read_without_increment(make_cpu):
     # Writes through mirrored ports advance from $FF through $00 to $01.
     _, machine = make_cpu()

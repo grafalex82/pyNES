@@ -119,12 +119,13 @@ raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pa
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color
 codes at $3F00-$3FFF with hardware mirrors.
 `PPU.render_frame()` produces a packed RGB frame using a fixed RGB approximation. When $2001 bit 3 is set, it draws
-the stationary $2000 nametable with the background pattern table selected by $2000 bit 4 and subpalettes selected by
-the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. When $2001 bit 4 is set, 8 × 8 or 8 × 16
+the scrolled nametables selected by $2000 and $2005, with the background pattern table selected by $2000 bit 4 and
+subpalettes selected by attribute bytes. Scroll state is sampled for a whole frame. Pattern index zero uses the $3F00
+backdrop. When $2001 bit 4 is set, 8 × 8 or 8 × 16
 sprites use OAM positions and sprite subpalettes. For 8 × 8 sprites $2000 bit 3 selects the pattern table; for 8 × 16
 sprites the tile number selects the table and tile pair. Sprite index zero is transparent. The first opaque sprite in
-OAM order wins, and its priority bit determines whether an opaque background pixel covers it. Sprite flips, scrolling,
-and the hardware's forced-blank palette override are not yet rendered. PPUMASK bit 0 applies grayscale by masking each
+OAM order wins, and its priority bit determines whether an opaque background pixel covers it. Sprite flips and the
+hardware's forced-blank palette override are not yet rendered. PPUMASK bit 0 applies grayscale by masking each
 displayed NES color code with $30 before RGB conversion. Bits 5-7 apply a fixed NTSC RGB emphasis approximation;
 each selected color reduces the other two channels to three quarters, rounding down for each step.
 PPUMASK bits 1 and 2 independently enable background and sprites in the leftmost eight pixels.
@@ -192,7 +193,7 @@ python main.py --help
 
 The command opens a window before the first CPU block and shows the initial backdrop. It captures a completed frame
 at each emulated vblank and presents the newest one between 1000-cycle blocks. Close the window to stop. Execution
-is not paced in real time; the title shows actual displayed frames per second. The stationary background can be drawn.
+is not paced in real time; the title shows actual displayed frames per second.
 Logging is disabled by default; `--debug` enables reset, instruction, and device traces. An execution error closes the
 window and propagates with its traceback in either mode.
 

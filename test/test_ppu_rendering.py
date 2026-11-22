@@ -9,6 +9,66 @@ from nesfile import NESFile
 from nes_palette import NES_COLORS
 
 
+def test_fine_scroll_moves_pattern_and_attribute_boundaries(tmp_path):
+    # A recognizable tile row and two attribute quadrants expose sub-tile scrolling.
+    chr_rom = bytearray(8192)
+    chr_rom[16 + 5] = 0xFF
+    path = tmp_path / "fine-scroll.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    for tile_x in range(4):
+        ppu.write_vram(0x2000 + tile_x, 1)
+    ppu.write_vram(0x23C0, 0x04)
+    ppu.write_vram(0x3F01, 0x01)
+    ppu.write_vram(0x3F05, 0x21)
+    machine.write_byte(0x2005, 3)
+    machine.write_byte(0x2005, 5)
+    machine.write_byte(0x2001, 0x0A)
+    frame = ppu.render_frame()
+
+    # World x=16 appears at screen x=13; world row 5 appears at screen row 0.
+    assert frame[12 * 3:13 * 3] == bytes((0, 42, 136))
+    assert frame[13 * 3:14 * 3] == bytes((100, 176, 255))
+    assert frame[(256 + 13) * 3:(256 + 14) * 3] == bytes((102, 102, 102))
+
+
+@pytest.mark.parametrize("mirroring,physical_pages", [(0, (0, 0, 1, 1)), (1, (0, 1, 0, 1))])
+@pytest.mark.parametrize("base", [0, 1, 2, 3])
+def test_scroll_crosses_both_nametable_boundaries(tmp_path, mirroring, physical_pages, base):
+    # Fill each physical nametable with its own opaque tile and set a distinct color for each tile.
+    chr_rom = bytearray(8192)
+    chr_rom[16:24] = bytes([0xFF] * 8)
+    chr_rom[40:48] = bytes([0xFF] * 8)
+    path = tmp_path / "scroll.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1, mirroring]) + bytes(9) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    for logical, page in enumerate(physical_pages):
+        for offset in range(960):
+            ppu.write_vram(0x2000 + logical * 0x400 + offset, page + 1)
+    ppu.write_vram(0x3F01, 0x01)
+    ppu.write_vram(0x3F02, 0x21)
+
+    # Scroll five pixels before both edges, with the entire left edge enabled.
+    machine.write_byte(0x2000, base)
+    machine.write_byte(0x2005, 251)
+    machine.write_byte(0x2005, 235)
+    machine.write_byte(0x2001, 0x0A)
+    frame = ppu.render_frame()
+    logical = (base, base ^ 1, base ^ 2, base ^ 3)
+    colors = ((0, 42, 136), (100, 176, 255))
+    for (x, y), table in zip(((4, 4), (5, 4), (4, 5), (5, 5)), logical):
+        offset = (y * 256 + x) * 3
+        assert tuple(frame[offset:offset + 3]) == colors[physical_pages[table]]
+
+    # The left mask stays anchored to the screen rather than moving with the scrolled tiles.
+    machine.write_byte(0x2001, 0x08)
+    frame = ppu.render_frame()
+    assert frame[(5 * 256 + 7) * 3:(5 * 256 + 8) * 3] == bytes((102, 102, 102))
+    assert tuple(frame[(5 * 256 + 8) * 3:(5 * 256 + 9) * 3]) == colors[physical_pages[base ^ 3]]
+
+
 @pytest.mark.parametrize("mask,rgb", [
     (0x00, (21, 95, 217)), (0x20, (21, 71, 162)), (0x40, (15, 95, 162)), (0x80, (15, 71, 217)),
     (0x60, (15, 71, 121)), (0xA0, (15, 53, 162)), (0xC0, (11, 71, 162)), (0xE0, (11, 53, 121)),

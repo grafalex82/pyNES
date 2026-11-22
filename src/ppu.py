@@ -40,7 +40,9 @@ class PPU:
         self._oam_address = 0
         self._vram_read_buffer = 0
         self._vram_address = 0
-        self._temporary_address = 0
+        # The PPU's temporary register t is shared by scroll settings and PPUADDR writes.
+        self._scroll_address_latch = 0
+        self._fine_x = 0
         self._awaiting_second_write = False
         self._write_ppuctrl(0)
 
@@ -116,6 +118,10 @@ class PPU:
             self._oam[self._oam_address] = value
             self._oam_address = (self._oam_address + 1) & 0xFF
 
+        # PPUSCROLL shares the first/second write toggle and temporary address with PPUADDR.
+        if offset == 5:
+            self._write_ppuscroll(value)
+
         # PPUADDR ($2006) selects the PPU video address in two writes.
         if offset == 6:
             self._write_ppuaddr(value)
@@ -133,6 +139,7 @@ class PPU:
         # Decode VPHB SINN into independent settings; NN selects the base nametable coordinates.
         self._base_nametable_x = bool(value & 0x01)
         self._base_nametable_y = bool(value & 0x02)
+        self._scroll_address_latch = (self._scroll_address_latch & ~0x0C00) | ((value & 0x03) << 10)
         self._increment_32 = bool(value & 0x04)
         self._sprite_pattern_table_high = bool(value & 0x08)
         self._background_pattern_table_high = bool(value & 0x10)
@@ -158,13 +165,34 @@ class PPU:
         return status
 
 
+    def _write_ppuscroll(self, value):
+        # The 15-bit latch t has layout yyy NN YYYYY XXXXX: fine Y, nametable, coarse Y, and coarse X.
+        # The first byte is a horizontal pixel offset: bits 7-3 select a tile and bits 2-0 a pixel within it.
+        if not self._awaiting_second_write:
+            # Clear t bits 0-4, then shift the five coarse X bits down into that field; preserve all other fields.
+            self._scroll_address_latch = (self._scroll_address_latch & ~0x001F) | (value >> 3)
+
+            # Fine X has its own 3-bit latch because t has no space for it.
+            self._fine_x = value & 7
+        else:
+            # The second byte is a vertical pixel offset with the same coarse/fine split as the first byte.
+            # Clear coarse Y (bits 5-9) and fine Y (bits 12-14), preserving nametable and coarse X fields.
+            # Shift value bits 7-3 left by 2 into coarse Y; shift bits 2-0 left by 12 into fine Y.
+            self._scroll_address_latch = (
+                (self._scroll_address_latch & ~0x73E0) | ((value & 0xF8) << 2) | ((value & 7) << 12)
+            )
+
+        # $2005 and $2006 share this toggle; a $2002 read also resets it to the first-write state.
+        self._awaiting_second_write = not self._awaiting_second_write
+
+
     def _write_ppuaddr(self, value):
         # The first write selects the upper six address bits; the second commits the full address.
         if not self._awaiting_second_write:
-            self._temporary_address = (self._temporary_address & 0x00FF) | ((value & 0x3F) << 8)
+            self._scroll_address_latch = (self._scroll_address_latch & 0x00FF) | ((value & 0x3F) << 8)
         else:
-            self._temporary_address = (self._temporary_address & 0x7F00) | value
-            self._vram_address = self._temporary_address
+            self._scroll_address_latch = (self._scroll_address_latch & 0x7F00) | value
+            self._vram_address = self._scroll_address_latch
         self._awaiting_second_write = not self._awaiting_second_write
 
 
@@ -278,45 +306,46 @@ class PPU:
 
 
     def _render_background(self, frame, colors, background_opaque):
-        # The visible nametable contains 30 rows of 32 tiles, each covering 8x8 pixels.
+        # The temporary scroll state selects the frame origin in a 2x2 grid of logical nametables.
+        address = self._scroll_address_latch
+        scroll_x = ((address >> 10) & 1) * 256 + (address & 0x1F) * 8 + self._fine_x
+        scroll_y = ((address >> 11) & 1) * 240 + ((address >> 5) & 0x1F) * 8 + ((address >> 12) & 7)
         pattern_base = 0x1000 if self._background_pattern_table_high else 0
-        for tile_y in range(30):
-            for tile_x in range(32):
-                # The left mask makes the first eight background pixels transparent to composition.
-                if tile_x == 0 and not self._background_left_enabled:
-                    continue
 
-                # Each nametable byte selects one 16-byte tile in the chosen pattern table.
-                tile = self.read_vram(0x2000 + tile_y * 32 + tile_x)
+        # Include partial tiles at the top and left, wrapping at each nametable boundary.
+        for screen_y in range(-(scroll_y % 8), 240, 8):
+            world_y = (scroll_y + screen_y) % 480
+            tile_y = (world_y % 240) // 8
+            for screen_x in range(-(scroll_x % 8), 256, 8):
+                world_x = (scroll_x + screen_x) % 512
+                tile_x = (world_x % 256) // 8
+                nametable = 0x2000 + (world_y // 240 * 2 + world_x // 256) * 0x400
 
-                # Each attribute byte covers 4x4 tiles; its four two-bit fields cover 2x2 tiles each.
-                attribute_x = tile_x // 4
-                attribute_y = tile_y // 4
-                attribute_address = 0x23C0 + attribute_y * 8 + attribute_x
-                attribute = self.read_vram(attribute_address)
-                quadrant_x = (tile_x % 4) // 2
-                quadrant_y = (tile_y % 4) // 2
-                shift = quadrant_y * 4 + quadrant_x * 2
-                palette = (attribute >> shift) & 0x03
+                # Attributes and tile bytes come from the same logical nametable, subject to cartridge mirroring.
+                tile = self.read_vram(nametable + tile_y * 32 + tile_x)
+                attribute = self.read_vram(nametable + 0x3C0 + tile_y // 4 * 8 + tile_x // 4)
+                shift = (tile_y % 4 // 2) * 4 + (tile_x % 4 // 2) * 2
+                palette = (attribute >> shift) & 3
 
+                # Decode the two bitplanes and clip partial tiles to screen coordinates and the left mask.
                 for row in range(8):
-                    # The first eight bytes hold the low bitplane; the next eight hold the high bitplane.
-                    address = pattern_base + tile * 16 + row
-                    low = self.read_vram(address)
-                    high = self.read_vram(address + 8)
+                    y = screen_y + row
+                    if not 0 <= y < 240:
+                        continue
+                    pattern = pattern_base + tile * 16 + row
+                    low = self.read_vram(pattern)
+                    high = self.read_vram(pattern + 8)
                     for column in range(8):
-                        # Bits run from left to right, most significant first; combine them into a 0-3 color index.
+                        x = screen_x + column
+                        if not 0 <= x < 256 or (x < 8 and not self._background_left_enabled):
+                            continue
                         shift = 7 - column
                         color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
                         if color_index:
-                            # Each subpalette has four entries; index zero always leaves the backdrop visible.
-                            palette_color_index = palette * 4 + color_index
-                            # Convert tile and pixel coordinates to a linear pixel number in the 256-pixel-wide frame.
-                            # Multiply by 3 because each pixel occupies three consecutive bytes: red, green, and blue.
-                            pixel = (tile_y * 8 + row) * 256 + tile_x * 8 + column
+                            pixel = y * 256 + x
                             background_opaque[pixel] = 1
                             offset = pixel * 3
-                            frame[offset:offset + 3] = colors[palette_color_index]
+                            frame[offset:offset + 3] = colors[palette * 4 + color_index]
 
 
     def _render_sprites(self, frame, background_opaque):

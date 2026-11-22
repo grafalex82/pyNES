@@ -5,6 +5,26 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Whole-frame background scrolling (2026-11-22)
+
+PPUCTRL bits 0-1 update the nametable bits in the temporary video address. PPUSCROLL's first write sets its coarse X
+and the separate fine X latch; its second sets coarse and fine Y. PPUSCROLL and PPUADDR share the write toggle and
+temporary address, so mixed writes interact and PPUSTATUS resets the pair. The renderer samples this state once per
+frame and traverses a 2 × 2 grid of logical nametables, using cartridge mirroring and each table's own attributes.
+The left-edge mask stays at screen columns 0-7. Synthetic tests cover mixed writes, both mirroring types, all base
+tables, both nametable crossings, fine offsets, attributes, and masking. See
+[NESdev PPU scrolling](https://www.nesdev.org/wiki/PPU_scrolling) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+This whole-frame approximation does not model scanline scroll transfers or mid-frame changes. Vertical offsets
+$F0-$FF are treated as ordinary coordinates crossing the 240-pixel boundary; real PPU coarse Y values 30 and 31 have
+different increment behavior. It affects games that use raster splits or those out-of-range offsets. The inspection
+view continues to show the stationary $2000 nametable. No ROM is patched.
+
+The local Battle City image reached 1,000,001 cycles at PC $D8FA with 33 captured frames and no `NotImplementedError`.
+Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` before and after. This bounded
+run does not establish playability.
+
 ### NTSC RGB color emphasis (2026-11-22)
 
 PPUMASK bits 5, 6, and 7 select red, green, and blue emphasis respectively. After grayscale masking and the fixed

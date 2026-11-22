@@ -55,7 +55,7 @@ def test_background_snapshot_tracks_vblank_without_changing_ppu_state(make_cpu):
     machine.write_byte(0x2006, 0x21)
     machine.write_byte(0x2006, 0x23)
     machine.write_byte(0x2006, 0x24)
-    state = (ppu._vram_address, ppu._temporary_address, ppu._awaiting_second_write, ppu._vram_read_buffer,
+    state = (ppu._vram_address, ppu._scroll_address_latch, ppu._awaiting_second_write, ppu._vram_read_buffer,
              ppu.last_writes)
     ppu.enable_frame_output()
     ppu.advance(27393)
@@ -69,7 +69,7 @@ def test_background_snapshot_tracks_vblank_without_changing_ppu_state(make_cpu):
     assert len(tiles) == 960 and (tiles[0], tiles[-1]) == (0x12, 0x34)
     assert len(attributes) == 64 and (attributes[0], attributes[-1]) == (0xE4, 0x1B)
     assert len(colors) == 16 and (colors[0], colors[5]) == (0x002A88, 0x64B0FF)
-    assert (ppu._vram_address, ppu._temporary_address, ppu._awaiting_second_write, ppu._vram_read_buffer,
+    assert (ppu._vram_address, ppu._scroll_address_latch, ppu._awaiting_second_write, ppu._vram_read_buffer,
             ppu.last_writes) == state
 
     # Later writes cannot alter the published bytes or palette and only appear at the next vblank.

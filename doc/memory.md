@@ -121,8 +121,8 @@ and every write replaces all eight, including bits that are clear in the new val
 | 6 | `_ext_output_enabled` | Select output on the PPU EXT pins. |
 | 7 | `_nmi_enabled` | Enable vblank NMI requests. |
 
-The address increment and NMI enable affect emulation. Nametable selection, rendering, and EXT pins are not yet
-implemented by storing these settings. The retained `last_writes` inspection interface remains in place.
+Nametable selection, pattern-table selection, sprite height, address increment, and NMI enable affect emulation.
+EXT pins are not modeled. The retained `last_writes` inspection interface remains in place.
 
 ## PPU address writes
 
@@ -132,8 +132,10 @@ Reading $2002 or a mirror resets the write pair so the next $2006 write starts w
 not reset the pair. The current address and temporary address start at zero for reproducibility.
 
 This functional model copies the address immediately after the second write and does not model sub-instruction
-timing, the hardware warmup interval, or rendering-time interactions. $2005 still only retains writes and does not share
-the toggle.
+timing, the hardware warmup interval, or rendering-time interactions. $2005 shares the temporary address and toggle:
+its first write sets horizontal coarse and fine scroll; its second sets vertical coarse and fine scroll. A $2000 write
+updates the temporary address's nametable bits. $2006 writes can therefore change the rendered scroll position, and
+mixed $2005/$2006 pairs use the same toggle. The renderer samples this state for a whole frame.
 See [the decision record](decisions.md#ppu-address-latch-2026-11-21).
 
 ## PPU data writes
@@ -240,7 +242,7 @@ PPU addresses $3F00-$3FFF access internal palette RAM. The 32-byte range $3F00-$
 $3F10, $3F14, $3F18, and $3F1C also share storage with $3F00, $3F04, $3F08, and $3F0C, respectively.
 Writes retain only the low six bits, and internal reads return those raw color codes. For example, a write of $E1
 to $3F30 makes $3F00, $3F10, and $3F20 read as $21. Each PPU has independent zero-initialized palette storage.
-Rendering uses these colors for the backdrop, stationary background, and sprites. PPUMASK bit 0 masks the displayed
+Rendering uses these colors for the backdrop, scrolled background, and sprites. PPUMASK bit 0 masks the displayed
 color codes with $30 without changing stored palette data or the current raw PPUDATA read behavior. Bits 5-7 apply
 the [NTSC RGB emphasis approximation](decisions.md#ntsc-rgb-color-emphasis-2026-11-22) to displayed colors.
 See [the palette decision](decisions.md#ppu-palette-ram-2026-11-21).

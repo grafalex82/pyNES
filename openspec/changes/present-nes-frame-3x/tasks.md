@@ -71,7 +71,7 @@
 
 ## 6. Add scrolling and sprite flips
 
-- [ ] 6.1 Add $2005 scrolling and the $2000 base nametable selection. Verify the shared write toggle and both
+- [x] 6.1 Add $2005 scrolling and the $2000 base nametable selection. Verify the shared write toggle and both
       nametable boundary crossings. Record the whole-frame scrolling approximation in doc/decisions.md.
 - [ ] 6.2 Apply horizontal and vertical sprite flips from OAM. Verify asymmetric sprites in both sizes,
       including the reversed tile order of an 8 × 16 sprite after a vertical flip.
