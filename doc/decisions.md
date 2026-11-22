@@ -5,6 +5,21 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU NMI delivery (2026-11-22)
+
+Task 4.2 of `present-nes-frame-3x` latches a request when vblank and PPUCTRL bit 7 become true together. Repeated
+enabled writes do not repeat a high condition; disabling or clearing vblank rearms the edge. A latched request survives
+the condition falling. After an instruction, the facade advances the PPU, services one request, and advances it by
+the seven NMI entry cycles. Frame capture occurs before the handler, so its palette updates appear in a later frame.
+Synthetic tests cover enabling during vblank, successive frames, a CPU wait loop, entry cycles, and frame capture.
+
+This instruction-boundary approximation omits hardware sub-instruction NMI and PPUSTATUS races for all cartridges;
+multiple edges before service coalesce into one pending request. See [NESdev NMI](https://www.nesdev.org/wiki/NMI).
+No ROM is patched. A bounded run of the local Battle City image stopped at an unimplemented write to $4014 after
+295,455 completed CPU cycles (PC $D410 after fetching the operand, instruction at $D40D). Its SHA-256 was
+`166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` both before and after. This does not establish
+playability. OAM DMA is the next observed obstacle and remains unimplemented.
+
 ### Functional CPU NMI entry (2026-11-22)
 
 Task 4.1 of `present-nes-frame-3x` adds explicit `CPU.enter_nmi()` at an instruction boundary. NMI saves the resume

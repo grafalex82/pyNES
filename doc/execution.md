@@ -55,9 +55,11 @@ does not fetch an instruction. Each instruction completes even if it crosses the
 `run(3)` consumes four cycles. Two successive `run(3)` calls consume eight cycles; the first overshoot does not reduce
 the second budget. Exceptions propagate, retaining completed instructions and their cycles.
 
-`cpu.cycles` is the cumulative nominal cost of completed instructions. Construction starts it at zero, and repeated
-reset preserves it without adding cycles. After each completed instruction, `Emulator.step()` advances PPU timing by
-the increase in this count. A direct `CPU.step()` does not advance the PPU; failed instructions add no video progress.
+`cpu.cycles` is the cumulative nominal cost of completed instructions and NMI entry. Construction starts it at zero,
+and repeated reset preserves it without adding cycles. After each completed instruction, `Emulator.step()` advances
+PPU timing by the increase in this count. It then services a pending PPU NMI and advances the PPU by seven entry cycles.
+The handler's first instruction executes on the next step. A direct `CPU.step()` does not advance the PPU or deliver its
+requests; failed instructions add no video progress.
 The count does not represent real-time pacing or bus phases, and functional reset omits its hardware cycles.
 See [the decision record](decisions.md) for the timing simplification.
 

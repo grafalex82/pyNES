@@ -88,8 +88,8 @@ and every write replaces all eight, including bits that are clear in the new val
 | 6 | `_ext_output_enabled` | Select output on the PPU EXT pins. |
 | 7 | `_nmi_enabled` | Enable vblank NMI requests. |
 
-Only the address increment currently affects emulation. Nametable selection, rendering, EXT pins, and NMI requests
-are not implemented by storing these settings. The retained `last_writes` inspection interface remains in place.
+The address increment and NMI enable affect emulation. Nametable selection, rendering, and EXT pins are not yet
+implemented by storing these settings. The retained `last_writes` inspection interface remains in place.
 
 ## PPU address writes
 
@@ -134,8 +134,9 @@ frame sets vblank again. The retained byte for offset 2 is separate from the ret
 
 Each new PPU starts at frame cycle 0 with vblank clear. The approximate frame lasts 29,781 nominal CPU cycles;
 vblank starts at cycle 27,394 and clears at cycle 29,667 even if it was never read. `Emulator` advances the PPU after
-each completed CPU instruction. CPU reset preserves the PPU and its phase. This model omits sub-instruction races,
-sprite status, open bus, and NMI delivery. See [the decision record](decisions.md#cpu-driven-ppu-vblank-2026-11-21).
+each completed CPU instruction. CPU reset preserves the PPU and its phase. An edge of the enabled vblank condition
+latches an NMI request for the execution facade. This model omits sub-instruction races, sprite status, and open bus.
+See [the decision record](decisions.md#cpu-driven-ppu-vblank-2026-11-21).
 
 ## Internal RAM and its mirrors
 

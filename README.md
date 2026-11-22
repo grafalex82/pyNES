@@ -107,10 +107,11 @@ deliberate hardware departures, and a synthetic byte-access example.
 
 Each Machine also owns a minimal [`PPU`](src/ppu.py). Writes to $2000-$3FFF retain the last byte for each mirrored
 register offset for inspection. A pair of $2006 writes selects a video address; reading $2002 resets the write pair.
-Writes to $2000 decode the PPUCTRL settings; only the video address increment currently has an effect. Reads and
+Writes to $2000 decode the PPUCTRL settings; the video address increment and NMI enable have effects. Reads and
 writes at $2007 access video data and advance the address by 1 or 32. Non-palette reads are buffered; palette reads
 return the color immediately. Status reads report and clear vblank, whose approximate phase advances with CPU
-instruction cycles through `Emulator`. Other PPU register reads remain unimplemented.
+instruction cycles through `Emulator`. A vblank NMI request is serviced after the completed instruction; other PPU
+register reads remain unimplemented.
 Its separate video address space connects 8 KiB of mapper-0 CHR ROM at $0000-$1FFF. CHR RAM and other CHR sizes
 raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pages map to $2000-$3EFF using the
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color
@@ -135,8 +136,8 @@ Each completed reset calls `log_state(event)` to emit one DEBUG event through th
 A/X/Y/SP/PC, a symbolic NV1BDIZC mask for P, and accumulated instruction cycles.
 `CPU.step()` fetches and executes one instruction through Machine. Missing behavior raises `NotImplementedError`
 with its byte and address. The read-only `CPU.cycles` provides a nominal total for bounded execution and does not
-advance devices. `CPU.enter_nmi()` performs functional NMI entry at an instruction boundary; PPU requests are not
-yet connected to it.
+advance devices. `CPU.enter_nmi()` performs functional NMI entry at an instruction boundary; `Emulator` delivers
+pending PPU requests and advances video by the entry cycles.
 Each completed instruction emits a DEBUG trace with its address, fetched bytes, mnemonic, and resulting CPU state.
 [`Emulator`](src/emulator.py) owns the connected CPU and provides single-step, cycle-budgeted run, and repeated reset
 controls. Whole instructions finish even when they exceed a run budget; see [execution control](doc/execution.md).

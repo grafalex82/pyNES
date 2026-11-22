@@ -24,6 +24,12 @@ class Emulator:
         self._cpu.step()
         self._machine.ppu.advance(self._cpu.cycles - previous_cycles)
 
+        # Capture occurs at vblank before entry; charge NMI cycles without fetching the handler opcode.
+        if self._machine.ppu.take_nmi():
+            previous_cycles = self._cpu.cycles
+            self._cpu.enter_nmi()
+            self._machine.ppu.advance(self._cpu.cycles - previous_cycles)
+
 
     def run(self, cycles):
         """Execute whole instructions until the requested cycle budget is reached."""

@@ -19,6 +19,8 @@ class PPU:
         self._last_writes = [None] * 8
         self._frame_cycle = 0
         self._vblank = False
+        self._nmi_pending = False
+        self._nmi_enabled = False
         self._frame_output_enabled = False
         self._completed_frame = None
         self._published_frames = 0
@@ -49,6 +51,13 @@ class PPU:
     def enable_frame_output(self):
         """Capture completed frames at subsequent vblank entries."""
         self._frame_output_enabled = True
+
+
+    def take_nmi(self):
+        """Consume a latched NMI request, if one has occurred."""
+        pending = self._nmi_pending
+        self._nmi_pending = False
+        return pending
 
 
     def read_byte(self, offset):
@@ -82,6 +91,10 @@ class PPU:
 
 
     def _write_ppuctrl(self, value):
+        # Enabling NMI while vblank is set creates a new edge, even between frame boundaries.
+        if self._vblank and not self._nmi_enabled and value & 0x80:
+            self._nmi_pending = True
+
         # Decode VPHB SINN into independent settings; NN selects the base nametable coordinates.
         self._base_nametable_x = bool(value & 0x01)
         self._base_nametable_y = bool(value & 0x02)
@@ -184,6 +197,8 @@ class PPU:
             # Vblank starts and clears at fixed CPU-cycle boundaries, independently of status reads.
             if previous < VBLANK_START_CPU_CYCLE <= self._frame_cycle:
                 self._vblank = True
+                if self._nmi_enabled:
+                    self._nmi_pending = True
                 logger.debug("Vblank started")
                 if self._frame_output_enabled:
                     frame = self.render_frame()
