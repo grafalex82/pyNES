@@ -8,6 +8,53 @@ from machine import Machine
 from nesfile import NESFile
 
 
+def test_sprite_background_priority_and_layer_combinations(tmp_path):
+    # The background has opaque pixels at columns 0 and 2; the first has the same color as the backdrop.
+    chr_rom = bytearray(8192)
+    chr_rom[16] = 0x80
+    chr_rom[24] = 0x20
+    chr_rom[32] = 0xE0
+    chr_rom[48:56] = bytes([0xF0] * 8)
+    path = tmp_path / "priority.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    ppu.write_vram(0x2000 + 2 * 32 + 2, 1)
+    for address, color in ((0x3F00, 0x0F), (0x3F01, 0x0F), (0x3F02, 0x30),
+                           (0x3F11, 0x01), (0x3F15, 0x21)):
+        ppu.write_vram(address, color)
+
+    # The first sprite is behind the background; the second is in front and has a different color.
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (15, 2, 0x20, 16, 15, 3, 1, 16):
+        machine.write_byte(0x2004, value)
+
+    # The first opaque sprite claims a pixel before its background priority is considered.
+    black, white, first, second = (0, 0, 0), (255, 254, 255), (0, 42, 136), (100, 176, 255)
+    expected = {
+        0x00: [black, black, black, black],
+        0x08: [black, black, white, black],
+        0x10: [first, first, first, second],
+        0x18: [black, first, white, second],
+    }
+    for mask, colors in expected.items():
+        machine.write_byte(0x2001, mask)
+        frame = ppu.render_frame()
+        pixels = [tuple(frame[(16 * 256 + x) * 3:(16 * 256 + x) * 3 + 3]) for x in range(16, 20)]
+        assert pixels == colors
+
+    # With front priority, the first sprite covers even an opaque background pixel of the same backdrop color.
+    machine.write_byte(0x2003, 2)
+    machine.write_byte(0x2004, 0)
+    frame = ppu.render_frame()
+    assert tuple(frame[(16 * 256 + 16) * 3:(16 * 256 + 16) * 3 + 3]) == first
+    assert tuple(frame[(16 * 256 + 18) * 3:(16 * 256 + 18) * 3 + 3]) == first
+
+
 def test_8x8_sprites_use_oam_position_pattern_table_and_palette(tmp_path):
     # Give tile 1 asymmetric bitplanes in both pattern tables and hide unused OAM entries.
     chr_rom = bytearray(8192)

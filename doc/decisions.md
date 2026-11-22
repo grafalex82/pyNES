@@ -5,6 +5,24 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Whole-frame sprite and background composition (2026-11-22)
+
+For each pixel, the renderer chooses the first opaque sprite in OAM order, then applies its background-priority bit.
+An opaque background pixel covers a behind-background sprite even if the background color matches the backdrop.
+The selected sprite still blocks later sprites when hidden by the background. PPUMASK bits 3 and 4 independently
+enable the layers. Synthetic tests exercise all four layer combinations, transparent pixels, both priority settings,
+OAM ordering, and the hidden-sprite case. See [NESdev sprite priority](https://www.nesdev.org/wiki/PPU_sprite_priority)
+and [Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+The renderer evaluates all OAM entries against one state captured for the whole frame. Hardware instead evaluates
+sprites per scanline, limits them to eight, and can show mid-frame changes; sprite overflow and sprite-zero hit flags
+are not modeled. These approximations affect any game depending on those behaviors. Left-edge masks and sprite flips
+remain separate tasks. No ROM is patched.
+
+The local Battle City image reached 1,000,001 cycles at PC $D8FA with 33 captured frames and no `NotImplementedError`.
+Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` before and after. This bounded
+run does not establish playability.
+
 ### Functional 8 × 16 sprite drawing (2026-11-22)
 
 When PPUCTRL bit 5 selects 8 × 16 sprites, each OAM tile number's low bit selects the pattern table, and its remaining

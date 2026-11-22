@@ -262,14 +262,15 @@ class PPU:
 
         # Fill the frame with backdrop color
         frame = bytearray(colors[0] * (256 * 240))
+        background_opaque = bytearray(256 * 240)
         if self._background_enabled:
-            self._render_background(frame, colors)
+            self._render_background(frame, colors, background_opaque)
         if self._sprites_enabled:
-            self._render_sprites(frame)
+            self._render_sprites(frame, background_opaque)
         return bytes(frame)
 
 
-    def _render_background(self, frame, colors):
+    def _render_background(self, frame, colors, background_opaque):
         # The visible nametable contains 30 rows of 32 tiles, each covering 8x8 pixels.
         pattern_base = 0x1000 if self._background_pattern_table_high else 0
         for tile_y in range(30):
@@ -301,20 +302,23 @@ class PPU:
                             palette_color_index = palette * 4 + color_index
                             # Convert tile and pixel coordinates to a linear pixel number in the 256-pixel-wide frame.
                             # Multiply by 3 because each pixel occupies three consecutive bytes: red, green, and blue.
-                            offset = ((tile_y * 8 + row) * 256 + tile_x * 8 + column) * 3
+                            pixel = (tile_y * 8 + row) * 256 + tile_x * 8 + column
+                            background_opaque[pixel] = 1
+                            offset = pixel * 3
                             frame[offset:offset + 3] = colors[palette_color_index]
 
 
-    def _render_sprites(self, frame):
+    def _render_sprites(self, frame, background_opaque):
         # PPUCTRL bit 5 selects a height of 8 or 16 pixels for every sprite.
         height = 16 if self._sprite_height_16 else 8
 
-        # Each of 64 OAM entries has four bytes: Y, tile number, attributes, and X.
-        # Draw in reverse OAM order so earlier opaque sprites remain visible over later ones.
-        for index in range(252, -1, -4):
+        # Select the first opaque sprite pixel in OAM order, even when the background hides it.
+        sprite_selected = bytearray(256 * 240)
+        for index in range(0, 256, 4):
+            # Each of 64 OAM entries has four bytes: Y, tile number, attributes, and X.
             y, tile, attributes, x = self._oam[index:index + 4]
 
-            # Attribute bits 0-1 select one of four sprite subpalettes; flips and priority are not yet applied.
+            # Attribute bits 0-1 select a sprite subpalette; bit 5 places the sprite behind opaque background.
             palette = attributes & 3
 
             # In 8x16 mode the tile's low bit selects the table; the remaining bits select an even tile pair.
@@ -338,11 +342,17 @@ class PPU:
                     shift = 7 - column
                     color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
                     if color_index:
-                        # Index zero is transparent; indices 1-3 select colors in the sprite palette at $3F10-$3F1F.
-                        code = self.read_vram(0x3F10 + palette * 4 + color_index)
+                        # Transparent pixels do not claim a position; an earlier opaque sprite always wins it.
+                        pixel = (y + 1 + row) * 256 + x + column
+                        if sprite_selected[pixel]:
+                            continue
+                        sprite_selected[pixel] = 1
 
-                        # Convert screen coordinates to the byte offset of a packed RGB pixel.
-                        offset = ((y + 1 + row) * 256 + x + column) * 3
+                        # A behind-background sprite is hidden only by a nonzero background pattern index.
+                        if attributes & 0x20 and background_opaque[pixel]:
+                            continue
+                        code = self.read_vram(0x3F10 + palette * 4 + color_index)
+                        offset = pixel * 3
                         frame[offset:offset + 3] = NES_COLORS[code].to_bytes(3, "big")
 
 

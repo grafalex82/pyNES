@@ -62,7 +62,7 @@
 - [x] 5.3 Draw 8 × 8 sprites from OAM and CHR. Verify the selected table, position, palette, transparency,
       and pixel placement with an asymmetric synthetic sprite.
 - [x] 5.4 Add 8 × 16 sprite selection. Verify both CHR tables and the order of the two tiles.
-- [ ] 5.5 Compose sprites with the background. Verify OAM ordering, behind-background priority, and all four
+- [x] 5.5 Compose sprites with the background. Verify OAM ordering, behind-background priority, and all four
       $2001 layer enable combinations. Document whole-frame sprite evaluation in doc/decisions.md.
 - [ ] 5.6 Apply independent left-edge masks. Verify columns 0 through 7 and the first unmasked column.
 - [ ] 5.7 Apply grayscale. Verify that rendering uses the palette code masked with $30.
