@@ -1,0 +1,6 @@
+# Tasks
+
+## 1. Pulse 2 control stub
+
+- [x] 1.1 Accept and log $4004 writes through APU; verify routing, unsupported reads, and CPU progress.
+- [x] 1.2 Document the departure and run focused tests and a bounded Battle City check, recording the next stop.
