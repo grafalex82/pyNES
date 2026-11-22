@@ -4,7 +4,7 @@ import logging
 
 
 logger = logging.getLogger("apu")
-_REGISTERS = (0x10, 0x11, 0x12, 0x13, 0x15)
+_REGISTERS = (*range(0x14), 0x15)
 
 
 class APU:
@@ -21,7 +21,7 @@ class APU:
 
     def write_byte(self, offset, value):
         # Other offsets must remain explicit missing behavior even when APU is accessed directly.
-        if offset not in _REGISTERS and offset not in (0x00, 0x04, 0x06, 0x08, 0x0C, 0x17):
+        if offset not in _REGISTERS and offset != 0x17:
             raise NotImplementedError(f"APU write at register offset 0x{offset:02X} is not implemented")
 
         # The dummy has no sample fetching, register effects, or sound output.

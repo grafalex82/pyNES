@@ -25,13 +25,7 @@ class Machine:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
         $0800-$1FFF  Three mirrors of the same internal RAM.
         $2000-$3FFF  PPU registers and mirrors; status, video address, and data access.
-        $4000        Pulse 1 control; dummy writes, reads unsupported.
-        $4004        Pulse 2 control; dummy writes, reads unsupported.
-        $4006        Pulse 2 timer low; dummy writes, reads unsupported.
-        $4008        Triangle control; dummy writes, reads unsupported.
-        $400C        Noise control; dummy writes, reads unsupported.
-        $4001-$4003, $4005, $4007, $4009-$400B, $400D-$400F  Other APU registers; not connected yet.
-        $4010-$4013  DMC registers; dummy writes and zero reads.
+        $4000-$4013  APU channels and unused addresses; dummy writes and zero reads.
         $4014        Sprite DMA; page transfer without stall, reads unsupported.
         $4015        APU status/control; dummy writes and zero reads.
         $4016        Controller 1; writes ignored and reads return zero.
@@ -56,7 +50,7 @@ class Machine:
     Reads and writes in $2000-$3FFF are routed to PPU register offsets. PPU status
     reports and clears timed vblank, and PPUDATA reads use a video read buffer.
     OAMDATA reads access object memory. Other PPU reads raise NotImplementedError identifying the register offset.
-    Reads and writes at $4010-$4013 and $4015
+    Reads and writes at $4000-$4013 and $4015
     route to a dummy APU; writes have no effects and reads return $00. Writes at
     $4017 are also ignored by the APU. Writes to $4014 copy a CPU page into OAM without a stall.
     Writes to $4016 are ignored; controller reads at $4016/$4017 return zero. Other reads
@@ -107,8 +101,8 @@ class Machine:
         if address in (0x4016, 0x4017):
             return 0
 
-        # Route only the selected APU registers, leaving sprite DMA reads unconnected.
-        if 0x4010 <= address <= 0x4013 or address == 0x4015:
+        # Route audio reads separately from sprite DMA and controller reads.
+        if 0x4000 <= address <= 0x4013 or address == 0x4015:
             return self.apu.read_byte(address - 0x4000)
 
         # The PRG mask repeats a 16 KiB image and preserves every offset of a 32 KiB image.
@@ -141,7 +135,7 @@ class Machine:
             return
 
         # APU writes include the frame counter, while reads at $4017 address controller 2.
-        if address in (0x4000, 0x4004, 0x4006, 0x4008, 0x400C, 0x4015, 0x4017) or 0x4010 <= address <= 0x4013:
+        if 0x4000 <= address <= 0x4013 or address in (0x4015, 0x4017):
             self.apu.write_byte(address - 0x4000, value)
             return
 

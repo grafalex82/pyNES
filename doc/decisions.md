@@ -189,6 +189,23 @@ Synthetic tests cover the glyphs, frame boundaries, attribute quadrants, disable
 The view always inspects the stationary $2000 nametable, including while background display is disabled; it does not
 show scrolling or sprites. A mode change takes effect on the next captured frame, using its matching snapshot.
 
+### Complete silent APU register boundary (2026-11-22)
+
+Machine routes reads and writes at $4000-$4013 and $4015 to the stateless APU. Writes, including to unused $4009 and
+$400D, are logged and ignored; reads return $00. Writes at $4017 remain silent APU frame-counter writes, while reads
+address controller 2. Sprite DMA at $4014 and controller strobing at $4016 keep their existing routes.
+
+Hardware channel registers are write-only and reads generally expose open bus; $4015 reports channel and interrupt
+status and clears the frame IRQ on read. Fixed zero instead reports inactive channels and IRQs and does not model open
+bus, counters, DMC fetches, or frame sequencing. Games waiting for activity or interrupts can stall or behave
+incorrectly. This approximation affects all cartridges and produces no audio. See [NESdev APU registers](https://www.nesdev.org/wiki/APU_registers)
+and [2A03 address map](https://www.nesdev.org/wiki/2A03). Focused synthetic tests cover every address, CPU execution,
+and neighboring devices. No ROM is patched.
+
+The local Super Mario Bros. (Europe) image reached a 1,000,000-cycle budget at PC $8057 without a
+`NotImplementedError`; the next unsupported behavior remains unknown and this does not establish playability.
+Its SHA-256 was `ff69421b584ce898b3d4b3ab57202900c079c45cdface84d654d0368ad796ffe` before and after the run.
+
 ### Ignored noise control writes (2026-11-22)
 
 Machine routes $400C writes to the dummy APU, which logs and ignores them. Hardware controls noise volume, envelope,

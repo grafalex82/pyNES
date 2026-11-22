@@ -42,9 +42,9 @@ def test_dma_reads_in_order_and_propagates_unimplemented_source(make_cpu, monkey
 
     # A failed source read stops the transfer after any earlier successful bytes.
     monkeypatch.setattr(machine, "read_byte", record_read)
-    with pytest.raises(NotImplementedError, match="CPU read at address 0x4000"):
+    with pytest.raises(NotImplementedError, match="CPU read at address 0x4014"):
         machine.write_byte(0x4014, 0x40)
-    assert addresses == [0x4000]
+    assert addresses == list(range(0x4000, 0x4015))
 
 
 def test_cpu_continues_after_dma_without_stall(make_cpu):

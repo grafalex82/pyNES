@@ -25,16 +25,7 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | $0000-$07FF | Internal RAM | Read/write one 2048-byte buffer. |
 | $0800-$1FFF | Three mirrors of internal RAM | Read/write the same buffer. |
 | $2000-$3FFF | PPU video registers and their mirrors | Retain writes; status and data reads have effects. |
-| $4000 | Pulse 1 control | Writes ignored; reads unsupported. |
-| $4001-$4003 | Other pulse 1 registers | Not connected. |
-| $4004 | Pulse 2 control | Writes ignored; reads unsupported. |
-| $4005 | Pulse 2 sweep | Not connected. |
-| $4006 | Pulse 2 timer low | Writes ignored; reads unsupported. |
-| $4007 | Pulse 2 timer high | Not connected. |
-| $4008 | Triangle control | Writes ignored; reads unsupported. |
-| $4009-$400B | Other triangle registers | Not connected. |
-| $400C | Noise control | Writes ignored; reads unsupported. |
-| $400D-$400F | Other noise registers | Not connected. |
+| $4000-$400F | Pulse, triangle, noise, and unused addresses | Writes ignored; reads return $00. |
 | $4010-$4013 | DMC control, output, address, and length | Accept writes without effects; reads return $00. |
 | $4014 | Sprite DMA | Write copies a CPU page into OAM without a stall; reads unsupported. |
 | $4015 | APU status and channel control | Accept writes without effects; reads return $00. |
@@ -54,24 +45,10 @@ hardware, and cartridge RAM have no behavior yet. No open-bus response is modele
 
 ## Dummy APU registers
 
-Each Machine routes $4000/$4004/$4006/$4008/$400C writes and $4010-$4013/$4015 accesses to its APU, using offsets relative to
-$4000.
-Writes are accepted and logged at DEBUG without register effects. Reads of $4010-$4013 and $4015 return $00, even
-after enabling DMC.
-This reports all channels and IRQ flags inactive and approximates the open bus for write-only $4010-$4013 and bit 5
+Each Machine routes $4000-$4013 and $4015 accesses to its APU, using offsets relative to $4000. Writes are accepted
+and logged at DEBUG without register effects, including unused addresses $4009 and $400D. Reads return $00 even after
+enabling DMC. This reports all channels and IRQ flags inactive and approximates the open bus for $4000-$4013 and bit 5
 of $4015. It does not fetch samples, perform DMC DMA, deliver audio interrupts, or produce sound.
-
-Writes to $4000 and $4004 are ignored without changing pulse width, volume, or envelope. Reads remain unsupported;
-see [the pulse 2 control decision](decisions.md#ignored-pulse-2-control-writes-2026-11-22).
-
-Writes to $4006 are ignored without changing the pulse 2 timer period. Reads remain unsupported; see
-[the timer-low decision](decisions.md#ignored-pulse-2-timer-low-writes-2026-11-22).
-
-Writes to $4008 are ignored without changing triangle counters. Reads at $4008 remain unsupported; see
-[the triangle control decision](decisions.md#ignored-triangle-control-writes-2026-11-22).
-
-Writes to $400C are ignored without changing noise volume, envelope, or length counter. Reads remain unsupported; see
-[the noise control decision](decisions.md#ignored-noise-control-writes-2026-11-22).
 
 Writes at $4017 also reach the APU at offset $17 and are ignored; reads at $4017 address the controller 2 stub.
 Hardware uses bit 7 to choose the frame-counter sequence and bit 6 to inhibit and clear frame IRQs.

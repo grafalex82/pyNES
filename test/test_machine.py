@@ -117,7 +117,7 @@ def test_propagates_the_original_rom_exception(make_cartridge, monkeypatch):
 
 
 @pytest.mark.parametrize("operation", ["read", "write"])
-@pytest.mark.parametrize("address", [0x4001, 0x400F, 0x4018, 0x401F, 0x4020, 0x5FFF,
+@pytest.mark.parametrize("address", [0x4018, 0x401F, 0x4020, 0x5FFF,
                                      0x6000, 0x7FFF])
 def test_rejects_unconnected_access_without_changing_memory(make_cartridge, operation, address):
     # Existing bytes expose accidental routing to RAM or ROM instead of an unconnected device.
@@ -139,7 +139,7 @@ def test_rejects_unconnected_access_without_changing_memory(make_cartridge, oper
     assert bytes(machine.read_byte(index) for index in range(0x8000, 0x10000)) == prg * 2
 
 
-@pytest.mark.parametrize("address", [0x4010, 0x4011, 0x4012, 0x4013, 0x4015])
+@pytest.mark.parametrize("address", [*range(0x4000, 0x4014), 0x4015])
 @pytest.mark.parametrize("value", [0x00, 0x10, 0xFF])
 def test_apu_register_reads_are_zero_before_and_after_writes(make_cartridge, address, value):
     machine = Machine(make_cartridge(bytes(16384)))
@@ -165,7 +165,7 @@ def test_apu_writes_do_not_fetch_samples_or_write_ppu(make_cartridge, monkeypatc
     machine.write_byte(0x4015, 0x10)
 
 
-@pytest.mark.parametrize("address", [0x4010, 0x4011, 0x4012, 0x4013, 0x4015])
+@pytest.mark.parametrize("address", [*range(0x4000, 0x4014), 0x4015])
 def test_apu_accesses_route_to_device_offsets(make_cartridge, monkeypatch, address):
     machine = Machine(make_cartridge(bytes(16384)))
     writes = []
@@ -209,7 +209,7 @@ def test_frame_counter_write_and_controller_read_are_distinct(make_cartridge):
         machine.apu.read_byte(0x17)
 
 
-@pytest.mark.parametrize("offset", [0x0F, 0x14, 0x16])
+@pytest.mark.parametrize("offset", [0x14, 0x16, 0x18])
 @pytest.mark.parametrize("operation", ["read", "write"])
 def test_apu_rejects_unsupported_device_offsets(make_cartridge, offset, operation):
     machine = Machine(make_cartridge(bytes(16384)))

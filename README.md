@@ -131,8 +131,7 @@ displayed NES color code with $30 before RGB conversion. Bits 5-7 apply a fixed 
 each selected color reduces the other two channels to three quarters, rounding down for each step.
 PPUMASK bits 1 and 2 independently enable background and sprites in the leftmost eight pixels.
 
-Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
-audio effects;
+Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000-$4013 and $4015 have no audio effects;
 reads return $00, including inactive channel and interrupt status. Writes to the APU frame counter at $4017 are also
 ignored; reads at $4017 (controller 2) return $00. This approximates rather than models open bus, DMC playback,
 frame timing, or frame IRQs. Writes to $4014 copy a CPU page into OAM without a DMA stall. Controller strobe writes
