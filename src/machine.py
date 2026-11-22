@@ -27,9 +27,10 @@ class Machine:
         $2000-$3FFF  PPU registers and mirrors; status, video address, and data access.
         $4000        Pulse 1 control; dummy writes, reads unsupported.
         $4004        Pulse 2 control; dummy writes, reads unsupported.
+        $4006        Pulse 2 timer low; dummy writes, reads unsupported.
         $4008        Triangle control; dummy writes, reads unsupported.
         $400C        Noise control; dummy writes, reads unsupported.
-        $4001-$4003, $4005-$4007, $4009-$400B, $400D-$400F  Other APU registers; not connected yet.
+        $4001-$4003, $4005, $4007, $4009-$400B, $400D-$400F  Other APU registers; not connected yet.
         $4010-$4013  DMC registers; dummy writes and zero reads.
         $4014        Sprite DMA; page transfer without stall, reads unsupported.
         $4015        APU status/control; dummy writes and zero reads.
@@ -140,7 +141,7 @@ class Machine:
             return
 
         # APU writes include the frame counter, while reads at $4017 address controller 2.
-        if address in (0x4000, 0x4004, 0x4008, 0x400C) or 0x4010 <= address <= 0x4013 or address in (0x4015, 0x4017):
+        if address in (0x4000, 0x4004, 0x4006, 0x4008, 0x400C, 0x4015, 0x4017) or 0x4010 <= address <= 0x4013:
             self.apu.write_byte(address - 0x4000, value)
             return
 

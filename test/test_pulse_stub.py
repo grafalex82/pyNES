@@ -51,3 +51,35 @@ def test_cpu_continues_after_pulse_control_write(make_cpu, address):
     emulator.step()
     assert emulator.cpu.pc == 0x0006
     assert emulator.cpu.cycles == 8
+
+
+def test_pulse2_timer_low_accepts_all_bytes_without_enabling_reads(make_cpu, caplog):
+    # Every byte reaches the silent APU, which records each ignored write in its component log.
+    _, machine = make_cpu()
+    with caplog.at_level(logging.DEBUG, logger="apu"):
+        for value in range(256):
+            machine.write_byte(0x4006, value)
+    assert [record.getMessage() for record in caplog.records] == [
+        f"Ignored APU write at register offset 0x06: 0x{value:02X}" for value in range(256)
+    ]
+
+    # Reads and the neighboring sweep and timer-high writes remain explicit missing behavior.
+    with pytest.raises(NotImplementedError, match="CPU read at address 0x4006"):
+        machine.read_byte(0x4006)
+    with pytest.raises(NotImplementedError, match="APU read at register offset 0x06"):
+        machine.apu.read_byte(0x06)
+    for address in (0x4005, 0x4007):
+        with pytest.raises(NotImplementedError, match=f"CPU write at address 0x{address:04X}"):
+            machine.write_byte(address, 0)
+
+
+def test_cpu_continues_after_pulse2_timer_low_write(make_cpu):
+    # The store is an ordinary four-cycle instruction and the following instruction remains executable.
+    _, machine = make_cpu()
+    for address, byte in enumerate((0xA9, 0xFF, 0x8D, 0x06, 0x40, 0xEA)):
+        machine.write_byte(address, byte)
+    emulator = Emulator(machine)
+    for _ in range(3):
+        emulator.step()
+    assert emulator.cpu.pc == 6
+    assert emulator.cpu.cycles == 8

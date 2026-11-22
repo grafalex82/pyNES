@@ -28,7 +28,9 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | $4000 | Pulse 1 control | Writes ignored; reads unsupported. |
 | $4001-$4003 | Other pulse 1 registers | Not connected. |
 | $4004 | Pulse 2 control | Writes ignored; reads unsupported. |
-| $4005-$4007 | Other pulse 2 registers | Not connected. |
+| $4005 | Pulse 2 sweep | Not connected. |
+| $4006 | Pulse 2 timer low | Writes ignored; reads unsupported. |
+| $4007 | Pulse 2 timer high | Not connected. |
 | $4008 | Triangle control | Writes ignored; reads unsupported. |
 | $4009-$400B | Other triangle registers | Not connected. |
 | $400C | Noise control | Writes ignored; reads unsupported. |
@@ -52,7 +54,7 @@ hardware, and cartridge RAM have no behavior yet. No open-bus response is modele
 
 ## Dummy APU registers
 
-Each Machine routes $4000/$4004/$4008/$400C writes and $4010-$4013/$4015 accesses to its APU, using offsets relative to
+Each Machine routes $4000/$4004/$4006/$4008/$400C writes and $4010-$4013/$4015 accesses to its APU, using offsets relative to
 $4000.
 Writes are accepted and logged at DEBUG without register effects. Reads of $4010-$4013 and $4015 return $00, even
 after enabling DMC.
@@ -61,6 +63,9 @@ of $4015. It does not fetch samples, perform DMC DMA, deliver audio interrupts, 
 
 Writes to $4000 and $4004 are ignored without changing pulse width, volume, or envelope. Reads remain unsupported;
 see [the pulse 2 control decision](decisions.md#ignored-pulse-2-control-writes-2026-11-22).
+
+Writes to $4006 are ignored without changing the pulse 2 timer period. Reads remain unsupported; see
+[the timer-low decision](decisions.md#ignored-pulse-2-timer-low-writes-2026-11-22).
 
 Writes to $4008 are ignored without changing triangle counters. Reads at $4008 remain unsupported; see
 [the triangle control decision](decisions.md#ignored-triangle-control-writes-2026-11-22).
@@ -134,7 +139,8 @@ This functional model copies the address immediately after the second write and 
 timing, the hardware warmup interval, or rendering-time interactions. $2005 shares the temporary address and toggle:
 its first write sets horizontal coarse and fine scroll; its second sets vertical coarse and fine scroll. A $2000 write
 updates the temporary address's nametable bits. $2006 writes can therefore change the rendered scroll position, and
-mixed $2005/$2006 pairs use the same toggle. The renderer samples this state for a whole frame.
+mixed $2005/$2006 pairs use the same toggle. Completed frames use the vertical origin sampled at frame start;
+visible-frame horizontal $2005 and $2000 writes apply from the next scanline. Direct `render_frame()` uses current state.
 See [the decision record](decisions.md#ppu-address-latch-2026-11-21).
 
 ## PPU data writes
