@@ -73,14 +73,11 @@ PermissionError without changing ROM or RAM. The CPU-facing interface SHALL prop
 
 ### Requirement: Report unimplemented CPU address ranges
 
-Reads at $2000-$3FFF except aliases of $2002 and $2007 and reads at $4000-$7FFF except $4010-$4013 and $4015-$4017 SHALL
-raise NotImplementedError. Writes at $4000-$7FFF except $4000, $4004, $4008, $400C and $4010-$4017 SHALL raise
-NotImplementedError.
-PPU-window access SHALL route to the PPU. Reads and writes at $4010-$4013 and $4015 SHALL route to the audio component.
-Writes at $4000, $4004, $4008 and $400C SHALL route to the audio component without channel effects; writes
-at $4017 SHALL route to the audio component without frame-counter or IRQ effects. Writes at $4014 and $4016 SHALL be
-accepted without effects. Controller reads at $4016 and $4017 SHALL return $00. PPU read errors SHALL identify the
-operation and register offset; other errors SHALL identify the operation and CPU address. Unimplemented ranges SHALL
+Reads and writes in $4000-$7FFF SHALL raise NotImplementedError except for the connected APU, sprite DMA and controller
+addresses described below. PPU-window access SHALL route to the PPU. Reads and writes at $4000-$4013 and $4015 SHALL
+route to the audio component. Writes at $4017 SHALL route to the audio component. Writes at $4014 SHALL perform the
+existing OAM transfer; reads at $4014 remain unsupported. Writes at $4016 SHALL be ignored, and reads at $4016 and
+$4017 SHALL return $00. Unimplemented accesses SHALL identify the operation and PPU offset or CPU address and SHALL
 NOT act as RAM.
 
 #### Scenario: Access an unimplemented address
@@ -90,8 +87,8 @@ NOT act as RAM.
 
 #### Scenario: Access sprite DMA
 
-- **WHEN** a read targets $4014 or a byte is written to $4014
-- **THEN** the read raises NotImplementedError and the write is ignored without transfer or DMA stall
+- **WHEN** a read targets $4014
+- **THEN** it raises NotImplementedError identifying the CPU address
 
 #### Scenario: Write a PPU register mirror
 
@@ -105,7 +102,7 @@ NOT act as RAM.
 
 #### Scenario: Access a selected audio register
 
-- **WHEN** a read or write targets $4010, $4011, $4012, $4013, or $4015
+- **WHEN** a read or write targets $4000-$4013 or $4015
 - **THEN** the operation reaches the connected audio component
 
 #### Scenario: Write the frame-counter register
@@ -121,8 +118,8 @@ NOT act as RAM.
 
 #### Scenario: Write sprite DMA
 
-- **WHEN** any byte is written to $4014
-- **THEN** the write completes without accessing the selected source page, transferring data, or adding DMA cycles
+- **WHEN** a byte is written to $4014
+- **THEN** the selected CPU page is copied to OAM without adding a DMA stall
 
 #### Scenario: Write the first controller address
 
@@ -139,25 +136,25 @@ NOT act as RAM.
 
 - **WHEN** a byte is written to $4000
 - **THEN** it reaches the audio component and has no pulse-channel effects
-- **AND** CPU reads at $4000 remain unsupported
+- **AND** CPU reads at $4000 return $00
 
 #### Scenario: Write pulse 2 channel control
 
 - **WHEN** a byte is written to $4004
 - **THEN** it reaches the audio component and has no pulse-channel effects
-- **AND** CPU reads at $4004 remain unsupported
+- **AND** CPU reads at $4004 return $00
 
 #### Scenario: Write triangle channel control
 
 - **WHEN** a byte is written to $4008
 - **THEN** it reaches the audio component and has no triangle-channel effects
-- **AND** CPU reads at $4008 remain unsupported
+- **AND** CPU reads at $4008 return $00
 
 #### Scenario: Write noise channel control
 
 - **WHEN** a byte is written to $400C
 - **THEN** it reaches the audio component and has no noise-channel effects
-- **AND** CPU reads at $400C remain unsupported
+- **AND** CPU reads at $400C return $00
 
 ### Requirement: Keep unsupported cartridge configurations explicit
 

@@ -8,13 +8,12 @@ Provide a minimal CPU-visible audio register boundary for incremental NES execut
 
 ### Requirement: Accept selected audio register writes
 
-CPU writes of any byte to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 SHALL succeed without audio effects,
-DMC reads,
-DMC DMA, or audio IRQs. This is a deliberate dummy behavior, not an implementation of audio playback.
+CPU writes of any byte to $4000-$4013, $4015 and $4017 SHALL succeed without audio effects, DMC reads, DMC DMA,
+or audio IRQs. This is a deliberate dummy behavior, not an implementation of audio playback.
 
 #### Scenario: Write selected registers
 
-- **WHEN** a byte is written to any of $4000, $4004, $4008, $400C, $4010, $4011, $4012, $4013, and $4015
+- **WHEN** a byte is written to any address in $4000-$4013, $4015 or $4017
 - **THEN** the write succeeds without generating audio, reading DMC samples, or triggering an audio interrupt
 
 #### Scenario: Write DMC control flags
@@ -29,12 +28,12 @@ DMC DMA, or audio IRQs. This is a deliberate dummy behavior, not an implementati
 
 ### Requirement: Return deterministic dummy audio reads
 
-CPU reads of $4010-$4013 and $4015 SHALL return $00 regardless of earlier writes or reads. The $4015 result reports
+CPU reads of $4000-$4013 and $4015 SHALL return $00 regardless of earlier writes or reads. The $4015 result reports
 all channel activity and interrupt flags as clear; this is an approximation, not hardware status emulation.
 
 #### Scenario: Read selected registers
 
-- **WHEN** any of $4010, $4011, $4012, $4013, and $4015 is read before or after writes
+- **WHEN** any address in $4000-$4013 or $4015 is read before or after writes
 - **THEN** it returns $00 on every read
 
 #### Scenario: Read status after enabling DMC
