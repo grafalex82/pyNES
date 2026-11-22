@@ -56,7 +56,7 @@
 
 ## 5. Display sprites and apply rendering modes
 
-- [ ] 5.1 Implement $2003/$2004 OAM access. Test consecutive writes, $FF-to-$00 wrapping, and nonincrementing reads.
+- [x] 5.1 Implement $2003/$2004 OAM access. Test consecutive writes, $FF-to-$00 wrapping, and nonincrementing reads.
 - [ ] 5.2 Implement the $4014 OAM transfer. Test a mirrored CPU page, nonzero start address, and destination wrap.
       Record the omitted DMA stall and rerun Battle City if DMA was the observed obstacle.
 - [ ] 5.3 Draw 8 × 8 sprites from OAM and CHR. Verify the selected table, position, palette, transparency,

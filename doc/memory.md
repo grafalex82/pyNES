@@ -45,7 +45,7 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | $C000-$FFFF | PRG ROM | Read the second 16 KiB, or mirror the first for a 16 KiB image. |
 
 The hardware ranges follow the [NESdev CPU memory map][cpu-map]; the PRG layout follows [NROM][nrom].
-PPU reads other than status or data raise `NotImplementedError` with the device-relative register offset. For example,
+PPU reads other than status, OAM data, or video data raise `NotImplementedError` with the device-relative offset. For example,
 reading $2001 reports `PPU read at register offset 0x01 is not implemented`. Unsupported reads and writes in
 $4000-$7FFF raise `NotImplementedError`, with the operation and CPU address. Sprite DMA, controllers, expansion
 hardware, and cartridge RAM have no behavior yet. No open-bus response is modeled.
@@ -87,12 +87,19 @@ Each Machine owns a PPU. Addresses $2000-$3FFF select a register offset using th
 $200A, and $3FFA all select offset 2. `machine.ppu.last_writes` provides an inspection tuple with the last written
 byte for each offset; an unwritten offset is `None`. For example, writing $80 to $200A makes element 2 equal $80.
 
-The $2006 address port selects a video address, and $2007 writes data there using the increment selected by $2000.
-Other register writes only retain bytes.
+The $2003 and $2004 ports address and access OAM; $2006 selects a video address, and $2007 accesses video data.
+Other register effects are described below.
 They are accepted even at $2002, although hardware PPUSTATUS is read-only. This model also records writes immediately;
 hardware ignores writes to $2000, $2001, $2005, and $2006 during an initial warmup period. See the
 [decision record](decisions.md#ppu-register-write-retention-2026-11-19) for the rationale and affected ROMs.
 Reads use the same offset routing. The PPU's errors for unsupported reads propagate unchanged.
+
+## OAM access
+
+Writing $2003 selects one of 256 OAM bytes. Writing $2004 stores a byte and advances the address modulo 256;
+reading $2004 returns the selected byte without advancing. These ports also work through register mirrors.
+OAM starts zero-filled, and these operations behave the same during rendering and blanking. See the
+[decision record](decisions.md#functional-oam-register-access-2026-11-22) for the hardware differences.
 
 ## PPU control settings
 

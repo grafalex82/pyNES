@@ -31,6 +31,8 @@ class PPU:
         self._nametable_ram = nametable_ram
         self._mirroring = mirroring
         self._palette_ram = bytearray(32)
+        self._oam = bytearray(256)
+        self._oam_address = 0
         self._vram_read_buffer = 0
         self._vram_address = 0
         self._temporary_address = 0
@@ -76,6 +78,10 @@ class PPU:
         if offset == 2:
             return self._read_ppustatus()
 
+        # OAMDATA reads leave the selected object-memory address unchanged.
+        if offset == 4:
+            return self._oam[self._oam_address]
+
         # PPUDATA ($2007) reads video memory and advances the selected address.
         if offset == 7:
             return self._read_ppudata()
@@ -95,6 +101,15 @@ class PPU:
         # PPUMASK ($2001) controls whether the background layer is visible.
         if offset == 1:
             self._background_enabled = bool(value & 0x08)
+
+        # OAMADDR selects a byte
+        if offset == 3:
+            self._oam_address = value
+            
+        # OAMDATA writes advance and wrap the address.
+        if offset == 4:
+            self._oam[self._oam_address] = value
+            self._oam_address = (self._oam_address + 1) & 0xFF
 
         # PPUADDR ($2006) selects the PPU video address in two writes.
         if offset == 6:

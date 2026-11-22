@@ -5,6 +5,17 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Functional OAM register access (2026-11-22)
+
+OAM is a separate 256-byte array initialized to zero for reproducible inspection. $2003 selects its address;
+$2004 stores and increments modulo 256 or reads without incrementing. The functional model preserves all eight
+bits of each byte and applies these operations throughout the frame. Real OAM power-up contents are unspecified,
+and rendering-time accesses have different effects; attribute bytes also have unimplemented bits. This approximation
+keeps the first OAM step independent of sprite evaluation and affects any game using these ports. No ROM is patched.
+Synthetic tests verify mirrors, consecutive writes, wrapping, repeated reads, and independent machines. DMA and sprite
+rendering remain unimplemented. See [NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers) and
+[OAM](https://www.nesdev.org/wiki/PPU_OAM).
+
 ### Background inspection snapshot (2026-11-22)
 
 When frame output is enabled, each vblank capture also records immutable $2000 nametable tile and attribute bytes

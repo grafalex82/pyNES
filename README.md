@@ -110,8 +110,10 @@ register offset for inspection. A pair of $2006 writes selects a video address; 
 Writes to $2000 decode the PPUCTRL settings; the video address increment and NMI enable have effects. Reads and
 writes at $2007 access video data and advance the address by 1 or 32. Non-palette reads are buffered; palette reads
 return the color immediately. Status reads report and clear vblank, whose approximate phase advances with CPU
-instruction cycles through `Emulator`. A vblank NMI request is serviced after the completed instruction; other PPU
-register reads remain unimplemented.
+instruction cycles through `Emulator`. A vblank NMI request is serviced after the completed instruction. Writes to
+$2003 select an OAM address; $2004 writes store a byte and advance the address, while reads do not advance it. OAM
+starts zero-filled and accesses use this functional behavior even during rendering. Other PPU register reads remain
+unimplemented.
 Its separate video address space connects 8 KiB of mapper-0 CHR ROM at $0000-$1FFF. CHR RAM and other CHR sizes
 raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pages map to $2000-$3EFF using the
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color

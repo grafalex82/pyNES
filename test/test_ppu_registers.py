@@ -3,6 +3,30 @@
 import pytest
 
 
+def test_oam_ports_write_wrap_and_read_without_increment(make_cpu):
+    # Writes through mirrored ports advance from $FF through $00 to $01.
+    _, machine = make_cpu()
+    machine.write_byte(0x200B, 0xFF)
+    machine.write_byte(0x2004, 0xA5)
+    machine.write_byte(0x3FFC, 0x5A)
+    machine.write_byte(0x2004, 0xC3)
+
+    # Selecting each location confirms the bytes and that repeated reads do not advance.
+    for address, expected in ((0xFF, 0xA5), (0x00, 0x5A), (0x01, 0xC3)):
+        machine.write_byte(0x3FFB, address)
+        assert machine.read_byte(0x200C) == expected
+        assert machine.read_byte(0x2004) == expected
+
+
+def test_oam_is_zero_initialized_and_independent_between_machines(make_cpu):
+    _, first = make_cpu()
+    _, second = make_cpu()
+    first.write_byte(0x2004, 0xFF)
+    first.write_byte(0x2003, 0)
+    assert first.read_byte(0x2004) == 0xFF
+    assert second.read_byte(0x2004) == 0
+
+
 def test_ppuctrl_settings_start_cleared(make_cpu):
     _, machine = make_cpu()
     ppu = machine.ppu
