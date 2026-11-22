@@ -5,6 +5,21 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### PPU status writes and register state (2026-11-22)
+
+The PPU no longer stores every last-written register byte for inspection; the implemented register settings, OAM,
+scroll/address latches, and video memory are the authoritative state. A write to PPUSTATUS or any mirror is accepted
+without changing vblank or the shared scroll/address write toggle. Hardware writes to PPUSTATUS also load the PPU's
+internal open-bus latch; this model omits that effect, reports zero in unmodeled status bits, and leaves write-only
+register reads unsupported. Games that depend on PPU open bus can therefore behave differently. No ROM is patched.
+Synthetic tests cover all status aliases, both toggle phases, both vblank states, and register routing. See
+[NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+The local Battle City image reached 1,000,001 cycles at PC $D8FA with 33 captured frames and no `NotImplementedError`.
+Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` before and after. This bounded
+run does not establish playability.
+
 ### Sprite flips (2026-11-22)
 
 OAM attribute bits 6 and 7 horizontally and vertically reflect the sprite inside its unchanged bounding box. For

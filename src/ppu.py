@@ -13,10 +13,9 @@ VBLANK_END_CPU_CYCLE = 29667
 
 
 class PPU:
-    """Minimal PPU boundary with an address latch and retained register writes."""
+    """Minimal PPU boundary with video registers and memory."""
 
     def __init__(self, chr_rom, chr_size, nametable_ram, mirroring):
-        self._last_writes = [None] * 8
         self._frame_cycle = 0
         self._vblank = False
         self._nmi_pending = False
@@ -45,12 +44,6 @@ class PPU:
         self._fine_x = 0
         self._awaiting_second_write = False
         self._write_ppuctrl(0)
-
-
-    @property
-    def last_writes(self):
-        """Return the last byte per offset, or None where no write has occurred."""
-        return tuple(self._last_writes)
 
 
     @property
@@ -98,9 +91,6 @@ class PPU:
 
 
     def write_byte(self, offset, value):
-        # Retain all writes for inspection, including writes to the read-only hardware status register.
-        self._last_writes[offset] = value
-
         # PPUCTRL ($2000) selects video addressing and rendering settings.
         if offset == 0:
             self._write_ppuctrl(value)
@@ -108,6 +98,10 @@ class PPU:
         # PPUMASK ($2001) controls whether the background and sprite layers are visible.
         if offset == 1:
             self._write_ppumask(value)
+
+        # PPUSTATUS is read-only; writes have no modeled effects, including on vblank and the write toggle.
+        if offset == 2:
+            return
 
         # OAMADDR selects a byte
         if offset == 3:

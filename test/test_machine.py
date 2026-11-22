@@ -220,41 +220,43 @@ def test_apu_rejects_unsupported_device_offsets(make_cartridge, offset, operatio
             machine.apu.write_byte(offset, 0xA5)
 
 
-def test_ppu_writes_route_all_mirrors_and_preserve_other_offsets(make_cartridge, monkeypatch):
-    # Isolate register routing from PPUDATA's video-memory side effects.
+def test_ppu_writes_route_all_mirrors_to_register_offsets(make_cartridge, monkeypatch):
+    # A stand-in receives each offset and value without applying the device's register effects.
     machine = Machine(make_cartridge(bytes(16384)))
-    monkeypatch.setattr(machine.ppu, "write_vram", lambda address, value: None)
+    writes = []
+    monkeypatch.setattr(machine.ppu, "write_byte", lambda offset, value: writes.append((offset, value)))
 
     # Every CPU address in the window must select exactly one of the eight offsets.
-    expected = [None] * 8
-    assert machine.ppu.last_writes == tuple(expected)
     for address in range(0x2000, 0x4000):
         value = (address // 8 + address) & 0xFF
         machine.write_byte(address, value)
-        expected[address & 7] = value
-        assert machine.ppu.last_writes == tuple(expected)
+        assert writes[-1] == (address & 7, value)
+    assert len(writes) == 0x2000
 
 
-def test_status_writes_through_mirrors_only_retain_the_last_byte(make_cartridge, monkeypatch):
-    # Give all other register offsets and RAM distinct contents before writing PPUSTATUS.
+@pytest.mark.parametrize("address", [0x2002, 0x200A, 0x3FFA])
+@pytest.mark.parametrize("value", [0x00, 0x80, 0xFF])
+@pytest.mark.parametrize("vblank", [False, True])
+@pytest.mark.parametrize("partial_pair", [False, True])
+def test_status_writes_preserve_vblank_and_shared_write_toggle(make_cartridge, address, value, vblank, partial_pair):
+    # Arrange both vblank states and both phases of a scroll/address write pair.
     prg = bytes(range(256)) * 64
     machine = Machine(make_cartridge(prg))
-    monkeypatch.setattr(machine.ppu, "write_vram", lambda address, value: None)
     machine.write_byte(0x123, 0xA5)
-    for offset in range(8):
-        if offset != 2:
-            machine.write_byte(0x2000 + offset, 0x10 + offset)
+    if vblank:
+        machine.ppu.advance(27394)
+    if partial_pair:
+        machine.write_byte(0x2006, 0x23)
+    before = (machine.ppu._scroll_address_latch, machine.ppu._vram_address, machine.ppu._fine_x)
 
-    # PPUSTATUS is read-only on hardware; this model records writes without register effects.
-    for address, value in ((0x2002, 0x00), (0x200A, 0x80), (0x3FFA, 0xFF)):
-        machine.write_byte(address, value)
-        assert machine.ppu.last_writes == (0x10, 0x11, value, 0x13, 0x14, 0x15, 0x16, 0x17)
-        assert machine.read_byte(0x123) == 0xA5
-        assert machine.read_byte(0x8000) == prg[0]
-
-    # Status reads do not expose or change the retained write.
-    assert machine.read_byte(0x2002) == 0x00
-    assert machine.ppu.last_writes[2] == 0xFF
+    # Writes to any status mirror cannot alter either phase, the address latches, RAM, or the vblank flag.
+    machine.write_byte(address, value)
+    assert machine.ppu._awaiting_second_write == partial_pair
+    assert (machine.ppu._scroll_address_latch, machine.ppu._vram_address, machine.ppu._fine_x) == before
+    assert machine.read_byte(0x123) == 0xA5
+    assert machine.read_byte(0x8000) == prg[0]
+    assert machine.read_byte(0x2002) == (0x80 if vblank else 0)
+    assert machine.read_byte(0x2002) == 0
 
 
 @pytest.mark.parametrize("offset", [0, 1, 3, 5, 6])
@@ -313,19 +315,20 @@ def test_ppu_writes_do_not_change_vblank_status(make_cartridge, monkeypatch):
         machine.write_byte(0x3FF8 + offset, offset + 0x80)
     assert machine.read_byte(0x200A) == 0x80
     assert machine.read_byte(0x2002) == 0x00
-    assert machine.ppu.last_writes == tuple(range(0x80, 0x88))
 
 
 def test_each_machine_owns_independent_ppu(make_cartridge):
-    # Constructing and writing a second Machine cannot change the first PPU's retained bytes.
+    # Constructing and writing a second Machine cannot change the first PPU's mask settings.
     cartridge = make_cartridge(bytes(16384))
     first = Machine(cartridge)
     first.write_byte(0x2001, 0xAB)
     second = Machine(cartridge)
-    assert second.ppu.last_writes == (None,) * 8
+    assert not second.ppu._background_enabled
     second.write_byte(0x3FF9, 0xCD)
-    assert first.ppu.last_writes[1] == 0xAB
-    assert second.ppu.last_writes[1] == 0xCD
+    assert first.ppu._background_enabled and not first.ppu._sprites_enabled
+    assert second.ppu._background_enabled and not second.ppu._sprites_enabled
+    assert first.ppu._color_emphasis == 5
+    assert second.ppu._color_emphasis == 6
 
 
 @pytest.mark.parametrize(

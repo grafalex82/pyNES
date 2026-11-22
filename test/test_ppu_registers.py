@@ -64,7 +64,6 @@ def test_ppuctrl_settings_start_cleared(make_cpu):
     assert not any((ppu._base_nametable_x, ppu._base_nametable_y, ppu._increment_32,
                     ppu._sprite_pattern_table_high, ppu._background_pattern_table_high,
                     ppu._sprite_height_16, ppu._ext_output_enabled, ppu._nmi_enabled))
-    assert ppu.last_writes[0] is None
 
 
 @pytest.mark.parametrize("value,expected", [
@@ -91,7 +90,6 @@ def test_ppuctrl_updates_all_named_settings(make_cpu, value, expected):
     assert (ppu._base_nametable_x, ppu._base_nametable_y, ppu._increment_32,
             ppu._sprite_pattern_table_high, ppu._background_pattern_table_high,
             ppu._sprite_height_16, ppu._ext_output_enabled, ppu._nmi_enabled) == expected
-    assert ppu.last_writes[0] == value
 
 
 @pytest.mark.parametrize("first_port,second_port", [(0x2006, 0x2006), (0x200E, 0x3FFE), (0x3FFE, 0x2006)])
@@ -109,7 +107,6 @@ def test_ppuaddr_commits_after_two_writes_and_masks_high_bits(make_cpu, first_po
     assert machine.ppu._vram_address == 0x1234
     machine.write_byte(second_port, low)
     assert machine.ppu._vram_address == expected
-    assert machine.ppu.last_writes[6] == low
 
 
 @pytest.mark.parametrize("status_port", [0x2002, 0x200A, 0x3FFA])
@@ -137,7 +134,6 @@ def test_status_write_and_other_register_writes_do_not_reset_the_address_pair(ma
     machine.write_byte(0x2000, 0x80)
     machine.write_byte(0x2006, 0x45)
     assert machine.ppu._vram_address == 0x2345
-    assert machine.ppu.last_writes[2] == 0xFF
 
 
 def test_ppuaddr_write_latches_are_independent_between_machines(make_cpu):

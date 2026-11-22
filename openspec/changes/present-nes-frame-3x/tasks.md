@@ -75,7 +75,7 @@
       nametable boundary crossings. Record the whole-frame scrolling approximation in doc/decisions.md.
 - [x] 6.2 Apply horizontal and vertical sprite flips from OAM. Verify asymmetric sprites in both sizes,
       including the reversed tile order of an 8 × 16 sprite after a vertical flip.
-- [ ] 6.3 Replace remaining uses of temporary register-write retention with the corresponding register state, then
+- [x] 6.3 Replace remaining uses of temporary register-write retention with the corresponding register state, then
       remove `_last_writes` and `last_writes`. Preserve implemented register effects and accept status writes without
       changing vblank or the shared write toggle. Update focused tests and documentation, including the unmodeled
       status-write open-bus effect.

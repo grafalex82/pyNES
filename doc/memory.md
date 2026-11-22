@@ -83,14 +83,13 @@ return $00; see [the controller read decision](decisions.md#fixed-controller-rea
 ## PPU register writes
 
 Each Machine owns a PPU. Addresses $2000-$3FFF select a register offset using the low three address bits, so $2002,
-$200A, and $3FFA all select offset 2. `machine.ppu.last_writes` provides an inspection tuple with the last written
-byte for each offset; an unwritten offset is `None`. For example, writing $80 to $200A makes element 2 equal $80.
+$200A, and $3FFA all select offset 2. Register writes update the state associated with the selected port.
 
 The $2003 and $2004 ports address and access OAM; $2006 selects a video address, and $2007 accesses video data.
-Other register effects are described below.
-They are accepted even at $2002, although hardware PPUSTATUS is read-only. This model also records writes immediately;
+Other register effects are described below. Writes to the read-only PPUSTATUS port are accepted without changing
+vblank or the shared write toggle; the hardware open-bus effect is not modeled. Writes take effect immediately;
 hardware ignores writes to $2000, $2001, $2005, and $2006 during an initial warmup period. See the
-[decision record](decisions.md#ppu-register-write-retention-2026-11-19) for the rationale and affected ROMs.
+[decision record](decisions.md#ppu-status-writes-and-register-state-2026-11-22) for the current model.
 Reads use the same offset routing. The PPU's errors for unsupported reads propagate unchanged.
 
 ## OAM access
@@ -122,7 +121,7 @@ and every write replaces all eight, including bits that are clear in the new val
 | 7 | `_nmi_enabled` | Enable vblank NMI requests. |
 
 Nametable selection, pattern-table selection, sprite height, address increment, and NMI enable affect emulation.
-EXT pins are not modeled. The retained `last_writes` inspection interface remains in place.
+EXT pins are not modeled.
 
 ## PPU address writes
 
@@ -143,8 +142,7 @@ See [the decision record](decisions.md#ppu-address-latch-2026-11-21).
 Writing to $2007 or a mirror stores a byte at the current video address. The PPU selects the increment from the
 decoded bit 2 of $2000: 1 when clear or 32 when set; the initial increment is 1. Each successful write
 advances the 15-bit internal address modulo $8000; PPU memory uses its low 14 bits. Normal nametable and palette
-mirrors apply. A rejected CHR write propagates its error without advancing the address; the attempted register byte
-is still retained for inspection.
+mirrors apply. A rejected CHR write propagates its error without advancing the address.
 
 The functional increment is applied without modeling rendering-time access restrictions or changes to the hardware's
 scroll increment behavior during rendering. See [the decision record](decisions.md#ppu-data-writes-2026-11-21).
@@ -165,7 +163,7 @@ modeled. See [the decision record](decisions.md#ppu-data-reads-2026-11-21).
 
 Reads of $2002 and its mirrors return the current vblank flag in bit 7, with all other bits zero. Every read clears
 vblank and resets the address write pair without advancing the frame phase. A second read returns $00 until a later
-frame sets vblank again. The retained byte for offset 2 is separate from the returned status and is unchanged by reads.
+frame sets vblank again.
 
 Each new PPU starts at frame cycle 0 with vblank clear. The approximate frame lasts 29,781 nominal CPU cycles;
 vblank starts at cycle 27,394 and clears at cycle 29,667 even if it was never read. `Emulator` advances the PPU after

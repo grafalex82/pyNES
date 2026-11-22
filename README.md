@@ -105,8 +105,8 @@ mapper/submapper 0 and no trainer. ROM writes raise `PermissionError`; unconnect
 configurations raise `NotImplementedError`. See [the memory guide](doc/memory.md) for the map, supported limits,
 deliberate hardware departures, and a synthetic byte-access example.
 
-Each Machine also owns a minimal [`PPU`](src/ppu.py). Writes to $2000-$3FFF retain the last byte for each mirrored
-register offset for inspection. A pair of $2006 writes selects a video address; reading $2002 resets the write pair.
+Each Machine also owns a minimal [`PPU`](src/ppu.py). CPU addresses $2000-$3FFF access mirrored PPU registers.
+A pair of $2006 writes selects a video address; reading $2002 resets the shared scroll/address write pair.
 Writes to $2000 decode the PPUCTRL settings; the video address increment and NMI enable have effects. Reads and
 writes at $2007 access video data and advance the address by 1 or 32. Non-palette reads are buffered; palette reads
 return the color immediately. Status reads report and clear vblank, whose approximate phase advances with CPU
