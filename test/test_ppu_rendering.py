@@ -102,6 +102,46 @@ def test_fine_scroll_moves_pattern_and_attribute_boundaries(tmp_path):
     assert frame[(256 + 13) * 3:(256 + 14) * 3] == bytes((102, 102, 102))
 
 
+def test_published_frame_applies_horizontal_changes_on_next_scanline(tmp_path):
+    # Two vertically mirrored nametables use different patterns; the second has a distinct second column.
+    chr_rom = bytearray(8192)
+    chr_rom[16:24] = bytes([0xFF] * 8)
+    chr_rom[40:48] = bytes([0xFF] * 8)
+    path = tmp_path / "split.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1, 1]) + bytes(9) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    for row in range(30):
+        for column in range(32):
+            ppu.write_vram(0x2000 + row * 32 + column, 1)
+            ppu.write_vram(0x2400 + row * 32 + column, 1 if column == 0 else 2)
+    ppu.write_vram(0x2400 + 12 * 32 + 1, 1)
+    ppu.write_vram(0x3F01, 0x01)
+    ppu.write_vram(0x3F02, 0x21)
+    machine.write_byte(0x2001, 0x0A)
+    ppu.enable_frame_output()
+
+    # At line 10 switch nametables, then at line 20 move eight pixels and change vertical scroll.
+    ppu.advance((10 * 341 + 100) // 3)
+    machine.write_byte(0x2000, 1)
+    ppu.advance((20 * 341 + 100) // 3 - (10 * 341 + 100) // 3)
+    machine.write_byte(0x2005, 8)
+    machine.write_byte(0x2005, 80)
+    ppu.advance(27394 - (20 * 341 + 100) // 3)
+    frame = ppu.completed_frame[1]
+    blue = NES_COLORS[0x01].to_bytes(3, "big")
+    light = NES_COLORS[0x21].to_bytes(3, "big")
+    for y, color in ((10, blue), (11, blue), (20, blue), (21, light), (239, light)):
+        offset = y * 256 * 3
+        assert frame[offset:offset + 3] == color
+    assert frame[(11 * 256 + 8) * 3:(11 * 256 + 9) * 3] == light
+
+    # A new frame starts with the latest settings instead of retaining the prior split.
+    ppu.advance(29781)
+    frame = ppu.completed_frame[1]
+    assert frame[:3] == light
+
+
 @pytest.mark.parametrize("mirroring,physical_pages", [(0, (0, 0, 1, 1)), (1, (0, 1, 0, 1))])
 @pytest.mark.parametrize("base", [0, 1, 2, 3])
 def test_scroll_crosses_both_nametable_boundaries(tmp_path, mirroring, physical_pages, base):

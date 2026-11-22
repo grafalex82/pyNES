@@ -86,6 +86,6 @@
       `$2002` bit 6. Verify timing, latch lifetime, transparency, layer and left-edge masks, x=255, and sprite
       priority with synthetic scenes. Run the identified Super Mario Bros. (Europe) ROM with a cycle budget
       and verify that execution leaves `$8150–$8155`. Document the timing approximation and any next obstacle.
-- [ ] 7.2 Apply horizontal `$2005` scroll and `$2000` horizontal nametable changes during the visible frame
+- [x] 7.2 Apply horizontal `$2005` scroll and `$2000` horizontal nametable changes during the visible frame
       from the next scanline. Verify a synthetic scene with distinct horizontal origins above and below the
       split. Check the top panel and playfield in a bounded Super Mario Bros. run and document the approximation.

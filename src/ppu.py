@@ -21,6 +21,8 @@ class PPU:
         self._sprite_zero_hit = False
         self._sprite_zero_cycle = None
         self._sample_collision = True
+        self._frame_scroll = None
+        self._scroll_changes = []
         self._nmi_pending = False
         self._nmi_enabled = False
         self._background_enabled = False
@@ -143,6 +145,7 @@ class PPU:
         self._sprite_height_16 = bool(value & 0x20)
         self._ext_output_enabled = bool(value & 0x40)
         self._nmi_enabled = bool(value & 0x80)
+        self._record_horizontal_scroll()
 
 
     def _write_ppumask(self, value):
@@ -171,6 +174,7 @@ class PPU:
 
             # Fine X has its own 3-bit latch because t has no space for it.
             self._fine_x = value & 7
+            self._record_horizontal_scroll()
         else:
             # The second byte is a vertical pixel offset with the same coarse/fine split as the first byte.
             # Clear coarse Y (bits 5-9) and fine Y (bits 12-14), preserving nametable and coarse X fields.
@@ -224,6 +228,20 @@ class PPU:
         self._vram_address = (self._vram_address + increment) & 0x7FFF
 
 
+    def _scroll_origin(self):
+        address = self._scroll_address_latch
+        x = ((address >> 10) & 1) * 256 + (address & 31) * 8 + self._fine_x
+        y = ((address >> 11) & 1) * 240 + ((address >> 5) & 31) * 8 + ((address >> 12) & 7)
+        return x, y
+
+
+    def _record_horizontal_scroll(self):
+        # Writes take effect on the next line of the approximate 341-dot raster.
+        if not self._sample_collision and self._frame_cycle * 3 < 240 * 341:
+            line = self._frame_cycle * 3 // 341 + 1
+            self._scroll_changes.append((line, self._scroll_origin()[0]))
+
+
     def _pattern_rom(self):
         # Defer unsupported video configurations so PRG-only programs can still execute.
         if self._chr_size == 0:
@@ -260,6 +278,8 @@ class PPU:
         while cycles:
             # Sample once at the beginning of each visible frame, independently of frame publication.
             if self._sample_collision:
+                self._frame_scroll = self._scroll_origin()
+                self._scroll_changes = []
                 self._sprite_zero_cycle = self._find_sprite_zero_cycle()
                 self._sample_collision = False
             elapsed = min(cycles, FRAME_CPU_CYCLES - self._frame_cycle)
@@ -278,7 +298,7 @@ class PPU:
                     self._nmi_pending = True
                 logger.debug("Vblank started")
                 if self._frame_output_enabled:
-                    frame = self.render_frame()
+                    frame = self._render_frame(self._frame_scroll, self._scroll_changes)
                     tiles = bytes(self.read_vram(address) for address in range(0x2000, 0x23C0))
                     attributes = bytes(self.read_vram(address) for address in range(0x23C0, 0x2400))
                     colors = tuple(self._render_color(0x3F00 + index) for index in range(16))
@@ -357,6 +377,10 @@ class PPU:
 
     def render_frame(self):
         """Render a native-size frame of packed RGB bytes."""
+        return self._render_frame(self._scroll_origin(), [])
+
+
+    def _render_frame(self, origin, changes):
         # Start with the backdrop, including transparent background pattern pixels.
         colors = []
         for color_index in range(16):
@@ -367,49 +391,71 @@ class PPU:
         frame = bytearray(colors[0] * (256 * 240))
         background_opaque = bytearray(256 * 240)
         if self._background_enabled:
-            self._render_background(frame, colors, background_opaque)
+            scroll_x, scroll_y = origin
+            start = 0
+            for end, next_x in changes + [(240, scroll_x)]:
+                if start < end:
+                    self._render_background(frame, colors, background_opaque, scroll_x, scroll_y, start, end)
+                start, scroll_x = end, next_x
         if self._sprites_enabled:
             self._render_sprites(frame, background_opaque)
         return bytes(frame)
 
 
-    def _render_background(self, frame, colors, background_opaque):
-        # The temporary scroll state selects the frame origin in a 2x2 grid of logical nametables.
-        address = self._scroll_address_latch
-        scroll_x = ((address >> 10) & 1) * 256 + (address & 0x1F) * 8 + self._fine_x
-        scroll_y = ((address >> 11) & 1) * 240 + ((address >> 5) & 0x1F) * 8 + ((address >> 12) & 7)
+    def _render_background(self, frame, colors, background_opaque, scroll_x, scroll_y, start, end):
+        # Draw only screen lines [start, end) using one scroll origin. frame already contains the backdrop;
+        # colors holds four background subpalettes and background_opaque records pixels for sprite priority.
+        # PPUCTRL selects one of the two 4 KiB CHR pattern tables for every background tile.
         pattern_base = 0x1000 if self._background_pattern_table_high else 0
 
-        # Include partial tiles at the top and left, wrapping at each nametable boundary.
-        for screen_y in range(-(scroll_y % 8), 240, 8):
+        # Walk whole 8x8 tiles in screen coordinates. The first tile can begin above start or left of x=0:
+        # aligning its origin to the scrolled tile grid lets the pixel loops clip it at the region boundary.
+        # For example, scroll_y=3 and start=10 begin at screen_y=5, whose world coordinate is tile-aligned.
+        for screen_y in range(start - (scroll_y + start) % 8, end, 8):
+            # Translate into the 512x480 grid of four logical 256x240 nametables and wrap at its edges.
+            # tile_y and tile_x are local tile coordinates within the selected 32x30 nametable.
             world_y = (scroll_y + screen_y) % 480
             tile_y = (world_y % 240) // 8
             for screen_x in range(-(scroll_x % 8), 256, 8):
                 world_x = (scroll_x + screen_x) % 512
                 tile_x = (world_x % 256) // 8
+
+                # The logical nametables are ordered top-left, top-right, bottom-left, bottom-right.
+                # Each occupies $400 bytes; read_vram applies the cartridge's physical nametable mirroring.
                 nametable = 0x2000 + (world_y // 240 * 2 + world_x // 256) * 0x400
 
-                # Attributes and tile bytes come from the same logical nametable, subject to cartridge mirroring.
+                # The first 960 bytes contain tile numbers in row-major order. The 64 attribute bytes at
+                # offset $3C0 form an 8x8 grid; each describes a 4x4-tile (32x32-pixel) area.
                 tile = self.read_vram(nametable + tile_y * 32 + tile_x)
                 attribute = self.read_vram(nametable + 0x3C0 + tile_y // 4 * 8 + tile_x // 4)
+
+                # Each attribute byte packs four 2-bit subpalette numbers for its 2x2-tile quadrants:
+                # top-left uses bits 0-1, top-right 2-3, bottom-left 4-5, bottom-right 6-7.
                 shift = (tile_y % 4 // 2) * 4 + (tile_x % 4 // 2) * 2
                 palette = (attribute >> shift) & 3
 
-                # Decode the two bitplanes and clip partial tiles to screen coordinates and the left mask.
+                # Clip rows to this region, which can split a tile when horizontal scroll changes mid-frame.
+                # A CHR tile has 16 bytes: eight low-plane rows followed by eight high-plane rows.
                 for row in range(8):
                     y = screen_y + row
-                    if not 0 <= y < 240:
+                    if not start <= y < end:
                         continue
                     pattern = pattern_base + tile * 16 + row
                     low = self.read_vram(pattern)
                     high = self.read_vram(pattern + 8)
                     for column in range(8):
+                        # Clip partial tiles at the screen edges and apply PPUMASK's left-eight-pixel mask.
                         x = screen_x + column
                         if not 0 <= x < 256 or (x < 8 and not self._background_left_enabled):
                             continue
+
+                        # Bit 7 is the leftmost pixel. Combine corresponding plane bits into an index 0..3.
                         shift = 7 - column
                         color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
                         if color_index:
+                            # Index 0 leaves the backdrop and opacity unchanged. Other indices select a
+                            # color within the quadrant's subpalette and can hide behind-background sprites.
+                            # RGB is packed as three consecutive bytes for each row-major screen pixel.
                             pixel = y * 256 + x
                             background_opaque[pixel] = 1
                             offset = pixel * 3

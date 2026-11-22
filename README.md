@@ -121,7 +121,8 @@ cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupport
 codes at $3F00-$3FFF with hardware mirrors.
 `PPU.render_frame()` produces a packed RGB frame using a fixed RGB approximation. When $2001 bit 3 is set, it draws
 the scrolled nametables selected by $2000 and $2005, with the background pattern table selected by $2000 bit 4 and
-subpalettes selected by attribute bytes. Scroll state is sampled for a whole frame. Pattern index zero uses the $3F00
+subpalettes selected by attribute bytes. Published frames retain the frame-start vertical origin and apply horizontal
+$2005 and $2000 changes from the next scanline; `render_frame()` samples the current origin. Pattern index zero uses the $3F00
 backdrop. When $2001 bit 4 is set, 8 × 8 or 8 × 16
 sprites use OAM positions, flips, and sprite subpalettes. For 8 × 8 sprites $2000 bit 3 selects the pattern table; for
 8 × 16 sprites the tile number selects the table and tile pair. Sprite index zero is transparent. The first opaque sprite in

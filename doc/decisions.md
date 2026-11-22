@@ -1363,6 +1363,24 @@ observed in this bounded run.
 
 [sprite-zero]: https://www.nesdev.org/wiki/PPU_OAM#Sprite_zero_hits
 
+## Horizontal scroll split (2026-11-22)
+
+Task 7.2 records the frame-start scroll origin and horizontal changes from the first $2005 write or $2000 bit 0.
+Each change takes effect on the next scanline, estimated from three PPU dots per completed CPU cycle and 341 dots
+per line. Published frames retain the frame-start vertical origin. Writes outside visible lines affect the next
+frame's initial state. `render_frame()` remains an immediate view of the current scroll state.
+
+Real hardware reloads horizontal scroll during rendering and fine horizontal scroll can affect pixels within a line.
+The line-level approximation avoids emulating individual PPU dots; it affects any ROM using raster effects. Other
+rendering inputs still use their state at frame capture, and sprite 0 hit still uses frame-start inputs. No ROM is
+patched. See [Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+Synthetic tests check the boundary, successive writes, nametable selection, vertical origin, and next frame.
+
+The identified Super Mario Bros. (Europe) image reached cycle 7,025,937 with a temporary test-only serial controller
+input for Start and Right. Published frame 236 showed the status panel and level 1-1, with horizontal origin 0 above
+line 32 and 10 below it. This is a bounded visual check, not a playability claim; controller input is not implemented
+in the emulator. The ROM SHA-256 remained `ff69421b584ce898b3d4b3ab57202900c079c45cdface84d654d0368ad796ffe`.
+
 ## Departures and patches
 
 ### Implied flag instructions and official NOP (2026-11-19)
