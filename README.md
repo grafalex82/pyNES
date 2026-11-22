@@ -122,10 +122,10 @@ codes at $3F00-$3FFF with hardware mirrors.
 the scrolled nametables selected by $2000 and $2005, with the background pattern table selected by $2000 bit 4 and
 subpalettes selected by attribute bytes. Scroll state is sampled for a whole frame. Pattern index zero uses the $3F00
 backdrop. When $2001 bit 4 is set, 8 × 8 or 8 × 16
-sprites use OAM positions and sprite subpalettes. For 8 × 8 sprites $2000 bit 3 selects the pattern table; for 8 × 16
-sprites the tile number selects the table and tile pair. Sprite index zero is transparent. The first opaque sprite in
-OAM order wins, and its priority bit determines whether an opaque background pixel covers it. Sprite flips and the
-hardware's forced-blank palette override are not yet rendered. PPUMASK bit 0 applies grayscale by masking each
+sprites use OAM positions, flips, and sprite subpalettes. For 8 × 8 sprites $2000 bit 3 selects the pattern table; for
+8 × 16 sprites the tile number selects the table and tile pair. Sprite index zero is transparent. The first opaque sprite in
+OAM order wins, and its priority bit determines whether an opaque background pixel covers it. The hardware's
+forced-blank palette override is not yet rendered. PPUMASK bit 0 applies grayscale by masking each
 displayed NES color code with $30 before RGB conversion. Bits 5-7 apply a fixed NTSC RGB emphasis approximation;
 each selected color reduces the other two channels to three quarters, rounding down for each step.
 PPUMASK bits 1 and 2 independently enable background and sprites in the leftmost eight pixels.

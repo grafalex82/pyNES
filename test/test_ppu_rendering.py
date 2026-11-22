@@ -9,6 +9,75 @@ from nesfile import NESFile
 from nes_palette import NES_COLORS
 
 
+@pytest.mark.parametrize("height", [8, 16])
+@pytest.mark.parametrize("flips", [0x00, 0x40, 0x80, 0xC0])
+def test_sprite_flips_reverse_complete_asymmetric_pattern(tmp_path, height, flips):
+    # Distinct points and colors in both halves expose horizontal, vertical, and combined reflections.
+    points = {(0, 0): 1, (5, 1): 2, (2, 7): 3}
+    if height == 16:
+        points.update({(7, 8): 1, (4, 14): 2, (1, 15): 3})
+    chr_rom = bytearray(8192)
+    for (x, y), color in points.items():
+        address = 0x1000 + (4 + y // 8) * 16 + y % 8
+        if color & 1:
+            chr_rom[address] |= 0x80 >> x
+        if color & 2:
+            chr_rom[address + 8] |= 0x80 >> x
+    path = tmp_path / "flip.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    for address, code in ((0x3F00, 0x0F), (0x3F11, 0x01), (0x3F12, 0x21), (0x3F13, 0x30)):
+        ppu.write_vram(address, code)
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (19, 4 if height == 8 else 5, flips, 30):
+        machine.write_byte(0x2004, value)
+    machine.write_byte(0x2000, 0x08 if height == 8 else 0x20)
+    machine.write_byte(0x2001, 0x10)
+    frame = ppu.render_frame()
+
+    # Compare every pixel in the unchanged bounding box, including transparent pixels and the 8x16 tile seam.
+    expected = {(7 - x if flips & 0x40 else x, height - 1 - y if flips & 0x80 else y): color
+                for (x, y), color in points.items()}
+    codes = (0x0F, 0x01, 0x21, 0x30)
+    for y in range(height):
+        for x in range(8):
+            offset = ((20 + y) * 256 + 30 + x) * 3
+            assert frame[offset:offset + 3] == NES_COLORS[codes[expected.get((x, y), 0)]].to_bytes(3, "big")
+
+
+@pytest.mark.parametrize("height", [8, 16])
+def test_flipped_sprite_clips_after_selecting_full_pattern(tmp_path, height):
+    # The bottom-right source pixel becomes the top-left pixel even when most of the sprite is offscreen.
+    chr_rom = bytearray(8192)
+    chr_rom[(4 + (height - 1) // 8) * 16 + 7] = 0x01
+    path = tmp_path / "flip-edge.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    machine.ppu.write_vram(0x3F00, 0x0F)
+    machine.ppu.write_vram(0x3F11, 0x30)
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (236, 4, 0xC0, 253):
+        machine.write_byte(0x2004, value)
+    machine.write_byte(0x2000, 0x20 if height == 16 else 0)
+    machine.write_byte(0x2001, 0x10)
+    frame = machine.ppu.render_frame()
+
+    # The point lands at (253, 237); the remaining visible and wrapped pixels are backdrop.
+    offset = (237 * 256 + 253) * 3
+    assert frame[offset:offset + 3] == bytes((255, 254, 255))
+    assert frame[offset + 3:offset + 6] == bytes((0, 0, 0))
+    assert frame[:3] == bytes((0, 0, 0))
+
+
 def test_fine_scroll_moves_pattern_and_attribute_boundaries(tmp_path):
     # A recognizable tile row and two attribute quadrants expose sub-tile scrolling.
     chr_rom = bytearray(8192)

@@ -5,6 +5,20 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Sprite flips (2026-11-22)
+
+OAM attribute bits 6 and 7 horizontally and vertically reflect the sprite inside its unchanged bounding box. For
+8 × 16 sprites the vertical reflection reverses all 16 source rows, so the odd tile appears above the even tile.
+Clipping and left-edge masks apply to screen coordinates after reflection. This uses the existing whole-frame sprite
+evaluation model; its timing and per-scanline limitations remain. No ROM is patched. Synthetic tests compare every
+pixel of asymmetric sprites in both sizes for all four flip combinations, including the tile seam and screen edges.
+See [NESdev OAM](https://www.nesdev.org/wiki/PPU_OAM) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+The local Battle City image reached 1,000,001 cycles at PC $D8FA with 33 captured frames and no `NotImplementedError`.
+Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` before and after. This bounded
+run does not establish playability.
+
 ### Whole-frame background scrolling (2026-11-22)
 
 PPUCTRL bits 0-1 update the nametable bits in the temporary video address. PPUSCROLL's first write sets its coarse X

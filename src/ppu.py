@@ -358,8 +358,11 @@ class PPU:
             # Each of 64 OAM entries has four bytes: Y, tile number, attributes, and X.
             y, tile, attributes, x = self._oam[index:index + 4]
 
-            # Attribute bits 0-1 select a sprite subpalette; bit 5 places the sprite behind opaque background.
+            # Attribute bits 0-1 select a subpalette; bit 5 sets priority, bits 6-7 flip the image.
             palette = attributes & 3
+            behind_background = bool(attributes & 0x20)
+            flip_horizontal = bool(attributes & 0x40)
+            flip_vertical = bool(attributes & 0x80)
 
             # In 8x16 mode the tile's low bit selects the table; the remaining bits select an even tile pair.
             # In 8x8 mode PPUCTRL bit 3 selects the table and all eight tile bits select the tile.
@@ -371,18 +374,19 @@ class PPU:
 
             # The sprite starts one scanline below OAM Y. Clip at the bottom; Y=$EF-$FF is entirely offscreen.
             for row in range(min(height, max(0, 239 - y))):
-                # A tile occupies 16 CHR bytes: eight low bitplane rows followed by eight high bitplane rows.
-                # Rows 8-15 of an 8x16 sprite come from the next tile, starting again at its first row.
-                address = pattern_base + (tile + row // 8) * 16 + row % 8
+                # Reverse the complete sprite's source rows before selecting a tile and its row.
+                # For 8x16 sprites this also swaps the upper and lower tiles, even when the sprite is clipped.
+                source_row = height - 1 - row if flip_vertical else row
+                address = pattern_base + (tile + source_row // 8) * 16 + source_row % 8
                 low = self.read_vram(address)
                 high = self.read_vram(address + 8)
 
-                # Clip columns at the right edge and combine the two bitplanes, most significant bit first.
+                # Clip at the right edge; horizontal flip reverses the bit selected from both bitplanes.
                 for column in range(min(8, 256 - x)):
                     # A masked sprite pixel cannot claim a position or obscure another layer.
                     if x + column < 8 and not self._sprites_left_enabled:
                         continue
-                    shift = 7 - column
+                    shift = column if flip_horizontal else 7 - column
                     color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
                     if color_index:
                         # Transparent pixels do not claim a position; an earlier opaque sprite always wins it.
@@ -392,7 +396,7 @@ class PPU:
                         sprite_selected[pixel] = 1
 
                         # A behind-background sprite is hidden only by a nonzero background pattern index.
-                        if attributes & 0x20 and background_opaque[pixel]:
+                        if behind_background and background_opaque[pixel]:
                             continue
                         offset = pixel * 3
                         color = self._render_color(0x3F10 + palette * 4 + color_index)
