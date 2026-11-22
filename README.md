@@ -124,8 +124,8 @@ the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. Whe
 sprites use OAM positions and sprite subpalettes. For 8 × 8 sprites $2000 bit 3 selects the pattern table; for 8 × 16
 sprites the tile number selects the table and tile pair. Sprite index zero is transparent. The first opaque sprite in
 OAM order wins, and its priority bit determines whether an opaque background pixel covers it. Sprite flips, scrolling,
-grayscale, color emphasis, and the
-hardware's forced-blank palette override are not yet rendered.
+color emphasis and the hardware's forced-blank palette override are not yet rendered. PPUMASK bit 0 applies
+grayscale by masking each displayed NES color code with $30 before RGB conversion.
 PPUMASK bits 1 and 2 independently enable background and sprites in the leftmost eight pixels.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
@@ -200,7 +200,7 @@ completed frame, and emulation continues in the same window. This key is indepen
 Each 8 × 8 tile cell shows its two-digit uppercase hexadecimal nametable byte in white 3 × 7 glyphs on black, with a
 one-pixel gap between digits and an empty rightmost column. The bottom row shows four colors, two pixels per color:
 the universal backdrop followed by the three colors of the tile's selected background subpalette. Colors use the same
-fixed RGB approximation as the normal image; identical subpalettes can look the same.
+fixed RGB approximation and grayscale setting as the normal image; identical subpalettes can look the same.
 
 The inspection view shows the stationary $2000 nametable even when background rendering is disabled. It does not
 represent scrolling or sprites. Tile bytes, attributes, and palette colors are captured at

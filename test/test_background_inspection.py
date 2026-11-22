@@ -9,6 +9,27 @@ def pixel(frame, x, y):
     return tuple(frame[offset:offset + 3])
 
 
+def test_swatches_capture_grayscale_colors_at_vblank(make_cpu):
+    # Capture grayscale backdrop and palette colors, then disable it before the next frame.
+    _, machine = make_cpu()
+    ppu = machine.ppu
+    ppu.write_vram(0x3F00, 0x16)
+    ppu.write_vram(0x3F01, 0x21)
+    machine.write_byte(0x2001, 0x01)
+    ppu.enable_frame_output()
+    ppu.advance(27394)
+    first = ppu.completed_background
+    machine.write_byte(0x2001, 0x00)
+    ppu.advance(29781)
+
+    # Each immutable snapshot retains the displayed colors from its own capture boundary.
+    assert first[3][:2] == (NES_COLORS[0x10], NES_COLORS[0x20])
+    assert ppu.completed_background[3][:2] == (NES_COLORS[0x16], NES_COLORS[0x21])
+    frame = render_background_inspection(first)
+    assert bytes(pixel(frame, 0, 7)) == NES_COLORS[0x10].to_bytes(3, "big")
+    assert bytes(pixel(frame, 2, 7)) == NES_COLORS[0x20].to_bytes(3, "big")
+
+
 def test_all_hex_digits_have_distinct_visible_glyphs():
     # Put every hexadecimal digit in the low position against the same leading zero.
     tiles = bytes(range(16)) + bytes(944)

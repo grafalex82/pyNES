@@ -25,6 +25,7 @@ class PPU:
         self._sprites_enabled = False
         self._background_left_enabled = False
         self._sprites_left_enabled = False
+        self._grayscale_enabled = False
         self._frame_output_enabled = False
         self._completed_frame = None
         self._completed_background = None
@@ -140,6 +141,7 @@ class PPU:
 
 
     def _write_ppumask(self, value):
+        self._grayscale_enabled = bool(value & 0x01)
         self._background_left_enabled = bool(value & 0x02)
         self._sprites_left_enabled = bool(value & 0x04)
         self._background_enabled = bool(value & 0x08)
@@ -244,7 +246,7 @@ class PPU:
                     frame = self.render_frame()
                     tiles = bytes(self.read_vram(address) for address in range(0x2000, 0x23C0))
                     attributes = bytes(self.read_vram(address) for address in range(0x23C0, 0x2400))
-                    colors = tuple(NES_COLORS[self.read_vram(0x3F00 + index)] for index in range(16))
+                    colors = tuple(self._render_color(0x3F00 + index) for index in range(16))
                     self._published_frames += 1
                     self._completed_frame = (self._published_frames, frame)
                     self._completed_background = (self._published_frames, tiles, attributes, colors)
@@ -260,8 +262,7 @@ class PPU:
         # Start with the backdrop, including transparent background pattern pixels.
         colors = []
         for color_index in range(16):
-            color_code = self.read_vram(0x3F00 + color_index)
-            rgb = NES_COLORS[color_code]
+            rgb = self._render_color(0x3F00 + color_index)
             colors.append(rgb.to_bytes(3, "big"))
 
         # Fill the frame with backdrop color
@@ -362,9 +363,17 @@ class PPU:
                         # A behind-background sprite is hidden only by a nonzero background pattern index.
                         if attributes & 0x20 and background_opaque[pixel]:
                             continue
-                        code = self.read_vram(0x3F10 + palette * 4 + color_index)
                         offset = pixel * 3
-                        frame[offset:offset + 3] = NES_COLORS[code].to_bytes(3, "big")
+                        color = self._render_color(0x3F10 + palette * 4 + color_index)
+                        frame[offset:offset + 3] = color.to_bytes(3, "big")
+
+
+    def _render_color(self, address):
+        # Grayscale removes the hue bits when converting a palette entry to RGB, without changing palette RAM.
+        code = self.read_vram(address)
+        if self._grayscale_enabled:
+            code &= 0x30
+        return NES_COLORS[code]
 
 
     def read_vram(self, address):

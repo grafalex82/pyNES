@@ -5,6 +5,21 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Grayscale rendering (2026-11-22)
+
+PPUMASK bit 0 masks displayed palette codes with $30 before the fixed RGB lookup. It applies to backdrop, background,
+sprites, and the background inspector's captured color swatches, without modifying palette RAM. Synthetic tests cover
+all four brightness ranges, toggling, both layers, capture timing, and unchanged palette reads. The existing PPUDATA
+model continues returning raw palette codes even in grayscale mode; hardware palette reads can reflect the grayscale
+mask. This deliberate rendering-only step keeps the existing read approximation and affects games that inspect palette
+data with grayscale enabled. Mid-frame changes remain outside the whole-frame model. No ROM is patched. See
+[NESdev PPU registers](https://www.nesdev.org/wiki/PPU_registers) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+The local Battle City image reached 1,000,001 cycles at PC $D8FA with 33 captured frames and no `NotImplementedError`.
+Its SHA-256 was `166ec235b062aa337045832843e2916f96f12dcf08972ad747016dbe77db761c` before and after. This bounded
+run does not establish playability.
+
 ### Independent left-edge masks (2026-11-22)
 
 PPUMASK bits 1 and 2 independently permit background and sprites in screen columns 0-7 when their layers are enabled.

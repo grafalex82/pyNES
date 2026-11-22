@@ -65,7 +65,7 @@
 - [x] 5.5 Compose sprites with the background. Verify OAM ordering, behind-background priority, and all four
       $2001 layer enable combinations. Document whole-frame sprite evaluation in doc/decisions.md.
 - [x] 5.6 Apply independent left-edge masks. Verify columns 0 through 7 and the first unmasked column.
-- [ ] 5.7 Apply grayscale. Verify that rendering uses the palette code masked with $30.
+- [x] 5.7 Apply grayscale. Verify that rendering uses the palette code masked with $30.
 - [ ] 5.8 Apply the NTSC RGB color emphasis approximation. Verify the three channel selections and document
       the mapping. Run the focused video tests and record the first observed frame or remaining game obstacle.
 

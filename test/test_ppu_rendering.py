@@ -6,6 +6,54 @@ import pytest
 from frame_display import FrameDisplay
 from machine import Machine
 from nesfile import NESFile
+from nes_palette import NES_COLORS
+
+
+@pytest.mark.parametrize("code", [0x0F, 0x16, 0x21, 0x3D])
+def test_grayscale_masks_backdrop_color_without_changing_palette(make_cpu, code):
+    # Render each brightness range with grayscale off, on, then off again.
+    _, machine = make_cpu()
+    ppu = machine.ppu
+    ppu.write_vram(0x3F00, code)
+    for mask, expected in ((0, code), (1, code & 0x30), (0, code)):
+        machine.write_byte(0x2009, mask)
+        assert ppu.render_frame() == NES_COLORS[expected].to_bytes(3, "big") * (256 * 240)
+        assert ppu.read_vram(0x3F00) == code
+
+    # Palette reads through the existing PPUDATA model continue returning the unmasked stored byte.
+    machine.write_byte(0x2001, 1)
+    machine.write_byte(0x2006, 0x3F)
+    machine.write_byte(0x2006, 0)
+    assert machine.read_byte(0x2007) == code
+
+
+def test_grayscale_applies_to_background_and_sprite_pixels(tmp_path):
+    # Place separate opaque background and sprite pixels with different palette color codes.
+    chr_rom = bytearray(8192)
+    chr_rom[16] = 0x80
+    path = tmp_path / "grayscale.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    ppu.write_vram(0x2042, 1)
+    for address, code in ((0x3F00, 0x0F), (0x3F01, 0x16), (0x3F11, 0x21)):
+        ppu.write_vram(address, code)
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (15, 1, 0, 32):
+        machine.write_byte(0x2004, value)
+
+    # Grayscale changes output colors for both layers and the backdrop, without changing palette data.
+    for mask, codes in ((0x18, (0x0F, 0x16, 0x21)), (0x19, (0x00, 0x10, 0x20))):
+        machine.write_byte(0x2001, mask)
+        frame = ppu.render_frame()
+        for x, code in zip((40, 16, 32), codes):
+            offset = (16 * 256 + x) * 3
+            assert frame[offset:offset + 3] == NES_COLORS[code].to_bytes(3, "big")
+    assert [ppu.read_vram(address) for address in (0x3F00, 0x3F01, 0x3F11)] == [0x0F, 0x16, 0x21]
 
 
 @pytest.mark.parametrize("layers", [0x00, 0x08, 0x10, 0x18])
@@ -301,7 +349,7 @@ def test_stationary_background_pattern_tables_and_transparency(tmp_path):
     assert pixel(frame, 16, 8) == backdrop
 
     # A later mirrored PPUMASK write can disable the background again.
-    machine.write_byte(0x3FF9, 0xF7)
+    machine.write_byte(0x3FF9, 0xF6)
     assert pixel(ppu.render_frame(), 16, 9) == backdrop
 
 
