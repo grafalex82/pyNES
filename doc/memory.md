@@ -29,8 +29,8 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 | $4010-$4013 | DMC control, output, address, and length | Accept writes without effects; reads return $00. |
 | $4014 | Sprite DMA | Write copies a CPU page into OAM without a stall; reads unsupported. |
 | $4015 | APU status and channel control | Accept writes without effects; reads return $00. |
-| $4016 | Controller strobe write / controller 1 read | Writes ignored; reads return $00. |
-| $4017 | Controller 2 read / APU frame-counter write | Reads return $00; writes have no effects. |
+| $4016 | Controller strobe write / controller 1 read | Writes strobe both controllers; reads return controller 1 serial bits. |
+| $4017 | Controller 2 read / APU frame-counter write | Reads return controller 2 serial bits; APU writes have no effects. |
 | $4018-$401F | Normally disabled APU and I/O functionality | Not connected. |
 | $4020-$5FFF | Cartridge expansion area | Not connected. |
 | $6000-$7FFF | Cartridge RAM when present | Not connected. |
@@ -40,8 +40,7 @@ All ranges below are inclusive hexadecimal CPU addresses. One KiB is 1024 bytes.
 The hardware ranges follow the [NESdev CPU memory map][cpu-map]; the PRG layout follows [NROM][nrom].
 PPU reads other than status, OAM data, or video data raise `NotImplementedError` with the device-relative offset. For example,
 reading $2001 reports `PPU read at register offset 0x01 is not implemented`. Unsupported reads and writes in
-$4000-$7FFF raise `NotImplementedError`, with the operation and CPU address. Controllers, expansion
-hardware, and cartridge RAM have no behavior yet. No open-bus response is modeled.
+$4000-$7FFF raise `NotImplementedError`, with the operation and CPU address. Expansion hardware and cartridge RAM have no behavior yet. No open-bus response is modeled.
 
 ## Dummy APU registers
 
@@ -50,7 +49,7 @@ and logged at DEBUG without register effects, including unused addresses $4009 a
 enabling DMC. This reports all channels and IRQ flags inactive and approximates the open bus for $4000-$4013 and bit 5
 of $4015. It does not fetch samples, perform DMC DMA, deliver audio interrupts, or produce sound.
 
-Writes at $4017 also reach the APU at offset $17 and are ignored; reads at $4017 address the controller 2 stub.
+Writes at $4017 also reach the APU at offset $17 and are ignored; reads at $4017 address controller 2.
 Hardware uses bit 7 to choose the frame-counter sequence and bit 6 to inhibit and clear frame IRQs.
 The stub implements neither sequencing nor those IRQ effects.
 
@@ -59,8 +58,9 @@ active. $4014 is sprite DMA, not a DMC register. Reads at $4014 remain unsupport
 [DMC/status](decisions.md#dummy-apu-register-access-2026-11-20) and
 [frame-counter writes](decisions.md#dummy-apu-frame-counter-write-2026-11-20) for hardware differences and rationale.
 
-Writes to $4016 are also ignored, without strobing either controller. Controller reads at $4016 and $4017 always
-return $00; see [the controller read decision](decisions.md#fixed-controller-read-responses-2026-11-22).
+Writes to $4016 strobe both controllers; reads at $4016 and $4017 return independent serial reports in bit 0.
+Bits 1-7 return zero as an open-bus approximation. Keyboard input is not yet connected; see the
+[controller decision](decisions.md#standard-controller-serial-reads-2026-11-22).
 
 ## PPU register writes
 

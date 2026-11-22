@@ -134,10 +134,11 @@ PPUMASK bits 1 and 2 independently enable background and sprites in the leftmost
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000-$4013 and $4015 have no audio effects;
 reads return $00, including inactive channel and interrupt status. Writes to the APU frame counter at $4017 are also
-ignored; reads at $4017 (controller 2) return $00. This approximates rather than models open bus, DMC playback,
-frame timing, or frame IRQs. Writes to $4014 copy a CPU page into OAM without a DMA stall. Controller strobe writes
-to $4016 are ignored, and reads at $4016 and $4017 always return $00;
-button input is not implemented. Reads at $4014 and other unconnected registers remain unsupported.
+ignored; reads at $4017 access controller 2. This approximates rather than models open bus, DMC playback,
+frame timing, or frame IRQs. Writes to $4014 copy a CPU page into OAM without a DMA stall. Two standard controllers
+share the $4016 strobe and provide independent serial reads at $4016 and $4017. Controller read bits 1-7 return zero
+as an open-bus approximation; keyboard input is not yet connected. Reads at $4014 and other unconnected registers
+remain unsupported.
 
 [`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and seven boolean status fields as read/write properties.
 Reading `p` assembles NV1BDIZC; assigning it replaces all seven fields and ignores bit 5, which always reads as 1.

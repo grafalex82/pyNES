@@ -203,7 +203,7 @@ def test_frame_counter_write_and_controller_read_are_distinct(make_cartridge):
     machine = Machine(make_cartridge(bytes(16384)))
     machine.write_byte(0x4017, 0xC0)
 
-    # CPU reads return the controller stub; direct APU reads remain unsupported.
+    # CPU reads select controller 2; direct APU reads remain unsupported.
     assert machine.read_byte(0x4017) == 0
     with pytest.raises(NotImplementedError, match=r"APU read.*0x17"):
         machine.apu.read_byte(0x17)

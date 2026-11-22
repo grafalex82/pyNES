@@ -1,5 +1,16 @@
 # Decisions and rationale
 
+### Standard controller serial reads (2026-11-22)
+
+Each controller captures its buttons on the falling edge of the shared strobe and shifts out A, B, Select, Start,
+Up, Down, Left, and Right, followed by ones. While the strobe is high, reads report the current A button.
+[NESdev's standard controller reference](https://www.nesdev.org/wiki/Standard_controller) describes this serial behavior.
+Reads return zero in bits 1-7 instead of modeling open bus and expansion inputs. This simple deterministic approximation
+can affect software that depends on those bits; it applies to all games and needs revisiting if observed. Synthetic
+tests cover both ports, latching, excess reads, and the $4017 APU write. No ROM has been patched or tested in this task.
+Keyboard input remains a separate task.
+
+
 This record began with the user's project constraints and setup choices on 2026-11-18; later entries describe selected
 implementation decisions. Each entry reflects the project state when it was made. See [the memory guide](memory.md)
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,

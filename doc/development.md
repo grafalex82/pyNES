@@ -88,10 +88,10 @@ vblank flag driven by approximate frame timing; other PPU register reads and bre
 `PPU.render_frame()` currently supplies a solid RGB backdrop frame; enabled output captures it at vblank.
 The host presents new completed frames between CPU blocks.
 The dummy APU accepts writes to $4000-$4013 and $4015 without effects. Reads at those addresses return $00.
-It also ignores frame-counter writes at $4017; controller 2 reads at that address return $00. It models
+It also ignores frame-counter writes at $4017, while reads there access controller 2. It models
 neither open bus, sample fetching, frame sequencing, audio output, nor audio interrupts. Sprite DMA copies a CPU page
-to OAM without a stall. Controller strobe writes at $4016 are ignored, and both controller reads
-return $00 without modeling input.
+to OAM without a stall. Two controllers share the $4016 strobe and provide independent serial reports; their upper
+read bits return zero as an open-bus approximation. Keyboard input is not yet connected.
 
 ## Documentation roles
 

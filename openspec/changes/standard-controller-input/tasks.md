@@ -2,7 +2,7 @@
 
 ## 1. Standard controller input
 
-- [ ] 1.1 Implement independent standard controller button and serial states, connect both ports through Machine, and
+- [x] 1.1 Implement independent standard controller button and serial states, connect both ports through Machine, and
   replace stub tests with focused pytest coverage of strobing, latching, read order, independent ports, excess reads,
   upper bits, and the preserved $4017 APU write.
 - [ ] 1.2 Connect the agreed keyboard mapping and focus-loss handling to the existing event loop, and use focused

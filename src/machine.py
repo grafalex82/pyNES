@@ -1,6 +1,7 @@
 """Route CPU byte access to internal RAM and fixed mapper-0 PRG ROM."""
 
 from apu import APU
+from controller import Controller
 from ppu import PPU
 from ram import RAM
 from rom import ROM
@@ -28,8 +29,8 @@ class Machine:
         $4000-$4013  APU channels and unused addresses; dummy writes and zero reads.
         $4014        Sprite DMA; page transfer without stall, reads unsupported.
         $4015        APU status/control; dummy writes and zero reads.
-        $4016        Controller 1; writes ignored and reads return zero.
-        $4017        Controller 2 read returns zero; APU frame-counter write ignored.
+        $4016        Controller 1 read and shared controller strobe write.
+        $4017        Controller 2 read; APU frame-counter write ignored.
         $4018-$401F  Normally disabled APU and I/O functionality; not connected yet.
         $4020-$5FFF  Cartridge expansion area; not connected yet.
         $6000-$7FFF  Cartridge RAM when present; not connected yet.
@@ -53,7 +54,7 @@ class Machine:
     Reads and writes at $4000-$4013 and $4015
     route to a dummy APU; writes have no effects and reads return $00. Writes at
     $4017 are also ignored by the APU. Writes to $4014 copy a CPU page into OAM without a stall.
-    Writes to $4016 are ignored; controller reads at $4016/$4017 return zero. Other reads
+    Writes to $4016 strobe both controllers; reads at $4016/$4017 return their serial bits. Other reads
     and writes in $4000-$7FFF raise NotImplementedError identifying the CPU address.
 
     Addresses are assumed to be valid 16-bit CPU addresses ($0000-$FFFF).
@@ -85,6 +86,7 @@ class Machine:
         chr_rom = cartridge.get_chr_rom()
         self.ppu = PPU(ROM(chr_rom), len(chr_rom), RAM(2048), cartridge.get_mirroring())
         self.apu = APU()
+        self.controllers = (Controller(), Controller())
         self._prg_mask = len(prg_rom) - 1
 
 
@@ -97,9 +99,9 @@ class Machine:
         if address < 0x4000:
             return self.ppu.read_byte(address & 0x07)
 
-        # Controller reads return a fixed no-input response until controller behavior is implemented.
+        # Each port advances its own serial report.
         if address in (0x4016, 0x4017):
-            return 0
+            return self.controllers[address - 0x4016].read()
 
         # Route audio reads separately from sprite DMA and controller reads.
         if 0x4000 <= address <= 0x4013 or address == 0x4015:
@@ -130,8 +132,10 @@ class Machine:
                 self.ppu.write_byte(4, self.read_byte((value << 8) | offset))
             return
 
-        # Controller strobing is not implemented; temporarily accept its writes without effects.
+        # Both ports share the strobe signal but retain independent reports.
         if address == 0x4016:
+            for controller in self.controllers:
+                controller.write_strobe(value)
             return
 
         # APU writes include the frame counter, while reads at $4017 address controller 2.
