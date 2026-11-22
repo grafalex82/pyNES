@@ -10,7 +10,7 @@ software-visible effect, and supporting references where relevant.
 When frame output is enabled, each vblank capture also records immutable $2000 nametable tile and attribute bytes
 and the 16 background palette entries converted to packed RGB. Its sequence matches the captured frame. Direct VRAM
 reads leave PPU register and latch state unchanged, and later writes do not alter the snapshot. This records the same
-whole-frame approximation as normal rendering; it does not add a visible inspection mode or modify game behavior.
+whole-frame approximation as normal rendering and does not modify game behavior.
 The first palette entry is the common backdrop for every subpalette. Synthetic tests check timing and isolation.
 
 The inspection renderer now turns a captured snapshot into a native-size RGB frame. Fixed white 3-by-7 hexadecimal
@@ -18,6 +18,8 @@ glyphs on black leave the last row for four two-pixel swatches. Attribute quadra
 the first uses the shared backdrop. This host-side visualization does not change emulated state. F1 selects the view
 for the next completed frame without changing logging or stopping execution; a second press restores normal output.
 Synthetic tests cover the glyphs, frame boundaries, attribute quadrants, disabled background and both F1 transitions.
+The view always inspects the stationary $2000 nametable, including while background display is disabled; it does not
+show scrolling or sprites. A mode change takes effect on the next captured frame, using its matching snapshot.
 
 ### Ignored noise control writes (2026-11-22)
 

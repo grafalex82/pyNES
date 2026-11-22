@@ -187,6 +187,18 @@ at each emulated vblank and presents the newest one between 1000-cycle blocks. C
 is not paced in real time; the title shows actual displayed frames per second. The stationary background can be drawn.
 Logging is disabled by default; `--debug` enables reset, instruction, and device traces. An execution error closes the
 window and propagates with its traceback in either mode.
+
+Press F1 to inspect background tiles; press it again to return to the normal image. The selected view appears on the next
+completed frame, and emulation continues in the same window. This key is independent of the `--debug` logging option.
+Each 8 × 8 tile cell shows its two-digit uppercase hexadecimal nametable byte in white 3 × 7 glyphs on black, with a
+one-pixel gap between digits and an empty rightmost column. The bottom row shows four colors, two pixels per color:
+the universal backdrop followed by the three colors of the tile's selected background subpalette. Colors use the same
+fixed RGB approximation as the normal image; identical subpalettes can look the same.
+
+The inspection view shows the stationary $2000 nametable even when background rendering is disabled. It does not
+represent scrolling or sprites, which are not yet rendered. Tile bytes, attributes, and palette colors are captured at
+the same vblank boundary as each normal frame; later video-memory writes appear in a later capture.
+
 The CPU has dispatch handlers for all 151 official NES CPU opcode encodings. Unofficial opcodes and some device
 behavior remain unsupported, so a ROM may still stop at a missing behavior. See
 [execution control](doc/execution.md#console-startup) for the execution loop and a synthetic example.

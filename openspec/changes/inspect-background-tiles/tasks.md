@@ -8,6 +8,6 @@
       for leading zeroes, frame edges, all attribute quadrants, universal backdrop, and disabled background.
 - [x] 1.3 Connect F1 to select the normal or inspection image in the host loop; verify startup default, both toggles,
       continued execution, frame scaling, and independence from `--debug` with synthetic tests.
-- [ ] 1.4 Document the key, pixel layout, swatch meaning, stationary-background limits and frame sampling in README.md
+- [x] 1.4 Document the key, pixel layout, swatch meaning, stationary-background limits and frame sampling in README.md
       and doc/decisions.md; review those descriptions against the implemented behavior.
-- [ ] 1.5 Run the focused PPU, frame display and host-loop pytest tests and report their results.
+- [x] 1.5 Run the focused PPU, frame display and host-loop pytest tests and report their results.
