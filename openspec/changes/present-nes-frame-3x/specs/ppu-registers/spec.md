@@ -6,7 +6,7 @@
 
 CPU addresses $2000-$3FFF SHALL select register offset (address - $2000) modulo 8. Supported writes SHALL apply
 the addressed register's effects. The PPU SHALL NOT retain every last-written byte for inspection. Writes to the
-status offset SHALL be accepted without changing the vblank flag or shared address and scroll write toggle.
+status offset SHALL be accepted without changing the vblank flag, sprite 0 hit flag, or shared write toggle.
 
 #### Scenario: Write through register mirrors
 
@@ -17,7 +17,7 @@ status offset SHALL be accepted without changing the vblank flag or shared addre
 
 - **WHEN** a byte is written to $2002 or its mirrors
 - **THEN** the write is accepted without retaining it for inspection
-- **AND** the vblank flag and shared address and scroll write toggle do not change
+- **AND** the vblank flag, sprite 0 hit flag, and shared address and scroll write toggle do not change
 
 ## REMOVED Requirements
 
@@ -31,14 +31,33 @@ status offset SHALL be accepted without changing the vblank flag or shared addre
 
 ### Requirement: Report vblank and reset the shared write toggle
 
-PPUSTATUS ($2002) SHALL return the previous vblank flag in bit 7, clear it, and reset the shared address and
-scroll write toggle. The other status bits SHALL read as zero in this model.
+PPUSTATUS ($2002) SHALL return the previous vblank flag in bit 7 and sprite 0 hit in bit 6. A read SHALL clear
+vblank and reset the shared address and scroll write toggle while preserving sprite 0 hit. Bits 0–5 SHALL read
+as zero in this model.
 
 #### Scenario: Read through mirrored status ports
 
-- **WHEN** vblank has started and software has issued the first address write
+- **WHEN** vblank has started without a sprite 0 hit and software has issued the first address write
 - **THEN** the first status read returns $80 and a second read before the next vblank returns $00
 - **AND** the next $2005 or $2006 write starts a new pair
+
+### Requirement: Latch sprite 0 hit during the visible frame
+
+Using frame-start inputs, the PPU SHALL set sprite 0 hit at the first visible overlap of nonzero background and
+sprite 0 pattern indices. Both layers and their masks SHALL permit that pixel. Column x=255 SHALL be excluded.
+The sprite's priority SHALL have no effect. The hit SHALL remain set until the next pre-render interval
+and SHALL be available even when the host does not publish frames.
+
+#### Scenario: Observe a hit during visible rendering
+
+- **WHEN** an enabled sprite 0 behind the background overlaps an opaque background pixel
+- **THEN** reads before its estimated visible-frame position return bit 6 clear
+- **AND** reads from that point until pre-render return bit 6 set, including repeated reads through aliases
+
+#### Scenario: Reject ineligible overlap
+
+- **WHEN** an overlap is transparent, hidden by a layer or left-edge mask, or occurs at x=255
+- **THEN** that overlap leaves the bit clear
 
 ### Requirement: Select a PPU address and write video data
 
@@ -75,7 +94,7 @@ horizontal and vertical scroll in order using the same write toggle as PPUADDR.
 
 #### Scenario: Use the shared write toggle
 
-- **WHEN** software reads PPUSTATUS between a partial write pair and a new scroll pair
+- **WHEN** before the visible period, software reads PPUSTATUS between a partial write pair and a new scroll pair
 - **THEN** the new pair supplies the horizontal and vertical offsets for the next rendered frame
 
 #### Scenario: Switch ports within one write pair

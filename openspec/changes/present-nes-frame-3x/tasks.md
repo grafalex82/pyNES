@@ -79,3 +79,13 @@
       remove `_last_writes` and `last_writes`. Preserve implemented register effects and accept status writes without
       changing vblank or the shared write toggle. Update focused tests and documentation, including the unmodeled
       status-write open-bus effect.
+
+## 7. Pass the Super Mario Bros. sprite-zero wait and render the scroll split
+
+- [ ] 7.1 Schedule sprite 0 hit at the first eligible pixel overlap in the visible frame and expose it in
+      `$2002` bit 6. Verify timing, latch lifetime, transparency, layer and left-edge masks, x=255, and sprite
+      priority with synthetic scenes. Run the identified Super Mario Bros. (Europe) ROM with a cycle budget
+      and verify that execution leaves `$8150–$8155`. Document the timing approximation and any next obstacle.
+- [ ] 7.2 Apply horizontal `$2005` scroll and `$2000` horizontal nametable changes during the visible frame
+      from the next scanline. Verify a synthetic scene with distinct horizontal origins above and below the
+      split. Check the top panel and playfield in a bounded Super Mario Bros. run and document the approximation.

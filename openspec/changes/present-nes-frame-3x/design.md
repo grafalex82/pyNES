@@ -9,7 +9,8 @@ The cartridge entry point runs bounded CPU blocks. The PPU can produce a backdro
 
 Keep the PPU responsible for producing native-size pixels and the host responsible for presenting them. Each stage
 adds one observable behavior at a time, with synthetic programs available before a game can produce a frame.
-This model covers fixed NROM video wiring and whole-frame rendering at instruction-level timing.
+This model covers fixed NROM video wiring and frame rendering with selected scanline effects.
+Device timing advances at instruction boundaries.
 
 ## Decisions
 
@@ -61,6 +62,18 @@ This model covers fixed NROM video wiring and whole-frame rendering at instructi
     before resolving its background priority. Use a fixed RGB palette for output and apply the mask bits during
     composition. For the first NTSC profile, approximate each emphasis bit by reducing the other two RGB
     channels to three quarters of their previous value, using integer arithmetic.
+11. **Schedule sprite 0 hit during the visible period.** Use the background and sprite 0 pattern indices and
+    masks to find the first eligible overlap in screen order. Estimate when the PPU reaches it from the
+    visible line and column and latch status bit 6 as instruction cycles cross that point. Sample the
+    collision inputs at the start of the visible frame. Clear the bit during pre-render. Frame publication
+    and status reads are independent of the hit latch.
+    [Mesen 2 sprite-zero overlap](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp#L785)
+12. **Keep the horizontal origin for each region of the frame.** The local Super Mario Bros. (Europe) ROM writes
+    `$2005` and `$2000` after its sprite-zero wait. Start with the scroll state at the beginning of the visible
+    frame and record horizontal changes from the first `$2005` write and the `$2000` horizontal nametable bit.
+    Apply each from the next scanline when composing the completed frame. Keep the frame-start vertical origin.
+    This gives the panel and playfield separate horizontal positions while reusing the existing renderer.
+    [Mesen 2 horizontal scroll reload](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp#L837)
 
 ## Risks / Trade-offs
 
@@ -68,9 +81,9 @@ This model covers fixed NROM video wiring and whole-frame rendering at instructi
   verify the actual window and confirm that it can be closed from the event loop.
 - The early window samples the current PPU state at host execution boundaries. Palette or VRAM updates can
   become visible at those boundaries until frame delivery switches to emulated vblank.
-- Whole-frame sampling uses one state for the image. Mid-frame scroll or palette changes, sprite-zero hits,
-  and per-scanline sprite evaluation can affect games that depend on raster timing. The first pass composes
-  eligible sprites in OAM order and leaves those timing-dependent behaviors for a separately observed need.
+- The final split uses scanline boundaries for horizontal scroll. Palette changes, mid-line effects, and
+  per-scanline sprite evaluation remain outside this approximation. The first sprite hit uses frame-start
+  inputs, so changes to collision inputs during the visible frame can differ from hardware.
 - The functional model reports zero for the unmodeled status and open-bus bits, stores OAM bytes directly,
   and performs DMA without a CPU stall. PPUDATA increments stay functional during rendering, and palette reads
   return raw six-bit codes. The backdrop always comes from `$3F00`, including when rendering is disabled.

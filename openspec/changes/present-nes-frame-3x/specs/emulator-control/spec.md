@@ -28,8 +28,8 @@ those cycles. The next step SHALL start with the handler instruction.
 
 ### Requirement: Make completed frames available to the host
 
-When frame output is enabled, each vblank entry SHALL publish one native-size frame composed from the PPU
-state at that boundary. The host SHALL be able to present the most recent completed frame.
+When frame output is enabled, each vblank entry SHALL publish one native-size frame for the visible period
+that just ended. The host SHALL be able to present the most recent completed frame.
 
 #### Scenario: Publish with NMI generation disabled
 

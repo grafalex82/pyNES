@@ -38,11 +38,13 @@ Sprite attributes live in the PPU's separate OAM. pygame presents the finished f
    eight-pixel masks, grayscale, and color emphasis separately.
 6. **Add scrolling and sprite flips.** Use `$2005` scrolling and base nametable selection, including nametable
    crossings. Apply horizontal and vertical OAM flips after basic sprite rendering works.
+7. **Pass the Super Mario Bros. wait and draw the scroll split.** Publish sprite 0 hit in `$2002` bit 6 to let
+   the local Super Mario Bros. (Europe) ROM leave its wait at `$8150–$8155`. Then preserve the top panel's
+   horizontal origin when the game writes new scroll settings for the playfield during the visible frame.
 
-Use whole-frame rendering at first. If a game depends on mid-frame changes or the timing of a sprite-zero hit,
-give that behavior its own verification step. After each game-facing change, rerun Battle City and use the next
-observed obstacle to order the remaining work. The current startup wait depends on NMI. The Battle City NMI
-handler writes `$4014` at `$D40D`, so OAM DMA may be needed before the first game frame.
+Use whole-frame rendering for the initial milestones. The Super Mario Bros. split then adds an approximation
+at scanline boundaries. After each game-facing change, rerun the affected local ROM and use the next observed
+obstacle to order the remaining work.
 [Local ROM checks](../../../ROMs/README.md) · [Battle City listing](../../../doc/disassembly/BattleCity.asm)
 
 ## Capabilities

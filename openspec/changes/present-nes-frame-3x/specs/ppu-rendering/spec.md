@@ -30,14 +30,26 @@ Pattern index zero SHALL allow the backdrop or a sprite to show through.
 
 ### Requirement: Scroll the background at frame boundaries
 
-The renderer SHALL use the nametable selection and scroll position captured for each whole frame. For ordinary
-scroll offsets, crossing a 256-pixel horizontal or 240-pixel vertical boundary SHALL select the adjacent
-logical nametable using the cartridge's mirroring.
+The renderer SHALL start each visible frame with its initial nametable selection and scroll position. For
+ordinary scroll offsets, crossing a 256-pixel horizontal or 240-pixel vertical boundary SHALL select the
+adjacent logical nametable using the cartridge's mirroring.
 
 #### Scenario: Cross both nametable boundaries
 
 - **WHEN** nonzero horizontal and vertical scroll offsets expose adjacent logical nametables
 - **THEN** pixels on either side of each boundary have the colors sourced from the corresponding nametable
+
+### Requirement: Apply horizontal scroll changes within the visible frame
+
+During the visible period, the first write of a $2005 pair SHALL update horizontal scroll and $2000 bit 0
+SHALL update the horizontal nametable selection from the next scanline. Earlier lines SHALL retain the
+previous horizontal settings. The frame's vertical origin SHALL remain the one selected at its start.
+
+#### Scenario: Change the playfield origin after a stationary panel
+
+- **WHEN** a synthetic program changes horizontal scroll and nametable selection during a visible scanline
+- **THEN** lines through that scanline use the initial horizontal settings
+- **AND** the subsequent lines use the new horizontal settings in the same published frame
 
 ### Requirement: Draw sprites from OAM and CHR
 
