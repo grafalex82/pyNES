@@ -52,7 +52,7 @@
 - [x] 4.3 Draw a stationary nametable using the $2000 background pattern table and the $2001 background
       enable bit. Verify asymmetric tiles, both pattern tables, and transparent pattern index zero.
       Run a synthetic cartridge that writes a nametable and confirm that its tiles appear in the startup window.
-- [ ] 4.4 Apply attribute quadrants. Verify different subpalettes across 16 × 16 regions in a synthetic scene.
+- [x] 4.4 Apply attribute quadrants. Verify different subpalettes across 16 × 16 regions in a synthetic scene.
 
 ## 5. Display sprites and apply rendering modes
 

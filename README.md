@@ -117,9 +117,9 @@ raise `NotImplementedError` on pattern memory access. Two 1 KiB nametable RAM pa
 cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupported. Palette RAM stores six-bit color
 codes at $3F00-$3FFF with hardware mirrors.
 `PPU.render_frame()` produces a packed RGB frame using a fixed RGB approximation. When $2001 bit 3 is set, it draws
-the stationary $2000 nametable with the background pattern table selected by $2000 bit 4 and the first background
-subpalette. Pattern index zero uses the $3F00 backdrop. Attributes, scrolling, sprites, other display masks, and the
-hardware's forced-blank palette override are not yet rendered.
+the stationary $2000 nametable with the background pattern table selected by $2000 bit 4 and subpalettes selected by
+the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. Scrolling, sprites, other display masks,
+and the hardware's forced-blank palette override are not yet rendered.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
 audio effects;

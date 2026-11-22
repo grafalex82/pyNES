@@ -220,7 +220,7 @@ class PPU:
         """Render a stationary background as a native-size frame of packed RGB bytes."""
         # Start with the backdrop, including transparent background pattern pixels.
         colors = []
-        for color_index in range(4):
+        for color_index in range(16):
             color_code = self.read_vram(0x3F00 + color_index)
             rgb = NES_COLORS[color_code]
             colors.append(rgb.to_bytes(3, "big"))
@@ -236,6 +236,17 @@ class PPU:
             for tile_x in range(32):
                 # Each nametable byte selects one 16-byte tile in the chosen pattern table.
                 tile = self.read_vram(0x2000 + tile_y * 32 + tile_x)
+
+                # Each attribute byte covers 4x4 tiles; its four two-bit fields cover 2x2 tiles each.
+                attribute_x = tile_x // 4
+                attribute_y = tile_y // 4
+                attribute_address = 0x23C0 + attribute_y * 8 + attribute_x
+                attribute = self.read_vram(attribute_address)
+                quadrant_x = (tile_x % 4) // 2
+                quadrant_y = (tile_y % 4) // 2
+                shift = quadrant_y * 4 + quadrant_x * 2
+                palette = (attribute >> shift) & 0x03
+
                 for row in range(8):
                     # The first eight bytes hold the low bitplane; the next eight hold the high bitplane.
                     address = pattern_base + tile * 16 + row
@@ -246,10 +257,12 @@ class PPU:
                         shift = 7 - column
                         color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
                         if color_index:
+                            # Each subpalette has four entries; index zero always leaves the backdrop visible.
+                            palette_color_index = palette * 4 + color_index
                             # Convert tile and pixel coordinates to a linear pixel number in the 256-pixel-wide frame.
                             # Multiply by 3 because each pixel occupies three consecutive bytes: red, green, and blue.
                             offset = ((tile_y * 8 + row) * 256 + tile_x * 8 + column) * 3
-                            frame[offset:offset + 3] = colors[color_index]
+                            frame[offset:offset + 3] = colors[palette_color_index]
         return bytes(frame)
 
 

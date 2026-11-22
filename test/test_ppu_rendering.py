@@ -81,7 +81,6 @@ def test_stationary_background_pattern_tables_and_transparency(tmp_path):
     for index, code in enumerate((0x0F, 0x01, 0x21, 0x30)):
         ppu.write_vram(0x3F00 + index, code)
     ppu.write_vram(0x2000 + 32 + 2, 1)
-    ppu.write_vram(0x23C0, 0xFF)  # Attributes are intentionally deferred.
 
     def pixel(frame, x, y):
         offset = (y * 256 + x) * 3
@@ -105,3 +104,40 @@ def test_stationary_background_pattern_tables_and_transparency(tmp_path):
     # A later mirrored PPUMASK write can disable the background again.
     machine.write_byte(0x3FF9, 0xF7)
     assert pixel(ppu.render_frame(), 16, 9) == backdrop
+
+
+def test_attribute_quadrants_select_background_subpalettes(tmp_path):
+    # Every tile has seven opaque pixels and one transparent pixel per row.
+    chr_rom = bytearray(8192)
+    for row in range(8):
+        chr_rom[row] = 0xFE
+    path = tmp_path / "attributes.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    ppu.write_vram(0x3F00, 0x0F)
+    for palette, color in enumerate((0x01, 0x21, 0x30, 0x00)):
+        ppu.write_vram(0x3F01 + palette * 4, color)
+
+    # The four quadrants select palettes 0, 1, 2, and 3 in reading order.
+    ppu.write_vram(0x23C0, 0xE4)
+    ppu.write_vram(0x23C1, 0x03)
+    ppu.write_vram(0x23FF, 0x08)
+    machine.write_byte(0x2001, 0x08)
+    frame = ppu.render_frame()
+
+    def pixel(x, y):
+        offset = (y * 256 + x) * 3
+        return tuple(frame[offset:offset + 3])
+
+    # Check both sides of quadrant and attribute-byte boundaries, including the last visible tile row.
+    assert pixel(14, 15) == (0, 42, 136)
+    assert pixel(16, 15) == (100, 176, 255)
+    assert pixel(14, 16) == (255, 254, 255)
+    assert pixel(16, 16) == (102, 102, 102)
+    assert pixel(30, 0) == (100, 176, 255)
+    assert pixel(32, 0) == (102, 102, 102)
+    assert pixel(240, 239) == (255, 254, 255)
+
+    # Transparent pixels use the universal backdrop even in a nonzero subpalette.
+    assert pixel(23, 16) == (0, 0, 0)

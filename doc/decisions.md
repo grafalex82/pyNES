@@ -79,6 +79,18 @@ Controller reads are the next observed obstacles; these bounded runs do not esta
 
 [controller-strobe]: https://www.nesdev.org/wiki/Standard_controller
 
+### Background attribute quadrants (2026-11-22)
+
+Task 4.4 of `present-nes-frame-3x` selects one of four background subpalettes for each 16 by 16 pixel region.
+Each attribute byte covers 4 by 4 tiles: its successive two-bit fields select the top-left, top-right, bottom-left,
+and bottom-right 2 by 2 tile quadrants. Nonzero tile pixels use the selected subpalette; index zero still shows the
+universal backdrop. See [NESdev attribute tables](https://www.nesdev.org/wiki/PPU_attribute_tables) and the
+[Mesen PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+Synthetic tests cover all four quadrants, attribute-byte boundaries, the final visible tile row, and transparency.
+The whole-frame and stationary-nametable approximations described below remain in effect for all cartridges.
+The local Battle City image reached 1,000,001 cycles at $D8FA with 33 captured frames and no `NotImplementedError`.
+Its SHA-256 matched the recorded value before and after; no ROM was patched. This does not establish playability.
+
 ### Stationary background tiles (2026-11-22)
 
 Task 4.3 of `present-nes-frame-3x` draws the 32 by 30 tiles at $2000 when PPUMASK bit 3 is set. PPUCTRL bit 4
