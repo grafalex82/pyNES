@@ -59,7 +59,7 @@
 - [x] 5.1 Implement $2003/$2004 OAM access. Test consecutive writes, $FF-to-$00 wrapping, and nonincrementing reads.
 - [x] 5.2 Implement the $4014 OAM transfer. Test a mirrored CPU page, nonzero start address, and destination wrap.
       Record the omitted DMA stall and rerun Battle City if DMA was the observed obstacle.
-- [ ] 5.3 Draw 8 × 8 sprites from OAM and CHR. Verify the selected table, position, palette, transparency,
+- [x] 5.3 Draw 8 × 8 sprites from OAM and CHR. Verify the selected table, position, palette, transparency,
       and pixel placement with an asymmetric synthetic sprite.
 - [ ] 5.4 Add 8 × 16 sprite selection. Verify both CHR tables and the order of the two tiles.
 - [ ] 5.5 Compose sprites with the background. Verify OAM ordering, behind-background priority, and all four

@@ -8,6 +8,82 @@ from machine import Machine
 from nesfile import NESFile
 
 
+def test_8x8_sprites_use_oam_position_pattern_table_and_palette(tmp_path):
+    # Give tile 1 asymmetric bitplanes in both pattern tables and hide unused OAM entries.
+    chr_rom = bytearray(8192)
+    chr_rom[16] = 0xA0
+    chr_rom[24] = 0x60
+    chr_rom[0x1011] = 0x40
+    chr_rom[0x1019] = 0x80
+    chr_rom[32:40] = bytes([0xFF] * 8)
+    path = tmp_path / "sprites.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    ppu = machine.ppu
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (19, 1, 2, 30):
+        machine.write_byte(0x2004, value)
+    for address, code in ((0x3F00, 0x0F), (0x3F19, 0x01), (0x3F1A, 0x21), (0x3F1B, 0x30)):
+        ppu.write_vram(address, code)
+
+    def pixel(frame, x, y):
+        offset = (y * 256 + x) * 3
+        return tuple(frame[offset:offset + 3])
+
+    # Sprite Y is one line above its first pixel; index zero leaves the backdrop intact.
+    black, first, second, third = (0, 0, 0), (0, 42, 136), (100, 176, 255), (255, 254, 255)
+    assert pixel(ppu.render_frame(), 30, 20) == black
+    machine.write_byte(0x2001, 0x10)
+    frame = ppu.render_frame()
+    assert [pixel(frame, x, 20) for x in range(30, 34)] == [first, second, third, black]
+    assert pixel(frame, 30, 19) == black
+    assert pixel(frame, 29, 20) == black
+
+    # Transparent sprite pixels preserve an opaque background pixel.
+    ppu.write_vram(0x2000 + 2 * 32 + 4, 2)
+    ppu.write_vram(0x3F01, 0x21)
+    machine.write_byte(0x2001, 0x18)
+    assert pixel(ppu.render_frame(), 33, 20) == second
+
+    # PPUCTRL bit 3 selects the second pattern table for 8x8 sprites.
+    machine.write_byte(0x2001, 0x10)
+    machine.write_byte(0x2000, 0x08)
+    frame = ppu.render_frame()
+    assert [pixel(frame, x, 21) for x in range(30, 33)] == [second, first, black]
+    assert pixel(frame, 30, 20) == black
+
+    # The next sprite-size task remains explicit when that mode is selected.
+    machine.write_byte(0x2000, 0x20)
+    with pytest.raises(NotImplementedError, match="8x16 sprite rendering"):
+        ppu.render_frame()
+
+
+def test_8x8_sprites_clip_at_screen_edges_and_do_not_wrap_y(tmp_path):
+    # The opaque tile reaches the lower-right corner; hidden sprites must not wrap to the first line.
+    chr_rom = bytearray(8192)
+    chr_rom[16:24] = bytes([0xFF] * 8)
+    path = tmp_path / "edge.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 1, 0, 255):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    machine.write_byte(0x2004, 238)
+    machine.ppu.write_vram(0x3F00, 0x0F)
+    machine.ppu.write_vram(0x3F11, 0x30)
+    machine.write_byte(0x2001, 0x10)
+    frame = machine.ppu.render_frame()
+    assert frame[0:3] == bytes((0, 0, 0))
+    assert frame[-3:] == bytes((255, 254, 255))
+    assert frame[-6:-3] == bytes((0, 0, 0))
+
+
 @pytest.fixture
 def display(monkeypatch):
     # The dummy driver lets the presenter expose its scaled pixels without opening a desktop window.

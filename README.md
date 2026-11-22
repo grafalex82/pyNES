@@ -120,8 +120,11 @@ cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupport
 codes at $3F00-$3FFF with hardware mirrors.
 `PPU.render_frame()` produces a packed RGB frame using a fixed RGB approximation. When $2001 bit 3 is set, it draws
 the stationary $2000 nametable with the background pattern table selected by $2000 bit 4 and subpalettes selected by
-the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. Scrolling, sprites, other display masks,
-and the hardware's forced-blank palette override are not yet rendered.
+the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. When $2001 bit 4 is set, 8 × 8 sprites
+use OAM positions, the $2000 bit 3 pattern table, and sprite subpalettes. Sprite index zero is transparent. Sprites
+currently draw over the background regardless of priority; sprite flips, scrolling, other display masks, and the
+hardware's forced-blank palette override are not yet rendered. Enabled 8 × 16 sprite rendering raises
+`NotImplementedError`.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
 audio effects;
@@ -198,7 +201,7 @@ the universal backdrop followed by the three colors of the tile's selected backg
 fixed RGB approximation as the normal image; identical subpalettes can look the same.
 
 The inspection view shows the stationary $2000 nametable even when background rendering is disabled. It does not
-represent scrolling or sprites, which are not yet rendered. Tile bytes, attributes, and palette colors are captured at
+represent scrolling or sprites. Tile bytes, attributes, and palette colors are captured at
 the same vblank boundary as each normal frame; later video-memory writes appear in a later capture.
 
 The CPU has dispatch handlers for all 151 official NES CPU opcode encodings. Unofficial opcodes and some device

@@ -5,6 +5,20 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Functional 8 × 8 sprite drawing (2026-11-22)
+
+With PPUMASK bit 4 enabled, the frame renderer draws OAM sprites using the PPUCTRL bit 3 pattern table, sprite
+subpalettes, and Y plus one. Pattern index zero leaves the existing pixel unchanged; pixels beyond the right and
+bottom edges are clipped, and Y values $EF-$FF are offscreen. It draws OAM entries in reverse order so earlier
+opaque sprites cover later ones. Enabled 8 × 16 rendering raises `NotImplementedError` until its separate task.
+See [NESdev OAM](https://www.nesdev.org/wiki/PPU_OAM) and
+[Mesen's PPU implementation](https://github.com/SourMesen/Mesen2/blob/master/Core/NES/NesPpu.cpp).
+
+This first whole-frame pass draws sprites over the background regardless of their priority bit, ignores flips and
+left-edge masks, evaluates all sprites without the hardware's eight-per-scanline limit, and does not set sprite status
+flags. These approximations affect any game using those features; no ROM is patched. Synthetic tests cover both
+pattern tables, asymmetric pixels, subpalette selection, transparency, coordinates, clipping, and unsupported size.
+
 ### Functional OAM DMA (2026-11-22)
 
 A $4014 write synchronously reads the selected CPU page in ascending order through Machine and writes each byte to

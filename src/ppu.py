@@ -22,6 +22,7 @@ class PPU:
         self._nmi_pending = False
         self._nmi_enabled = False
         self._background_enabled = False
+        self._sprites_enabled = False
         self._frame_output_enabled = False
         self._completed_frame = None
         self._completed_background = None
@@ -98,9 +99,9 @@ class PPU:
         if offset == 0:
             self._write_ppuctrl(value)
 
-        # PPUMASK ($2001) controls whether the background layer is visible.
+        # PPUMASK ($2001) controls whether the background and sprite layers are visible.
         if offset == 1:
-            self._background_enabled = bool(value & 0x08)
+            self._write_ppumask(value)
 
         # OAMADDR selects a byte
         if offset == 3:
@@ -134,6 +135,11 @@ class PPU:
         self._sprite_height_16 = bool(value & 0x20)
         self._ext_output_enabled = bool(value & 0x40)
         self._nmi_enabled = bool(value & 0x80)
+
+
+    def _write_ppumask(self, value):
+        self._background_enabled = bool(value & 0x08)
+        self._sprites_enabled = bool(value & 0x10)
 
 
     def _read_ppustatus(self):
@@ -246,7 +252,7 @@ class PPU:
 
 
     def render_frame(self):
-        """Render a stationary background as a native-size frame of packed RGB bytes."""
+        """Render a native-size frame of packed RGB bytes."""
         # Start with the backdrop, including transparent background pattern pixels.
         colors = []
         for color_index in range(16):
@@ -256,9 +262,14 @@ class PPU:
 
         # Fill the frame with backdrop color
         frame = bytearray(colors[0] * (256 * 240))
-        if not self._background_enabled:
-            return bytes(frame)
+        if self._background_enabled:
+            self._render_background(frame, colors)
+        if self._sprites_enabled:
+            self._render_sprites(frame)
+        return bytes(frame)
 
+
+    def _render_background(self, frame, colors):
         # The visible nametable contains 30 rows of 32 tiles, each covering 8x8 pixels.
         pattern_base = 0x1000 if self._background_pattern_table_high else 0
         for tile_y in range(30):
@@ -292,7 +303,42 @@ class PPU:
                             # Multiply by 3 because each pixel occupies three consecutive bytes: red, green, and blue.
                             offset = ((tile_y * 8 + row) * 256 + tile_x * 8 + column) * 3
                             frame[offset:offset + 3] = colors[palette_color_index]
-        return bytes(frame)
+
+
+    def _render_sprites(self, frame):
+        # 8x16 pattern selection belongs to the next rendering step.
+        if self._sprite_height_16:
+            raise NotImplementedError("PPU 8x16 sprite rendering is not implemented")
+
+        # PPUCTRL bit 3 selects the 4 KiB pattern table for all 8x8 sprites.
+        pattern_base = 0x1000 if self._sprite_pattern_table_high else 0
+
+        # Each of 64 OAM entries has four bytes: Y, tile number, attributes, and X.
+        # Draw in reverse OAM order so earlier opaque sprites remain visible over later ones.
+        for index in range(252, -1, -4):
+            y, tile, attributes, x = self._oam[index:index + 4]
+
+            # Attribute bits 0-1 select one of four sprite subpalettes; flips and priority are not yet applied.
+            palette = attributes & 3
+
+            # The sprite starts one scanline below OAM Y. Clip at the bottom; Y=$EF-$FF is entirely offscreen.
+            for row in range(min(8, max(0, 239 - y))):
+                # A tile occupies 16 CHR bytes: eight low bitplane rows followed by eight high bitplane rows.
+                address = pattern_base + tile * 16 + row
+                low = self.read_vram(address)
+                high = self.read_vram(address + 8)
+
+                # Clip columns at the right edge and combine the two bitplanes, most significant bit first.
+                for column in range(min(8, 256 - x)):
+                    shift = 7 - column
+                    color_index = ((high >> shift) & 1) * 2 + ((low >> shift) & 1)
+                    if color_index:
+                        # Index zero is transparent; indices 1-3 select colors in the sprite palette at $3F10-$3F1F.
+                        code = self.read_vram(0x3F10 + palette * 4 + color_index)
+
+                        # Convert screen coordinates to the byte offset of a packed RGB pixel.
+                        offset = ((y + 1 + row) * 256 + x + column) * 3
+                        frame[offset:offset + 3] = NES_COLORS[code].to_bytes(3, "big")
 
 
     def read_vram(self, address):

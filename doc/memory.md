@@ -215,8 +215,8 @@ occupy $0000-$0FFF and $1000-$1FFF. `write_vram(address, value)` routes writes t
 raises `PermissionError` without changing data. This is a diagnostic departure from physical ROM behavior.
 
 CHR RAM and CHR ROM of other sizes raise `NotImplementedError` when pattern memory is accessed. Machine construction
-and CPU execution can still use a supported PRG configuration without CHR ROM. `PPU.render_frame()` currently renders
-only a solid backdrop from palette memory.
+and CPU execution can still use a supported PRG configuration without CHR ROM. Rendering enabled background or visible
+8 × 8 sprites accesses CHR ROM.
 See [the CHR decision](decisions.md#fixed-chr-rom-for-the-ppu-2026-11-21).
 
 ## PPU nametable memory
@@ -240,7 +240,7 @@ PPU addresses $3F00-$3FFF access internal palette RAM. The 32-byte range $3F00-$
 $3F10, $3F14, $3F18, and $3F1C also share storage with $3F00, $3F04, $3F08, and $3F0C, respectively.
 Writes retain only the low six bits, and internal reads return those raw color codes. For example, a write of $E1
 to $3F30 makes $3F00, $3F10, and $3F20 read as $21. Each PPU has independent zero-initialized palette storage.
-These memory accesses do not implement background or sprite layers or grayscale.
+Rendering uses these colors for the backdrop, stationary background, and 8 × 8 sprites; grayscale is not yet applied.
 See [the palette decision](decisions.md#ppu-palette-ram-2026-11-21).
 
 ## Supported configuration
