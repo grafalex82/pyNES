@@ -5,6 +5,95 @@ implementation decisions. Each entry reflects the project state when it was made
 for current memory capabilities. Add a short dated entry for each new decision, including its reason,
 software-visible effect, and supporting references where relevant.
 
+### Ignored noise control writes (2026-11-22)
+
+Machine routes $400C writes to the dummy APU, which logs and ignores them. Hardware controls noise volume, envelope,
+and length-counter behavior at this register; see [NESdev noise registers][noise-control]. The stub does not change
+those settings or produce audio for any game using it. Reads at $400C remain unsupported. Synthetic tests verify
+routing, logging, reads, and CPU continuation.
+
+With a 1,000,000-cycle budget, Battle City reached 1,000,001 cycles at PC $D8FA without NotImplementedError. The ROM
+hash was unchanged; no ROM was patched and this bounded run does not establish playability.
+
+[noise-control]: https://www.nesdev.org/wiki/APU_Noise
+
+### Ignored triangle control writes (2026-11-22)
+
+Machine routes $4008 writes to the dummy APU, which logs and ignores them. Hardware uses this register for the triangle
+linear counter reload value and control and length-counter halt flags; see [NESdev triangle registers][triangle-control].
+The stub does not change those settings or produce audio for any game using it. Reads at $4008 remain unsupported.
+Synthetic tests verify routing, logging, reads, and CPU continuation.
+
+With a 1,000,000-cycle budget, Battle City stopped on an unimplemented $400C write after 298,524 cycles, with PC
+$EB0A after fetching the operand. The ROM hash was unchanged; no ROM was patched and playability is not established.
+
+[triangle-control]: https://www.nesdev.org/wiki/APU_Triangle
+
+### Ignored pulse 2 control writes (2026-11-22)
+
+At the user's request, Machine routes $4004 writes to the dummy APU, which logs and ignores them. Hardware uses this
+register for pulse 2 width, envelope, and volume; see [NESdev pulse registers][pulse2-control]. The stub does not
+change those settings or produce audio for any game using it. Reads at $4004 remain unsupported. Synthetic tests verify
+routing, logging, reads, and CPU continuation.
+
+With a 1,000,000-cycle budget, Battle City stopped on an unimplemented $4008 write after 298,485 cycles, with PC
+$EB0A after fetching the operand. The ROM hash was unchanged; no ROM was patched and playability is not established.
+
+[pulse2-control]: https://www.nesdev.org/wiki/APU_Pulse
+
+### Ignored pulse control writes (2026-11-22)
+
+At the user's request, Machine routes $4000 writes to the dummy APU, which logs and ignores them. Hardware uses this
+register to control pulse 1 width, envelope, and volume; see [NESdev pulse registers][pulse-control]. The stub does
+not change those settings or produce audio, affecting any game that uses this register. Reads at $4000 remain
+unsupported. Synthetic tests verify routing, logging, reads, and CPU continuation.
+
+With a 1,000,000-cycle budget, Battle City stopped on an unimplemented $4004 write after 298,446 cycles, with PC
+$EB0A after fetching the operand. The ROM hash was unchanged; no ROM was patched and playability is not established.
+
+[pulse-control]: https://www.nesdev.org/wiki/APU_Pulse
+
+### Fixed controller read responses (2026-11-22)
+
+At the user's request, reads at $4016 and $4017 always return $00, independently of strobe writes or read count.
+This reports no pressed buttons in the usual eight-bit poll; no keyboard input, serial shift state, or open bus is
+modeled. A standard controller normally reports one after eight button bits, while undriven bits retain bus values;
+see [NESdev controller behavior](https://www.nesdev.org/wiki/Standard_controller). The approximation affects every
+game using controller reads and can prevent progress when input or other responses are required. Synthetic tests cover
+both ports, repeated reads, CPU flags, and unchanged $4017 APU write routing.
+
+With a 1,000,000-cycle budget, Battle City stopped on a $4000 write after 298,407 cycles. Space Invaders reached
+1,000,000 cycles at $82E5 and Super Mario Bros. reached 1,000,002 at $8153 without NotImplementedError. All ROM hashes
+matched before and after; no ROM was patched. These bounded runs do not establish playability.
+
+### Ignored controller strobe writes (2026-11-22)
+
+At the user's request, $4016 writes are temporarily accepted without controller effects. Hardware bit 0 controls the
+shared controller strobe, which selects how the controllers report button states; see [NESdev][controller-strobe].
+The stub does not latch buttons or model the strobe for any game, and reads at $4016 and $4017 remain unsupported.
+Synthetic tests verify accepted values, unsupported reads, and CPU continuation. No ROM is patched.
+
+With a 1,000,000-cycle budget, Battle City stopped on a $4017 read after 295,555 cycles, Space Invaders on a $4016
+read after 87,938, and Super Mario Bros. on a $4016 read after 116,962. All three ROM hashes matched before and after.
+Controller reads are the next observed obstacles; these bounded runs do not establish playability.
+
+[controller-strobe]: https://www.nesdev.org/wiki/Standard_controller
+
+### Ignored sprite DMA writes (2026-11-22)
+
+At the user's request, writes to $4014 are temporarily accepted without reading a CPU source page, copying sprite data,
+or stalling the CPU. Hardware copies 256 bytes to OAM and stalls for 513 or 514 cycles; see [NESdev DMA][oam-dma].
+The stub affects every game using DMA, including the three local ROMs, and can produce missing sprites and incorrect
+timing. It allows execution to reveal subsequent missing behavior; it does not establish playability. Reads at $4014
+remain unsupported. Synthetic tests cover several source pages, unsupported reads, CPU continuation, and cycle
+progress.
+
+With a 1,000,000-cycle budget, Battle City stopped on a $4016 write after 295,540 cycles, Space Invaders after 87,926,
+and Super Mario Bros. after 116,939. All three ROM hashes matched before and after; no ROM was patched. Controller 1
+is the next observed obstacle. Real OAM access and DMA remain separate planned work.
+
+[oam-dma]: https://www.nesdev.org/wiki/DMA
+
 ### PPU NMI delivery (2026-11-22)
 
 Task 4.2 of `present-nes-frame-3x` latches a request when vblank and PPUCTRL bit 7 become true together. Repeated

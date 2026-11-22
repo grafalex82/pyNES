@@ -87,9 +87,12 @@ non-palette reads are buffered, while palette reads return the color immediately
 vblank flag driven by approximate frame timing; other PPU register reads and breakpoints remain future work.
 `PPU.render_frame()` currently supplies a solid RGB backdrop frame; enabled output captures it at vblank.
 The host presents new completed frames between CPU blocks.
-The dummy APU accepts writes to $4010-$4013 and $4015 without effects and returns $00 when those addresses are read.
-It also ignores frame-counter writes at $4017; controller 2 reads at that address remain unimplemented. It models
-neither open bus, sample fetching, frame sequencing, audio output, nor audio interrupts; sprite DMA is unimplemented.
+The dummy APU accepts writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 without effects. Reads at $4010-$4013
+and $4015 return $00.
+It also ignores frame-counter writes at $4017; controller 2 reads at that address return $00. It models
+neither open bus, sample fetching, frame sequencing, audio output, nor audio interrupts. Sprite DMA writes are ignored;
+the transfer and stall are unimplemented. Controller strobe writes at $4016 are ignored, and both controller reads
+return $00 without modeling input.
 
 ## Documentation roles
 

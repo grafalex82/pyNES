@@ -25,12 +25,16 @@ class Machine:
         $0000-$07FF  Internal RAM: one writable 2048-byte buffer.
         $0800-$1FFF  Three mirrors of the same internal RAM.
         $2000-$3FFF  PPU registers and mirrors; status, video address, and data access.
-        $4000-$400F  APU registers; not connected yet.
+        $4000        Pulse 1 control; dummy writes, reads unsupported.
+        $4004        Pulse 2 control; dummy writes, reads unsupported.
+        $4008        Triangle control; dummy writes, reads unsupported.
+        $400C        Noise control; dummy writes, reads unsupported.
+        $4001-$4003, $4005-$4007, $4009-$400B, $400D-$400F  Other APU registers; not connected yet.
         $4010-$4013  DMC registers; dummy writes and zero reads.
-        $4014        Sprite DMA; not connected yet.
+        $4014        Sprite DMA; writes ignored, reads unsupported.
         $4015        APU status/control; dummy writes and zero reads.
-        $4016        Controller 1; not connected yet.
-        $4017        Controller 2 read unsupported; APU frame-counter write ignored.
+        $4016        Controller 1; writes ignored and reads return zero.
+        $4017        Controller 2 read returns zero; APU frame-counter write ignored.
         $4018-$401F  Normally disabled APU and I/O functionality; not connected yet.
         $4020-$5FFF  Cartridge expansion area; not connected yet.
         $6000-$7FFF  Cartridge RAM when present; not connected yet.
@@ -53,7 +57,8 @@ class Machine:
     Other PPU reads raise NotImplementedError identifying the register offset.
     Reads and writes at $4010-$4013 and $4015
     route to a dummy APU; writes have no effects and reads return $00. Writes at
-    $4017 are also ignored by the APU, while reads remain unsupported. Other reads
+    $4017 are also ignored by the APU. Writes to $4014 and $4016 are ignored as
+    temporary DMA and controller stubs; controller reads at $4016/$4017 return zero. Other reads
     and writes in $4000-$7FFF raise NotImplementedError identifying the CPU address.
 
     Addresses are assumed to be valid 16-bit CPU addresses ($0000-$FFFF).
@@ -97,7 +102,11 @@ class Machine:
         if address < 0x4000:
             return self.ppu.read_byte(address & 0x07)
 
-        # Route only the selected APU registers, leaving sprite DMA unconnected.
+        # Controller reads return a fixed no-input response until controller behavior is implemented.
+        if address in (0x4016, 0x4017):
+            return 0
+
+        # Route only the selected APU registers, leaving sprite DMA reads unconnected.
         if 0x4010 <= address <= 0x4013 or address == 0x4015:
             return self.apu.read_byte(address - 0x4000)
 
@@ -120,8 +129,16 @@ class Machine:
             self.ppu.write_byte(address & 0x07, value)
             return
 
+        # Sprite DMA is not implemented; temporarily accept its write without a transfer or stall.
+        if address == 0x4014:
+            return
+
+        # Controller strobing is not implemented; temporarily accept its writes without effects.
+        if address == 0x4016:
+            return
+
         # APU writes include the frame counter, while reads at $4017 address controller 2.
-        if 0x4010 <= address <= 0x4013 or address in (0x4015, 0x4017):
+        if address in (0x4000, 0x4004, 0x4008, 0x400C) or 0x4010 <= address <= 0x4013 or address in (0x4015, 0x4017):
             self.apu.write_byte(address - 0x4000, value)
             return
 

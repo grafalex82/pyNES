@@ -2183,18 +2183,18 @@ def test_absolute_stores_write_register_without_changing_flags(make_cpu, opcode,
     (0x8C, "y"),  # STY absolute
 ])
 @pytest.mark.parametrize(
-    "high_byte, error, message",
+    "low_byte, high_byte, error, message",
     [
-        (0x40, NotImplementedError, "CPU write at address 0x4000"),
-        (0x80, PermissionError, "ROM at offset 0x0000"),
+        (0x01, 0x40, NotImplementedError, "CPU write at address 0x4001"),
+        (0x00, 0x80, PermissionError, "ROM at offset 0x0000"),
     ],
 )
-def test_absolute_store_propagates_write_error(make_cpu, opcode, register, high_byte, error, message):
+def test_absolute_store_propagates_write_error(make_cpu, opcode, register, low_byte, high_byte, error, message):
     # Target either unconnected I/O or the beginning of PRG ROM.
     cpu, machine = make_cpu(start_address=0x0200)
     setattr(cpu, register, 0xA5)
     machine.write_byte(0x0200, opcode)
-    machine.write_byte(0x0201, 0x00)
+    machine.write_byte(0x0201, low_byte)
     machine.write_byte(0x0202, high_byte)
 
     # The device's diagnostic propagates before completed-instruction cycles accrue.

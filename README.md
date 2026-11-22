@@ -119,10 +119,13 @@ codes at $3F00-$3FFF with hardware mirrors.
 `PPU.render_frame()` produces a packed RGB frame filled with the color at $3F00, using a fixed RGB approximation.
 Background and sprite layers, display masks, and the hardware's forced-blank palette override are not yet rendered.
 
-Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4010-$4013 and $4015 have no audio effects;
+Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
+audio effects;
 reads return $00, including inactive channel and interrupt status. Writes to the APU frame counter at $4017 are also
-ignored; reads at $4017 (controller 2) remain unsupported. This approximates rather than models open bus, DMC playback,
-frame timing, or frame IRQs. Sprite DMA at $4014 and other unconnected registers remain unsupported.
+ignored; reads at $4017 (controller 2) return $00. This approximates rather than models open bus, DMC playback,
+frame timing, or frame IRQs. Writes to sprite DMA at $4014 are temporarily ignored; no sprites are transferred and
+no DMA stall occurs. Controller strobe writes to $4016 are ignored, and reads at $4016 and $4017 always return $00;
+button input is not implemented. Reads at $4014 and other unconnected registers remain unsupported.
 
 [`CPU`](src/cpu.py) exposes `a`, `x`, `y`, `sp`, `pc`, and seven boolean status fields as read/write properties.
 Reading `p` assembles NV1BDIZC; assigning it replaces all seven fields and ignores bit 5, which always reads as 1.

@@ -117,7 +117,7 @@ def test_propagates_the_original_rom_exception(make_cartridge, monkeypatch):
 
 
 @pytest.mark.parametrize("operation", ["read", "write"])
-@pytest.mark.parametrize("address", [0x4000, 0x400F, 0x4014, 0x4016, 0x4018, 0x401F, 0x4020, 0x5FFF,
+@pytest.mark.parametrize("address", [0x4001, 0x400F, 0x4018, 0x401F, 0x4020, 0x5FFF,
                                      0x6000, 0x7FFF])
 def test_rejects_unconnected_access_without_changing_memory(make_cartridge, operation, address):
     # Existing bytes expose accidental routing to RAM or ROM instead of an unconnected device.
@@ -199,13 +199,12 @@ def test_frame_counter_writes_are_ignored_and_logged(make_cartridge, caplog):
     ]
 
 
-def test_frame_counter_address_reads_remain_unsupported(make_cartridge):
+def test_frame_counter_write_and_controller_read_are_distinct(make_cartridge):
     machine = Machine(make_cartridge(bytes(16384)))
     machine.write_byte(0x4017, 0xC0)
 
-    # CPU reads address controller 2; direct APU reads must not turn it into a readable register.
-    with pytest.raises(NotImplementedError, match=r"CPU read.*0x4017"):
-        machine.read_byte(0x4017)
+    # CPU reads return the controller stub; direct APU reads remain unsupported.
+    assert machine.read_byte(0x4017) == 0
     with pytest.raises(NotImplementedError, match=r"APU read.*0x17"):
         machine.apu.read_byte(0x17)
 
