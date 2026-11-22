@@ -306,12 +306,8 @@ class PPU:
 
 
     def _render_sprites(self, frame):
-        # 8x16 pattern selection belongs to the next rendering step.
-        if self._sprite_height_16:
-            raise NotImplementedError("PPU 8x16 sprite rendering is not implemented")
-
-        # PPUCTRL bit 3 selects the 4 KiB pattern table for all 8x8 sprites.
-        pattern_base = 0x1000 if self._sprite_pattern_table_high else 0
+        # PPUCTRL bit 5 selects a height of 8 or 16 pixels for every sprite.
+        height = 16 if self._sprite_height_16 else 8
 
         # Each of 64 OAM entries has four bytes: Y, tile number, attributes, and X.
         # Draw in reverse OAM order so earlier opaque sprites remain visible over later ones.
@@ -321,10 +317,19 @@ class PPU:
             # Attribute bits 0-1 select one of four sprite subpalettes; flips and priority are not yet applied.
             palette = attributes & 3
 
+            # In 8x16 mode the tile's low bit selects the table; the remaining bits select an even tile pair.
+            # In 8x8 mode PPUCTRL bit 3 selects the table and all eight tile bits select the tile.
+            if self._sprite_height_16:
+                pattern_base = (tile & 1) * 0x1000
+                tile &= 0xFE
+            else:
+                pattern_base = 0x1000 if self._sprite_pattern_table_high else 0
+
             # The sprite starts one scanline below OAM Y. Clip at the bottom; Y=$EF-$FF is entirely offscreen.
-            for row in range(min(8, max(0, 239 - y))):
+            for row in range(min(height, max(0, 239 - y))):
                 # A tile occupies 16 CHR bytes: eight low bitplane rows followed by eight high bitplane rows.
-                address = pattern_base + tile * 16 + row
+                # Rows 8-15 of an 8x16 sprite come from the next tile, starting again at its first row.
+                address = pattern_base + (tile + row // 8) * 16 + row % 8
                 low = self.read_vram(address)
                 high = self.read_vram(address + 8)
 

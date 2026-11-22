@@ -56,11 +56,6 @@ def test_8x8_sprites_use_oam_position_pattern_table_and_palette(tmp_path):
     assert [pixel(frame, x, 21) for x in range(30, 33)] == [second, first, black]
     assert pixel(frame, 30, 20) == black
 
-    # The next sprite-size task remains explicit when that mode is selected.
-    machine.write_byte(0x2000, 0x20)
-    with pytest.raises(NotImplementedError, match="8x16 sprite rendering"):
-        ppu.render_frame()
-
 
 def test_8x8_sprites_clip_at_screen_edges_and_do_not_wrap_y(tmp_path):
     # The opaque tile reaches the lower-right corner; hidden sprites must not wrap to the first line.
@@ -82,6 +77,55 @@ def test_8x8_sprites_clip_at_screen_edges_and_do_not_wrap_y(tmp_path):
     assert frame[0:3] == bytes((0, 0, 0))
     assert frame[-3:] == bytes((255, 254, 255))
     assert frame[-6:-3] == bytes((0, 0, 0))
+
+
+@pytest.mark.parametrize("tile,control", [(0x04, 0x20), (0x04, 0x28), (0x05, 0x20), (0x05, 0x28)])
+def test_8x16_sprites_select_table_and_ordered_tile_pair(tmp_path, tile, control):
+    # Distinct pixels at both ends of each tile expose the table, tile order, and row boundaries.
+    chr_rom = bytearray(8192)
+    chr_rom[0x0040] = 0x80
+    chr_rom[0x0047] = 0x40
+    chr_rom[0x0058] = 0x20
+    chr_rom[0x005F] = 0x10
+    chr_rom[0x1048] = 0x80
+    chr_rom[0x104F] = 0x40
+    chr_rom[0x1050] = 0x20
+    chr_rom[0x1057] = 0x10
+    path = tmp_path / "tall-sprite.nes"
+    path.write_bytes(b"NES\x1a" + bytes([1, 1]) + bytes(10) + bytes(16384) + chr_rom)
+    machine = Machine(NESFile(path))
+    machine.write_byte(0x2003, 0)
+    for _ in range(64):
+        for value in (0xFF, 0, 0, 0):
+            machine.write_byte(0x2004, value)
+    machine.write_byte(0x2003, 0)
+    for value in (19, tile, 0, 30):
+        machine.write_byte(0x2004, value)
+    for address, color in ((0x3F00, 0x0F), (0x3F11, 0x01), (0x3F12, 0x21)):
+        machine.ppu.write_vram(address, color)
+    machine.write_byte(0x2000, control)
+    machine.write_byte(0x2001, 0x10)
+    frame = machine.ppu.render_frame()
+
+    # Bit 0 of the OAM tile selects the table, independently of PPUCTRL bit 3.
+    def pixel(x, y):
+        offset = (y * 256 + x) * 3
+        return tuple(frame[offset:offset + 3])
+
+    black, first, second = (0, 0, 0), (0, 42, 136), (100, 176, 255)
+    top, bottom = (first, second) if tile == 0x04 else (second, first)
+    assert [pixel(x, y) for x, y in ((30, 20), (31, 27), (32, 28), (33, 35))] == [top, top, bottom, bottom]
+    assert pixel(30, 19) == black
+    assert pixel(33, 36) == black
+    assert pixel(31, 20) == black
+
+    # The bottom tile can begin on the last visible scanline without wrapping the remaining rows.
+    machine.write_byte(0x2003, 0)
+    machine.write_byte(0x2004, 230)
+    frame = machine.ppu.render_frame()
+    assert pixel(31, 238) == top
+    assert pixel(32, 239) == bottom
+    assert pixel(32, 0) == black
 
 
 @pytest.fixture

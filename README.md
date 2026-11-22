@@ -120,11 +120,11 @@ cartridge's horizontal or vertical mirroring; four-screen mirroring is unsupport
 codes at $3F00-$3FFF with hardware mirrors.
 `PPU.render_frame()` produces a packed RGB frame using a fixed RGB approximation. When $2001 bit 3 is set, it draws
 the stationary $2000 nametable with the background pattern table selected by $2000 bit 4 and subpalettes selected by
-the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. When $2001 bit 4 is set, 8 × 8 sprites
-use OAM positions, the $2000 bit 3 pattern table, and sprite subpalettes. Sprite index zero is transparent. Sprites
+the nametable's attribute bytes. Pattern index zero uses the $3F00 backdrop. When $2001 bit 4 is set, 8 × 8 or 8 × 16
+sprites use OAM positions and sprite subpalettes. For 8 × 8 sprites $2000 bit 3 selects the pattern table; for 8 × 16
+sprites the tile number selects the table and tile pair. Sprite index zero is transparent. Sprites
 currently draw over the background regardless of priority; sprite flips, scrolling, other display masks, and the
-hardware's forced-blank palette override are not yet rendered. Enabled 8 × 16 sprite rendering raises
-`NotImplementedError`.
+hardware's forced-blank palette override are not yet rendered.
 
 Each Machine also owns a dummy [`APU`](src/apu.py). Writes to $4000, $4004, $4008, $400C, $4010-$4013 and $4015 have no
 audio effects;
